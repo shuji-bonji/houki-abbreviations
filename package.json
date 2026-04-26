@@ -1,6 +1,6 @@
 {
   "name": "@shuji-bonji/houki-abbreviations",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Shared abbreviation dictionary for Japanese laws and regulations — used by houki-hub MCP family",
   "keywords": [
     "japan",
@@ -29,9 +29,12 @@
     }
   },
   "files": [
-    "dist",
-    "src/data/*.json"
+    "dist"
   ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "tsc && node scripts/copy-assets.mjs",
     "dev": "tsc --watch",
