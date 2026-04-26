@@ -41,17 +41,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # publish ジョブは Node 24 を使う:
+      # - Node 24 は npm 11+ 同梱なので Trusted Publisher のためのアップデート不要
+      # - Node 22 同梱 npm 10 は `npm install -g npm@latest` で promise-retry not found
+      #   になることがあり、ロバストな代替が無い
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
-      # npm 11.5.1 以上が Trusted Publisher 対応に必要。
-      # `--force` は actions/setup-node 同梱 npm からのセルフアップデート時の
-      # 依存解決バグ（promise-retry not found 等）を回避するため。
-      - name: Upgrade npm to 11.5.1+
-        run: npm install -g npm@latest --force
+      - name: Show node/npm versions
+        run: node --version && npm --version
 
       - run: npm ci
       - run: npm run build
