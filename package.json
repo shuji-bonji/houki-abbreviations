@@ -1,0 +1,61 @@
+{
+  "name": "@shuji-bonji/houki-abbreviations",
+  "version": "0.1.0",
+  "description": "Shared abbreviation dictionary for Japanese laws and regulations — used by houki-hub MCP family",
+  "keywords": [
+    "japan",
+    "law",
+    "houki",
+    "abbreviation",
+    "dictionary",
+    "tax",
+    "labor",
+    "legal",
+    "mcp"
+  ],
+  "author": "shuji-bonji",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shuji-bonji/houki-abbreviations.git"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src/data/*.json"
+  ],
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.mjs",
+    "dev": "tsc --watch",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --run --coverage",
+    "lint": "eslint src",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "migrate": "node scripts/migrate.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.53.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
