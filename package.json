@@ -1,6 +1,6 @@
 {
   "name": "@shuji-bonji/houki-abbreviations",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared abbreviation dictionary for Japanese laws and regulations — used by houki-hub MCP family",
   "keywords": [
     "japan",
@@ -17,7 +17,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shuji-bonji/houki-abbreviations.git"
+    "url": "git+https://github.com/shuji-bonji/houki-abbreviations.git"
   },
   "type": "module",
   "main": "dist/index.js",
@@ -32,8 +32,7 @@
     "dist"
   ],
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "scripts": {
     "build": "tsc && node scripts/copy-assets.mjs",
