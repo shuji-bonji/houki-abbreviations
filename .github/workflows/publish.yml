@@ -70,4 +70,4 @@ jobs:
 
       # OIDC + provenance 付き publish
       - name: Publish to npm with provenance
-        run: npm publish --provenance --access public
+        run: npx publish --provenance --access public
