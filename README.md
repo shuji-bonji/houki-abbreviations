@@ -149,6 +149,10 @@ v0.1.0 では `houki-egov` 管轄のみ。`houki-nta-mcp` 等の開発と並行�
 
 辞書の追加・修正は PR でお願いします。詳しくは [CONTRIBUTING.md](CONTRIBUTING.md) を参照。
 
+## リリース
+
+リリース手順・Trusted Publisher 設定・トラブルシュートは [docs/RELEASE.md](docs/RELEASE.md) を参照。
+
 ## ライセンス
 
 MIT

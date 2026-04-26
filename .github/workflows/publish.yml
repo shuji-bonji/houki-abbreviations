@@ -69,5 +69,7 @@ jobs:
           echo "Version verified: $PACKAGE_VERSION"
 
       # OIDC + provenance 付き publish
+      # NOTE: `npx publish` は別物の古いパッケージ（publish@0.6.0）を起動して
+      #       しまうので必ず `npm publish` を使うこと。
       - name: Publish to npm with provenance
-        run: npx publish --provenance --access public
+        run: npm publish --provenance --access public
