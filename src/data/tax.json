@@ -268,5 +268,91 @@
     "domain": "tax",
     "category": "law",
     "source_mcp_hint": "houki-egov"
+  },
+  {
+    "abbr": "消基通",
+    "formal": "消費税法基本通達",
+    "law_id": null,
+    "domain": "tax",
+    "category": "kihon-tsutatsu",
+    "source_mcp_hint": "houki-nta",
+    "aliases": ["消費税法基本通達"],
+    "note": "国税庁長官が発する消費税法の解釈通達。実務の主要参照"
+  },
+  {
+    "abbr": "所基通",
+    "formal": "所得税基本通達",
+    "law_id": null,
+    "domain": "tax",
+    "category": "kihon-tsutatsu",
+    "source_mcp_hint": "houki-nta",
+    "aliases": ["所得税基本通達"],
+    "note": "国税庁長官が発する所得税法の解釈通達"
+  },
+  {
+    "abbr": "法基通",
+    "formal": "法人税基本通達",
+    "law_id": null,
+    "domain": "tax",
+    "category": "kihon-tsutatsu",
+    "source_mcp_hint": "houki-nta",
+    "aliases": ["法人税基本通達"],
+    "note": "国税庁長官が発する法人税法の解釈通達"
+  },
+  {
+    "abbr": "相基通",
+    "formal": "相続税法基本通達",
+    "law_id": null,
+    "domain": "tax",
+    "category": "kihon-tsutatsu",
+    "source_mcp_hint": "houki-nta",
+    "aliases": ["相続税法基本通達"]
+  },
+  {
+    "abbr": "通基通",
+    "formal": "国税通則法基本通達",
+    "law_id": null,
+    "domain": "tax",
+    "category": "kihon-tsutatsu",
+    "source_mcp_hint": "houki-nta",
+    "aliases": ["国税通則法基本通達"]
+  },
+  {
+    "abbr": "徴基通",
+    "formal": "国税徴収法基本通達",
+    "law_id": null,
+    "domain": "tax",
+    "category": "kihon-tsutatsu",
+    "source_mcp_hint": "houki-nta",
+    "aliases": ["国税徴収法基本通達"]
+  },
+  {
+    "abbr": "措通",
+    "formal": "租税特別措置法関係通達",
+    "law_id": null,
+    "domain": "tax",
+    "category": "kihon-tsutatsu",
+    "source_mcp_hint": "houki-nta",
+    "aliases": ["租税特別措置法関係通達", "措置法通達"],
+    "note": "租税特別措置法の解釈通達。各税目別に分かれている"
+  },
+  {
+    "abbr": "印基通",
+    "formal": "印紙税法基本通達",
+    "law_id": null,
+    "domain": "tax",
+    "category": "kihon-tsutatsu",
+    "source_mcp_hint": "houki-nta",
+    "aliases": ["印紙税法基本通達"]
+  },
+  {
+    "abbr": "電帳法取通",
+    "formal": "電子計算機を使用して作成する国税関係帳簿書類の保存方法等の特例に関する法律の取扱通達",
+    "law_id": null,
+    "domain": "tax",
+    "category": "kobetsu-tsutatsu",
+    "source_mcp_hint": "houki-nta",
+    "aliases": ["電子帳簿保存法取扱通達", "電帳法取扱通達"],
+    "note": "電帳法の運用に関する個別通達"
   }
 ]

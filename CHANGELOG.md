@@ -5,15 +5,38 @@ All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.1.1]
+## [Unreleased]
+
+## [0.2.0] - 2026-04-27
+
+**通達系エントリ追加**。houki-nta-mcp の Phase 1 開発に向けた前提整備として、税法系の通達略称 9 件を追加。
 
 ### Added
 
-- docs/RELEASE.md 追加 等
+- **通達系エントリ 9 件**（全て `source_mcp_hint: 'houki-nta'`）
+  - `消基通` — 消費税法基本通達 (`category: 'kihon-tsutatsu'`)
+  - `所基通` — 所得税基本通達
+  - `法基通` — 法人税基本通達
+  - `相基通` — 相続税法基本通達
+  - `通基通` — 国税通則法基本通達
+  - `徴基通` — 国税徴収法基本通達
+  - `措通` — 租税特別措置法関係通達
+  - `印基通` — 印紙税法基本通達
+  - `電帳法取通` — 電子帳簿保存法取扱通達 (`category: 'kobetsu-tsutatsu'`)
 
 ### Changed
 
-- publish.yml の Node 24 化
+- 統計の更新: total 165 → **174**, tax 26 → **35**
+- カテゴリ追加: `kihon-tsutatsu: 8`, `kobetsu-tsutatsu: 1`
+- MCP hint 追加: `houki-nta: 9`
+- テスト更新: `listByCategory('kihon-tsutatsu')` / `listBySourceMcpHint('houki-nta')` の動作確認テストを追加
+
+### Notes (v0.1.1 で計画していた変更)
+
+- `docs/RELEASE.md` 追加（初回手動 publish + Trusted Publisher の卵と鶏問題の記録）
+- `publish.yml` の Node 24 化（npm 11+ 同梱でセルフアップデート不要）
+
+これらは v0.1.1 を独立 release せず v0.2.0 に統合した。
 
 ## [0.1.0] - 2026-04-27
 
@@ -49,5 +72,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 houki-hub-mcp v0.1.1 の `src/abbreviations/` をベースに、Architecture E（複数独立 MCP + meta-package + Skill）への転換に伴い独立パッケージ化。
 
-[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.2.0
 [0.1.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.1.0

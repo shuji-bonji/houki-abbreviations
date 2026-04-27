@@ -99,10 +99,22 @@ describe('abbreviation dictionary integrity', () => {
     expect(constitution?.law_id).toBe('321CONSTITUTION');
   });
 
-  it('all entries currently point to houki-egov (v0.1.0 baseline)', () => {
-    // v0.1.0 時点では法令系のみ。通達等が追加されたらこのテストは更新する。
-    for (const e of abbreviationEntries) {
-      expect(e.source_mcp_hint, `${e.formal} should be houki-egov in v0.1.0`).toBe('houki-egov');
+  it('houki-egov entries are the majority (法令系)', () => {
+    // v0.2.0: 通達系（houki-nta）が追加されたが、まだ法令系（houki-egov）が主体
+    const egov = abbreviationEntries.filter((e) => e.source_mcp_hint === 'houki-egov');
+    const nta = abbreviationEntries.filter((e) => e.source_mcp_hint === 'houki-nta');
+    expect(egov.length).toBeGreaterThan(nta.length);
+    expect(egov.length).toBeGreaterThan(100); // v0.1.0 時点で 165 件
+  });
+
+  it('houki-nta entries exist (v0.2.0 で追加)', () => {
+    const nta = abbreviationEntries.filter((e) => e.source_mcp_hint === 'houki-nta');
+    expect(nta.length).toBeGreaterThan(0);
+    // 全て通達系カテゴリ
+    for (const e of nta) {
+      expect(['kihon-tsutatsu', 'kobetsu-tsutatsu', 'qa-jirei', 'tax-answer']).toContain(
+        e.category
+      );
     }
   });
 });
@@ -206,20 +218,37 @@ describe('listByCategory()', () => {
     expect(co.some((e) => e.formal.endsWith('施行令'))).toBe(true);
   });
 
-  it('returns empty array for unused categories (v0.1.0)', () => {
-    expect(listByCategory('kihon-tsutatsu')).toHaveLength(0);
+  it('returns kihon-tsutatsu entries (v0.2.0 で追加)', () => {
+    const kt = listByCategory('kihon-tsutatsu');
+    expect(kt.length).toBeGreaterThan(0);
+    expect(kt.some((e) => e.formal === '消費税法基本通達')).toBe(true);
+  });
+
+  it('returns empty array for not-yet-populated categories', () => {
     expect(listByCategory('hanrei')).toHaveLength(0);
+    expect(listByCategory('saiketsu')).toHaveLength(0);
   });
 });
 
 describe('listBySourceMcpHint()', () => {
-  it('returns all entries for houki-egov in v0.1.0', () => {
-    const all = listBySourceMcpHint('houki-egov');
-    expect(all).toHaveLength(abbreviationEntries.length);
+  it('returns houki-egov entries (法令系)', () => {
+    const egov = listBySourceMcpHint('houki-egov');
+    expect(egov.length).toBeGreaterThan(100);
+    for (const e of egov) {
+      expect(e.source_mcp_hint).toBe('houki-egov');
+    }
   });
 
-  it('returns empty array for not-yet-populated hints (v0.1.0)', () => {
-    expect(listBySourceMcpHint('houki-nta')).toHaveLength(0);
+  it('returns houki-nta entries (v0.2.0 で追加)', () => {
+    const nta = listBySourceMcpHint('houki-nta');
+    expect(nta.length).toBeGreaterThan(0);
+    expect(nta.some((e) => e.formal === '消費税法基本通達')).toBe(true);
+    for (const e of nta) {
+      expect(e.source_mcp_hint).toBe('houki-nta');
+    }
+  });
+
+  it('returns empty array for not-yet-populated hints', () => {
     expect(listBySourceMcpHint('houki-mhlw')).toHaveLength(0);
     expect(listBySourceMcpHint('houki-court')).toHaveLength(0);
   });
