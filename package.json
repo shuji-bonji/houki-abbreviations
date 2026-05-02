@@ -1,6 +1,6 @@
 {
   "name": "@shuji-bonji/houki-abbreviations",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared abbreviation dictionary for Japanese laws and regulations — used by houki-hub MCP family",
   "keywords": [
     "japan",
@@ -20,6 +20,7 @@
     "url": "git+https://github.com/shuji-bonji/houki-abbreviations.git"
   },
   "type": "module",
+  "sideEffects": false,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

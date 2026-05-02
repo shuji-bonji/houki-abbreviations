@@ -29,15 +29,15 @@ graph TB
     style Abbr fill:#fff4d6
 ```
 
-## v0.1.0 の収録範囲
+## 収録範囲（v0.2.0 時点）
 
-- **165 エントリ**（6 分野）
-- **法律・政令・省令・規則・憲法**（e-Gov 法令API 配下）
-- 全エントリ `source_mcp_hint='houki-egov'`
+- **174 エントリ**（6 分野）
+- **法律・政令・省令・規則・憲法**（e-Gov 法令 API 配下、`source_mcp_hint='houki-egov'`）
+- **基本通達 8 件＋個別通達 1 件**（v0.2.0 追加分、`source_mcp_hint='houki-nta'`）
 
 | 分野 | 件数 | 例 |
 |---|---|---|
-| tax | 26 | 所法、消法、電帳法 |
+| tax | 35 | 所法、消法、電帳法、消基通、所基通、電帳法取通 |
 | labor | 28 | 労基法、安衛法、フリーランス新法 |
 | accounting | 9 | 公認会計士法、会計士法 |
 | commercial | 31 | 会社、商法、電子署名法、資金決済法 |
@@ -86,14 +86,56 @@ listBySourceMcpHint('houki-egov');    // e-Gov 管轄全件
 
 // 統計
 getAbbreviationStats();
-// { total: 165, byDomain: {...}, byCategory: {...}, bySourceMcpHint: {...} }
+// { total: 174, byDomain: {...}, byCategory: {...}, bySourceMcpHint: {...} }
 ```
+
+### 正規化 API（v0.3.0〜）
+
+ユーザー入力に全角／半角の表記揺れがあっても照合できるようにする正規化ユーティリティ群です。houki-hub MCP family 全体で同じ正規化ルールを使うことで、検索・解決の挙動を統一できます。
+
+```ts
+import {
+  normalizeJpText,
+  normalizeSearchQuery,
+  resolveAbbreviation,
+} from '@shuji-bonji/houki-abbreviations';
+
+// 全角ゆらぎを保守的に半角化（大文字小文字は保持）
+normalizeJpText('１８３－２');     // '183-2'
+normalizeJpText('ＰＬ法');         // 'PL法'
+normalizeJpText('消　法');         // '消 法'
+
+// 検索クエリ向けの積極的な正規化（さらに小文字化＋空白畳み込み）
+normalizeSearchQuery('ＰＬ法');     // 'pl法'
+normalizeSearchQuery(' 消    法 '); // '消 法'
+
+// resolveAbbreviation の normalize オプション（デフォルト OFF で後方互換）
+resolveAbbreviation('ＰＬ法', { normalize: true })?.formal;
+// '製造物責任法'（全角→半角を吸収）
+
+resolveAbbreviation('消　法', { normalize: true })?.formal;
+// '消費税法'（全角スペースを吸収）
+
+resolveAbbreviation('ＰＬ法');  // null（normalize: false がデフォルト）
+```
+
+正規化ルールは [houki-nta-mcp の Normalize-everywhere パターン](https://github.com/shuji-bonji/houki-nta-mcp) と同じで、漢字・ひらがな・カタカナ・中黒（`・`）は変更しません。詳細は [`src/normalize.ts`](src/normalize.ts) のドキュメントを参照。
 
 ## API
 
-### `resolveAbbreviation(name: string): AbbreviationEntry | null`
+### `resolveAbbreviation(name: string, options?: ResolveAbbreviationOptions): AbbreviationEntry | null`
 
 略称・通称・正式名称のいずれかからエントリを引きます。前後の空白はトリムされます。完全一致のみ（部分一致なし）。見つからない場合は `null`。
+
+`options.normalize`（デフォルト `false`）を `true` にすると、全角／半角の表記揺れを吸収して照合します。**大文字小文字は保持**されるため、`PL法` と `pl法` は別物として扱われます。
+
+### `normalizeJpText(input: string): string`
+
+全角数字・全角 ASCII 文字・全角ハイフン（`－` → `-`）・全角チルダ（`～` `〜` → `~`）・全角スペース（`　` → ` `）を半角化します。漢字・かな・中黒は保持。`.trim()` 込み。
+
+### `normalizeSearchQuery(input: string): string`
+
+`normalizeJpText` の処理に加えて、ASCII 大文字を小文字へ変換し、連続する空白文字を単一の半角スペースに畳み込みます。FTS5 検索など、ユーザー入力の揺れを最大限吸収したいケース向け。
 
 ### `listByDomain(domain: Domain): AbbreviationEntry[]`
 
@@ -117,7 +159,7 @@ getAbbreviationStats();
 interface AbbreviationEntry {
   abbr: string;            // 略称（例: '消法'）
   formal: string;          // 正式名称（例: '消費税法'）
-  law_id: string | null;   // e-Gov law_id（verified 済みのみ）
+  law_id: string | null;   // e-Gov law_id（verified 済みのみ。それ以外は null）
   law_num?: string;        // 法令番号（例: '昭和六十三年法律第百八号'）
   law_type?: LawTypeCode;  // 'Act' | 'CabinetOrder' | ...（後方互換）
   domain: Domain;          // 分野タグ
@@ -127,6 +169,13 @@ interface AbbreviationEntry {
   note?: string;           // 備考
 }
 ```
+
+### `law_id` の方針
+
+- **格納するのは e-Gov 法令 API で動作確認済み（verified）の `law_id` のみ**です
+- 未確認・未調査・該当なしのエントリは `null` を入れます
+- 通達系（`source_mcp_hint='houki-nta'` 等）は e-Gov 配下ではないため、設計上 `law_id` は基本的に `null` です
+- 利用側で `if (entry.law_id !== null) { /* e-Gov 取得 */ }` のような分岐を期待しています
 
 ## category と source_mcp_hint の対応
 

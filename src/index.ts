@@ -20,6 +20,7 @@
  */
 
 import type { AbbreviationEntry, Category, Domain, SourceMcpHint } from './types.js';
+import { normalizeJpText } from './normalize.js';
 
 import tax from './data/tax.json' with { type: 'json' };
 import labor from './data/labor.json' with { type: 'json' };
@@ -30,6 +31,7 @@ import administrative from './data/administrative.json' with { type: 'json' };
 
 export type { AbbreviationEntry, Category, Domain, LawTypeCode, SourceMcpHint } from './types.js';
 export { CATEGORIES, DOMAINS, LAW_TYPE_CODES, SOURCE_MCP_HINTS } from './types.js';
+export { normalizeJpText, normalizeSearchQuery } from './normalize.js';
 
 /** 全分野を結合した辞書 */
 export const abbreviationEntries: readonly AbbreviationEntry[] = Object.freeze([
@@ -55,29 +57,100 @@ const lookupIndex: Map<string, AbbreviationEntry> = (() => {
 })();
 
 /**
+ * 全角ゆらぎを正規化したキーで引けるインデックス（lazy 構築）。
+ *
+ * `resolveAbbreviation(name, { normalize: true })` で初めて要求された時点で
+ * 構築される。通常の lookupIndex のキーをすべて `normalizeJpText` で
+ * 正規化し直したエントリを保持する。
+ *
+ * 同じ正規化キーに複数のエントリがマップされる可能性は理論上あるが、
+ * v0.3.0 時点の辞書では `abbr` の一意性が CI で保証されており、
+ * `formal` / `aliases` も含めて衝突は確認されていない。仮に衝突した場合は
+ * 先勝ち（先に登録された方が優先）の挙動となる。
+ */
+let normalizedLookupIndex: Map<string, AbbreviationEntry> | null = null;
+
+function getNormalizedLookupIndex(): Map<string, AbbreviationEntry> {
+  if (normalizedLookupIndex !== null) return normalizedLookupIndex;
+  const m = new Map<string, AbbreviationEntry>();
+  for (const entry of abbreviationEntries) {
+    const keys = [entry.abbr, entry.formal, ...(entry.aliases ?? [])];
+    for (const key of keys) {
+      const normalized = normalizeJpText(key);
+      if (!normalized) continue;
+      // 先勝ち: 既に登録済みのキーは上書きしない
+      if (!m.has(normalized)) {
+        m.set(normalized, entry);
+      }
+    }
+  }
+  normalizedLookupIndex = m;
+  return m;
+}
+
+/**
+ * `resolveAbbreviation` に渡せるオプション。
+ */
+export interface ResolveAbbreviationOptions {
+  /**
+   * 全角／半角の表記ゆらぎを吸収して照合するかどうか。
+   *
+   * - `false`（デフォルト）: 入力を `.trim()` のみ施して完全一致照合。
+   *   v0.2.0 までと同じ挙動で、後方互換性が保たれる。
+   * - `true`: 入力を `normalizeJpText` で正規化したうえで、
+   *   同様に正規化されたインデックスから照合する。
+   *   全角ハイフン／チルダ／数字／全角 ASCII 文字／全角スペースの
+   *   揺れを吸収する。**大文字小文字は保持する**ため、`PL法` と `pl法` は
+   *   別物として扱われる。
+   *
+   * @default false
+   */
+  normalize?: boolean;
+}
+
+/**
  * 略称・通称・正式名称のいずれかから辞書エントリを引く。
  *
  * - 前後の空白はトリム
  * - 完全一致のみ（部分一致はしない）
  * - 見つからなければ null
+ * - `options.normalize` が `true` のとき、全角／半角の表記ゆらぎを吸収する
  *
  * @param name 略称・通称・正式名称のいずれか
+ * @param options 照合オプション（省略可）
  * @returns 該当エントリ、見つからなければ null
  *
  * @example
  * ```ts
- * resolveAbbreviation('消法')        // → 消費税法
- * resolveAbbreviation('消費税法')    // → 消費税法
- * resolveAbbreviation('消費税')      // → 消費税法（aliases）
- * resolveAbbreviation('  消法  ')   // → 消費税法（前後空白OK）
- * resolveAbbreviation('存在しない')  // → null
+ * resolveAbbreviation('消法')                         // → 消費税法
+ * resolveAbbreviation('消費税法')                     // → 消費税法
+ * resolveAbbreviation('消費税')                       // → 消費税法（aliases）
+ * resolveAbbreviation('  消法  ')                    // → 消費税法（前後空白OK）
+ * resolveAbbreviation('存在しない')                   // → null
+ *
+ * // 正規化モード（v0.3.0〜）
+ * resolveAbbreviation('消　法', { normalize: true }); // → 消費税法（全角スペース吸収）
+ * resolveAbbreviation('ＰＬ法', { normalize: true }); // → 製造物責任法（全角→半角）
+ * resolveAbbreviation('ＰＬ法');                       // → null（normalize: false がデフォルト）
  * ```
  */
-export function resolveAbbreviation(name: string): AbbreviationEntry | null {
+export function resolveAbbreviation(
+  name: string,
+  options?: ResolveAbbreviationOptions
+): AbbreviationEntry | null {
   if (!name) return null;
-  const trimmed = name.trim();
-  if (!trimmed) return null;
-  return lookupIndex.get(trimmed) ?? null;
+  const normalize = options?.normalize ?? false;
+  if (!normalize) {
+    const trimmed = name.trim();
+    if (!trimmed) return null;
+    return lookupIndex.get(trimmed) ?? null;
+  }
+  const normalized = normalizeJpText(name);
+  if (!normalized) return null;
+  // 先に「正規化なしのキー」で完全一致するならそれを返す（既存挙動を尊重）
+  const direct = lookupIndex.get(normalized);
+  if (direct) return direct;
+  return getNormalizedLookupIndex().get(normalized) ?? null;
 }
 
 /**

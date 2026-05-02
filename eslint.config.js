@@ -24,6 +24,18 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      // 全角スペース等を文字列リテラル・コメント・正規表現内で許可。
+      // 法令テキストの全角ゆらぎ正規化を扱うため、
+      // U+3000 等を意図的に記述する箇所がある（src/normalize.ts ほか）。
+      'no-irregular-whitespace': [
+        'error',
+        {
+          skipStrings: true,
+          skipComments: true,
+          skipRegExps: true,
+          skipTemplates: true,
+        },
+      ],
     },
   },
   {
@@ -31,6 +43,15 @@ export default tseslint.config(
     files: ['src/**/*.test.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      'no-irregular-whitespace': [
+        'error',
+        {
+          skipStrings: true,
+          skipComments: true,
+          skipRegExps: true,
+          skipTemplates: true,
+        },
+      ],
     },
   },
   {

@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-03
+
+**正規化 API 追加**。houki-nta-mcp で確立された Normalize-everywhere パターンを共通パッケージに昇格。houki-hub MCP family 全体で全角／半角の表記ゆらぎを統一的に扱えるようにする。
+
+### Added
+
+- **正規化ヘルパー関数（新規 `src/normalize.ts`）**
+  - `normalizeJpText(input)` — 保守的な width 正規化。全角数字／全角 ASCII 文字／全角ハイフン（`－` → `-`）／全角チルダ（`～` `〜` → `~`）／全角スペース → 半角。漢字・かな・中黒は保持。**大文字小文字は保持**
+  - `normalizeSearchQuery(input)` — `normalizeJpText` に加えて、ASCII 大文字 → 小文字、連続空白 → 単一スペースへ畳み込み
+
+- **`resolveAbbreviation` の `options.normalize`**
+  - `resolveAbbreviation(name, { normalize: true })` で全角／半角の表記ゆらぎを吸収して照合可能に
+  - 正規化済みインデックスは初回呼び出し時に lazy 構築（メモリオーバーヘッドなし）
+  - 正規化なしインデックスを優先照合してから正規化済みインデックスへフォールバック（既存挙動を尊重）
+  - `options` を渡さない場合の挙動は v0.2.0 と完全に同じ（**後方互換性**）
+
+- **`ResolveAbbreviationOptions` インターフェースの export**
+  - 利用側 MCP で型を再利用可能
+
+- **テスト 24 件追加（`src/normalize.test.ts`）**
+  - `normalizeJpText` / `normalizeSearchQuery` の各種ケース
+  - `resolveAbbreviation({ normalize: true })` の代表ケース、後方互換性、エッジケース
+
+### Changed
+
+- **`package.json` に `"sideEffects": false`** を追加。Tree-shaking がより効果的に効くように
+- README に「正規化 API」セクションを追加
+
+### Source
+
+houki-nta-mcp v0.3.0-alpha.6 の `src/services/text-normalize.ts` の保守的部分（width-only normalization）を共通パッケージへ昇格。FTS5 escape などの houki-nta-mcp 固有処理は引き続き各 MCP 内に残す。
+
 ## [0.2.0] - 2026-04-27
 
 **通達系エントリ追加**。houki-nta-mcp の Phase 1 開発に向けた前提整備として、税法系の通達略称 9 件を追加。
@@ -72,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 houki-hub-mcp v0.1.1 の `src/abbreviations/` をベースに、Architecture E（複数独立 MCP + meta-package + Skill）への転換に伴い独立パッケージ化。
 
-[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.3.0
 [0.2.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.2.0
 [0.1.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.1.0
