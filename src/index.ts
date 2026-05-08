@@ -33,6 +33,10 @@ export type { AbbreviationEntry, Category, Domain, LawTypeCode, SourceMcpHint } 
 export { CATEGORIES, DOMAINS, LAW_TYPE_CODES, SOURCE_MCP_HINTS } from './types.js';
 export { normalizeJpText, normalizeSearchQuery } from './normalize.js';
 
+// v0.4.1 (Issue #15): family 共通の staleness 判定 (型 + 閾値 + 純関数のみ)
+export type { StalenessLevel } from './freshness.js';
+export { STALENESS_THRESHOLDS, computeDaysSince, judgeStaleness } from './freshness.js';
+
 // v0.4.0 Track 1: search & fuzzy API
 export type {
   SearchMode,

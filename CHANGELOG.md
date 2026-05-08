@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 (none)
 
+## [0.4.1] - 2026-05-08
+
+🩹 **patch リリース** — houki-hub family の **freshness 判定を共通化** (Issue #15 対応)。型 + 閾値定数 + 純関数のみを追加し、DB アクセス層・レスポンス整形は各 MCP に残す軽量な共通化。
+
+### Added
+
+- **新規 [`src/freshness.ts`](src/freshness.ts)**: family 共通の staleness 判定ヘルパ。
+  - **型 `StalenessLevel`** (`'fresh' | 'stale' | 'outdated'`)
+  - **閾値定数 `STALENESS_THRESHOLDS`** (`fresh_days: 7`, `stale_days: 30` — houki-nta-mcp v0.6.0 で確立された慣行値)
+  - **純関数 `judgeStaleness(daysSince)`** — 経過日数 → staleness レベル
+  - **純関数 `computeDaysSince(fetchedAt, nowMs?)`** — ISO 8601 fetched_at から経過日数を計算 (パース不能 / 未来時刻は 0)
+- **新規 [`src/freshness.test.ts`](src/freshness.test.ts)** (16 ケース): 閾値・境界値・典型シナリオを網羅。
+
+### 共通化の方針 (Issue #15 設計判断より)
+
+- **共通化するもの**: 型 + 閾値 + 純関数のみ
+- **共通化しないもの**: DB アクセス層 (例: `summarizeFreshnessFromSection` / `summarizeFreshnessFromDocument`)、レスポンス整形 (`FreshnessRange` / `FreshnessSingle` interface 等)、警告メッセージ (各 MCP の bulk DL コマンド文言)
+
+各 MCP のデータ取得方法 (bulk DL / API / 都度 fetch) ごとの違いを吸収するため、検知ロジックは各 MCP に残す。memory `houki_resilience_locality.md`「検知ロジックは各 MCP に置き、集約は結果レイヤーで」スタンスと整合。
+
+### Migration (v0.4.0 → v0.4.1)
+
+- 完全な後方互換。既存 API はすべて挙動不変。
+- 新規 export (`StalenessLevel` / `STALENESS_THRESHOLDS` / `judgeStaleness` / `computeDaysSince`) を追加するだけ。
+- 各 MCP は本パッケージの閾値・純関数を import に切替えれば、家族横断で **同じ感覚で staleness を判定** できる (例: houki-nta-mcp v0.9.3 で対応予定)。
+
+### 関連 GitHub Issue
+
+- [houki-nta-mcp Issue #15](https://github.com/shuji-bonji/houki-nta-mcp/issues/15): freshness ロジックを houki-hub family 共有パッケージに昇格 — **本リリースで対応 (B 案: 型 + 閾値だけ同梱)**
+
 ## [0.4.0] - 2026-05-08
 
 🚀 **検索拡張リリース** — Track 1 (search & fuzzy API) を追加し、家族横断の検索精度を大幅に向上。houki-nta-mcp の Issue #3 (通称キーワードでヒット 0 件問題) を本パッケージで解消するための布石。
