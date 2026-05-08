@@ -33,6 +33,25 @@ export type { AbbreviationEntry, Category, Domain, LawTypeCode, SourceMcpHint } 
 export { CATEGORIES, DOMAINS, LAW_TYPE_CODES, SOURCE_MCP_HINTS } from './types.js';
 export { normalizeJpText, normalizeSearchQuery } from './normalize.js';
 
+// v0.4.0 Track 1: search & fuzzy API
+export type {
+  SearchMode,
+  SearchOptions,
+  SearchFilter,
+  FuzzyOptions,
+  FuzzyMatch,
+} from './search.js';
+import {
+  searchByName as _searchByName,
+  findSimilar as _findSimilar,
+  suggestCorrection as _suggestCorrection,
+  levenshtein as _levenshtein,
+  type SearchOptions as _SearchOptions,
+  type FuzzyOptions as _FuzzyOptions,
+  type FuzzyMatch as _FuzzyMatch,
+} from './search.js';
+export { levenshtein } from './search.js';
+
 /** 全分野を結合した辞書 */
 export const abbreviationEntries: readonly AbbreviationEntry[] = Object.freeze([
   ...(tax as AbbreviationEntry[]),
@@ -223,3 +242,63 @@ export function getAbbreviationStats(): AbbreviationStats {
     bySourceMcpHint,
   };
 }
+
+/* -------------------------------------------------------------------------- */
+/* v0.4.0 Track 1: search & fuzzy API (公開ラッパ)                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * 名前で検索 (部分一致)。`abbr` / `formal` / `aliases` のどれかにマッチする
+ * エントリを返す。
+ *
+ * @example
+ * ```ts
+ * import { searchByName } from '@shuji-bonji/houki-abbreviations';
+ *
+ * searchByName('労働');
+ * // → 労基法, 労契法, 労安衛法, ...
+ *
+ * searchByName('税法', { mode: 'contains' });
+ * // → 法人税法, 消費税法, 所得税法, ...
+ *
+ * searchByName('労働', { filter: { domain: 'labor' }, limit: 10 });
+ * ```
+ *
+ * @see SearchOptions for filter / mode / limit / normalize
+ */
+export function searchByName(query: string, options?: _SearchOptions): AbbreviationEntry[] {
+  return _searchByName(abbreviationEntries, query, options);
+}
+
+/**
+ * あいまい一致 (Levenshtein 距離ベース)。「うろ覚え」入力で類似エントリを
+ * 探すときに使う。
+ *
+ * @example
+ * ```ts
+ * import { findSimilar } from '@shuji-bonji/houki-abbreviations';
+ *
+ * findSimilar('労働基準法施行例');
+ * // → [{ entry: 労基法施行令, matchedKey: '労働基準法施行令', distance: 1 }]
+ * ```
+ */
+export function findSimilar(query: string, options?: _FuzzyOptions): _FuzzyMatch[] {
+  return _findSimilar(abbreviationEntries, query, options);
+}
+
+/**
+ * 「もしかして」サジェスト。`findSimilar` の薄いラッパで、上位 N 件の
+ * `formal` だけを文字列配列で返す。LLM プロンプトでそのまま使える形。
+ *
+ * @example
+ * ```ts
+ * suggestCorrection('労働基準法施行例');
+ * // → ['労働基準法施行令']
+ * ```
+ */
+export function suggestCorrection(query: string, limit = 5): string[] {
+  return _suggestCorrection(abbreviationEntries, query, limit);
+}
+
+/** internal helper を export (テスト・外部利用用) */
+void _levenshtein;

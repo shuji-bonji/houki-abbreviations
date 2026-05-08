@@ -194,6 +194,10 @@ interface AbbreviationEntry {
 
 v0.1.0 では `houki-egov` 管轄のみ。`houki-nta-mcp` 等の開発と並行してエントリを追加していきます。
 
+## ロードマップ
+
+中期計画は [docs/v0.4.0-roadmap.md](docs/v0.4.0-roadmap.md) を参照。v0.4.0 では検索拡張（部分一致・あいまい一致）と逆引き API を、v0.5.0 でルーティングヘルパー、v0.6.0 で検証ヘルパーを追加予定。辞書増強（aliases / 通称の網羅）は patch release で継続的に。
+
 ## 貢献方法
 
 辞書の追加・修正は PR でお願いします。詳しくは [CONTRIBUTING.md](CONTRIBUTING.md) を参照。

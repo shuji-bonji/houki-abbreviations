@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+(none)
+
+## [0.4.0] - 2026-05-08
+
+🚀 **検索拡張リリース** — Track 1 (search & fuzzy API) を追加し、家族横断の検索精度を大幅に向上。houki-nta-mcp の Issue #3 (通称キーワードでヒット 0 件問題) を本パッケージで解消するための布石。
+
+### Added
+
+#### Track 1: 検索拡張 API
+
+- **新規 `searchByName(query, options)`** ([`src/search.ts`](src/search.ts)): 部分一致モード対応の検索 API。`abbr` / `formal` / `aliases` を横断走査し、`prefix` / `contains` (default) / `suffix` の 3 モードを切替可能。`filter` で `domain` / `category` / `source_mcp_hint` の絞り込み、`limit` で件数制限、`normalize` で全角ゆらぎ吸収。
+- **新規 `findSimilar(query, options)`**: Levenshtein 距離ベースのあいまい一致 API。`maxDistance` (default 2) 以下のエントリを返す。`sortByScore` で距離昇順ソート、`limit` / `filter` も対応。例: 「労働基準法施行例」→「労働基準法施行令」(distance=1)。
+- **新規 `suggestCorrection(query, limit)`**: `findSimilar` の薄いラッパで、上位 N 件の `formal` だけを文字列配列で返す。LLM プロンプトでそのまま使える形。
+- **新規 `levenshtein(a, b)`**: 内部 helper だが export してテスト・外部利用可能。外部依存なし、O(m\*n) 時間 / O(min(m,n)) 空間の自前実装 (~50 行)。
+- **新規 export 型**: `SearchMode` / `SearchOptions` / `SearchFilter` / `FuzzyOptions` / `FuzzyMatch`
+
+#### Track 4: 辞書増強 (Issue #3 対応の最小範囲)
+
+LLM が自然に投げる通称・俗称を `aliases` で吸収できるよう、税務・行政分野の主要エントリに通称を追加:
+
+- **消費税法 (`消法`)** に追加: `インボイス`, `インボイス制度`, `適格請求書`, `適格請求書等保存方式`, `適格請求書発行事業者`, `軽減税率`, `軽減税率制度`, `簡易課税`, `簡易課税制度`
+- **所得税法 (`所法`)** に追加: `ふるさと納税`, `寄附金控除`, `寄付金控除`, `確定申告`
+- **電帳法**: `電帳`, `電子帳簿保存`, `電子帳簿等保存制度` を alias に追加 (既存の「電子帳簿保存法」は維持)
+- **マイナンバー法** に追加: `マイナンバー`, `マイナ`, `個人番号`, `個人番号利用法`
+
+これにより `resolveAbbreviation('インボイス')` が消費税法エントリを返し、houki-nta-mcp 等の家族 MCP は **既存の Phase 6-1 略称展開ロジックそのままで Issue #3 を自動解消** できる。
+
+#### テスト
+
+- **新規 [`src/search.test.ts`](src/search.test.ts)** (24 ケース): `searchByName` の 3 モード + filter + limit + normalize / `findSimilar` の Levenshtein 動作 + filter / `suggestCorrection` / `levenshtein` 内部 helper / Issue #3 関連エントリの alias sanity check。
+
+### Migration (v0.3.x → v0.4.0)
+
+- **完全な後方互換**。既存 API (`resolveAbbreviation` / `listByDomain` / `listByCategory` / `listBySourceMcpHint` / `getAbbreviationStats`) はすべて挙動不変。
+- 新規 API (`searchByName` / `findSimilar` / `suggestCorrection`) を追加するだけ。
+- `aliases` 拡充により、houki-nta-mcp v0.8.0+ の `buildFtsQueryWithAbbreviation` が `インボイス` 等の通称で消費税法 formal を OR 展開するようになり、検索ヒット率が向上 (houki-nta-mcp 側の改修は不要)。
+
+### v0.4.0 Roadmap の他 Track
+
+- **Track 2** (逆引き API: `findByLawId` / `findByLawNum` 等): 次の minor (v0.5.0 想定)。Issue #3 解決には不要なため本リリースでは見送り。
+- **Track 3** (検証ヘルパー: `validateAllEntries` / `getCoverageReport`): v0.6.0 想定。
+- **Track 5** (ルーティング: `routeToMcp`): Track 1 + Track 2 完成後の v0.5.0 以降。
+
+詳細は [`docs/v0.4.0-roadmap.md`](docs/v0.4.0-roadmap.md) を参照。
+
 ## [0.3.0] - 2026-05-03
 
 **正規化 API 追加**。houki-nta-mcp で確立された Normalize-everywhere パターンを共通パッケージに昇格。houki-hub MCP family 全体で全角／半角の表記ゆらぎを統一的に扱えるようにする。
