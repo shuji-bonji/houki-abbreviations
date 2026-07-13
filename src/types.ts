@@ -85,6 +85,13 @@ export type SourceMcpHint = (typeof SOURCE_MCP_HINTS)[number];
  *
  * 1 件 = 1 つの法令／通達／判例 等のメタ情報。
  * 複数の略称・通称・正式名称から逆引きするための共通テーブル。
+ *
+ * ## freshness は持たない
+ *
+ * 本エントリは **静的なメタ情報のみ** を保持する。「いつ取得したか」という
+ * 運用状態（`fetched_at` 等）は各 MCP のローカル DB / キャッシュ側で管理し、
+ * 判定は `freshness` モジュール（`judgeStaleness` / `computeDaysSince`）で
+ * 行う。詳細は [`src/freshness.ts`](./freshness.ts) のヘッダ JSDoc を参照。
  */
 export interface AbbreviationEntry {
   /** 略称・通称。例: "消法", "民" */

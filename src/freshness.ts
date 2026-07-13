@@ -4,6 +4,14 @@
  * 各 MCP は自前で `fetched_at` (ISO 8601) を持ち、本モジュールの
  * **型 + 閾値 + 純関数 helper** を使って統一的に staleness を判定する。
  *
+ * ## エントリ単位の freshness は持たない
+ *
+ * 本パッケージの `AbbreviationEntry` には `freshness` 系フィールドは含まれない。
+ * 辞書データ（abbr / formal / law_id 等）は **静的なメタ情報** であり、
+ * 「いつ取得したか」という運用状態を持つのは各 MCP のローカル DB / キャッシュ側。
+ * したがって、本モジュールが担うのは **判定ロジックの正典化のみ** で、
+ * 「どこに `fetched_at` を持つか」「どの粒度で集計するか」は各 MCP に委ねる。
+ *
  * ## 共通化の方針 (Issue #15 設計判断)
  *
  * 共通化するもの:
@@ -26,7 +34,14 @@
  * - `fresh_days: 7` — 1 週間以内なら "fresh" (週次 health-check 想定)
  * - `stale_days: 30` — 1 ヶ月以内なら "stale"、それ以上は "outdated" (月次 bulk DL 想定)
  *
- * @example
+ * ## 呼び出し側の典型パターン
+ *
+ * 1. 各 MCP の DB / cache から `fetched_at` (ISO 8601) を引く
+ * 2. `computeDaysSince(fetched_at)` で経過日数を得る
+ * 3. `judgeStaleness(days)` で `'fresh' | 'stale' | 'outdated'` を得る
+ * 4. MCP 固有のレスポンス形 (`FreshnessRange` / `FreshnessSingle` 等) に詰めて返す
+ *
+ * @example 単一エントリの判定
  * ```ts
  * import { judgeStaleness, computeDaysSince } from '@shuji-bonji/houki-abbreviations';
  *
@@ -34,10 +49,39 @@
  * const level = judgeStaleness(days);  // 'fresh' | 'stale' | 'outdated'
  * ```
  *
+ * @example MCP 固有しきい値が必要な場合 (本定数を上書きしない)
+ * ```ts
+ * import {
+ *   STALENESS_THRESHOLDS,
+ *   judgeStaleness,
+ *   type StalenessLevel,
+ * } from '@shuji-bonji/houki-abbreviations';
+ *
+ * // 通達系は鮮度感覚が緩いので独自しきい値でラップ
+ * const TSUTATSU_THRESHOLDS = { fresh_days: 14, stale_days: 90 } as const;
+ *
+ * function judgeTsutatsuStaleness(days: number): StalenessLevel {
+ *   if (days < TSUTATSU_THRESHOLDS.fresh_days) return 'fresh';
+ *   if (days < TSUTATSU_THRESHOLDS.stale_days) return 'stale';
+ *   return 'outdated';
+ * }
+ * ```
+ *
  * @see houki-nta-mcp v0.6.0 `docs/RESILIENCE.md` (慣行の起点)
+ * @see memory `houki_resilience_locality.md` (集約レイヤー責務分担)
  */
 
-/** staleness の判定レベル */
+/**
+ * staleness の判定レベル。
+ *
+ * 各 MCP のレスポンス整形（`FreshnessRange` / `FreshnessSingle` 等）の
+ * フィールドとして共通的に使われる想定。文字列 union の値は family 全体で
+ * 不変として扱う（壊すと既存の MCP すべてに破壊変更が伝播する）。
+ *
+ * - `'fresh'`: 直近に取得済み（既定: < 7 日）。利用可、警告不要
+ * - `'stale'`: やや古い（既定: 7〜29 日）。利用可だが bulk DL を warning として返す
+ * - `'outdated'`: 古い（既定: ≧ 30 日）。利用前に再取得を促す
+ */
 export type StalenessLevel = 'fresh' | 'stale' | 'outdated';
 
 /**
@@ -57,8 +101,20 @@ export const STALENESS_THRESHOLDS = {
 /**
  * 経過日数から staleness レベルを判定する純関数。
  *
+ * 通常は `computeDaysSince` の戻り値をそのまま渡す。`STALENESS_THRESHOLDS`
+ * （`fresh_days` / `stale_days`）に従って `'fresh' | 'stale' | 'outdated'`
+ * を返す。
+ *
  * @param daysSince 経過日数 (整数想定、負値は 0 に丸める呼び出し側責務)
  * @returns `'fresh'` | `'stale'` | `'outdated'`
+ *
+ * @example
+ * ```ts
+ * judgeStaleness(0);   // 'fresh'
+ * judgeStaleness(7);   // 'stale'  (境界: fresh_days はちょうどで stale)
+ * judgeStaleness(29);  // 'stale'
+ * judgeStaleness(30);  // 'outdated' (境界: stale_days はちょうどで outdated)
+ * ```
  */
 export function judgeStaleness(daysSince: number): StalenessLevel {
   if (daysSince < STALENESS_THRESHOLDS.fresh_days) return 'fresh';

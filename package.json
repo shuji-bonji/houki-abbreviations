@@ -1,6 +1,6 @@
 {
   "name": "@shuji-bonji/houki-abbreviations",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Shared abbreviation dictionary for Japanese laws and regulations — used by houki-hub MCP family",
   "keywords": [
     "japan",
@@ -45,6 +45,8 @@
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "migrate": "node scripts/migrate.mjs",
+    "validate": "node -e \"import('./dist/index.js').then(m => { const r = m.validateAllEntries(); r.warnings.forEach(w => console.warn('WARN:', w.message)); if (!r.valid) { r.errors.forEach(e => console.error('ERROR:', e.message)); process.exit(1); } console.log('valid: ' + r.errors.length + ' errors, ' + r.warnings.length + ' warnings'); })\"",
+    "verify-law-ids": "node scripts/verify-law-ids.mjs",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {

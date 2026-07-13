@@ -56,6 +56,30 @@ import {
 } from './search.js';
 export { levenshtein } from './search.js';
 
+// v0.5.0: reverse lookup API
+import {
+  lookupByLawId as _lookupByLawId,
+  lookupByLawNum as _lookupByLawNum,
+  getAllNames as _getAllNames,
+} from './lookup.js';
+
+// v0.5.0: validation helpers
+export type {
+  ValidationIssue,
+  ValidationReport,
+  LawNameMatch,
+  ExtractOptions,
+} from './validate.js';
+import {
+  isValidLawId as _isValidLawId,
+  validateAllEntries as _validateAllEntries,
+  extractLawNames as _extractLawNames,
+  type ExtractOptions as _ExtractOptions,
+  type ValidationReport as _ValidationReport,
+  type LawNameMatch as _LawNameMatch,
+} from './validate.js';
+export { isValidLawId } from './validate.js';
+
 /** 全分野を結合した辞書 */
 export const abbreviationEntries: readonly AbbreviationEntry[] = Object.freeze([
   ...(tax as AbbreviationEntry[]),
@@ -306,3 +330,104 @@ export function suggestCorrection(query: string, limit = 5): string[] {
 
 /** internal helper を export (テスト・外部利用用) */
 void _levenshtein;
+
+/* -------------------------------------------------------------------------- */
+/* v0.5.0: reverse lookup API (公開ラッパ)                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * e-Gov `law_id` から辞書エントリを引く。完全一致のみ。
+ *
+ * @example
+ * ```ts
+ * import { lookupByLawId } from '@shuji-bonji/houki-abbreviations';
+ *
+ * lookupByLawId('363AC0000000108')?.formal;  // '消費税法'
+ * lookupByLawId('321CONSTITUTION')?.formal;  // '日本国憲法'
+ * lookupByLawId('999XX0000000000');          // null
+ * ```
+ */
+export function lookupByLawId(law_id: string): AbbreviationEntry | null {
+  return _lookupByLawId(abbreviationEntries, law_id);
+}
+
+/**
+ * 法令番号（漢数字表記）から辞書エントリを引く。完全一致のみ。
+ *
+ * 漢数字↔算用数字の正規化は v0.5.0 ではサポートしない。呼び出し側で
+ * 表記を揃える責務。
+ *
+ * @example
+ * ```ts
+ * import { lookupByLawNum } from '@shuji-bonji/houki-abbreviations';
+ *
+ * lookupByLawNum('昭和六十三年法律第百八号')?.formal;  // '消費税法'
+ * lookupByLawNum('昭和63年法律第108号');                 // null（v0.5.0 では正規化なし）
+ * ```
+ */
+export function lookupByLawNum(law_num: string): AbbreviationEntry | null {
+  return _lookupByLawNum(abbreviationEntries, law_num);
+}
+
+/**
+ * `abbr` / `formal` / `aliases` のいずれかから、そのエントリの
+ * **全別表記** を文字列配列で返す。
+ *
+ * 順序は `[abbr, formal, ...aliases]`、重複は除去済み。
+ *
+ * @example
+ * ```ts
+ * import { getAllNames } from '@shuji-bonji/houki-abbreviations';
+ *
+ * getAllNames('消法');
+ * // → ['消法', '消費税法', '消費税', 'インボイス', 'インボイス制度', ...]
+ *
+ * getAllNames('存在しない');
+ * // → []
+ * ```
+ */
+export function getAllNames(name: string): string[] {
+  return _getAllNames(abbreviationEntries, name);
+}
+
+/* -------------------------------------------------------------------------- */
+/* v0.5.0: validation helpers (公開ラッパ)                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * 辞書全体の静的整合性をチェックする。CI 用途を想定。
+ *
+ * @example
+ * ```ts
+ * import { validateAllEntries } from '@shuji-bonji/houki-abbreviations';
+ *
+ * const report = validateAllEntries();
+ * if (!report.valid) {
+ *   console.error(report.errors);
+ *   process.exit(1);
+ * }
+ * report.warnings.forEach((w) => console.warn(w.message));
+ * ```
+ */
+export function validateAllEntries(): _ValidationReport {
+  return _validateAllEntries(abbreviationEntries);
+}
+
+/**
+ * 入力テキスト中の **法令名らしき文字列** を辞書マッチで抽出する。
+ *
+ * @example
+ * ```ts
+ * import { extractLawNames } from '@shuji-bonji/houki-abbreviations';
+ *
+ * extractLawNames('消費税法と法人税法の改正について。インボイス制度も対象。');
+ * // → [
+ * //   { entry: <消法>, matchedKey: '消費税法', position: 0, length: 4 },
+ * //   { entry: <法法>, matchedKey: '法人税法', position: 5, length: 4 },
+ * //   { entry: <消法>, matchedKey: 'インボイス制度', position: 17, length: 7 },
+ * // ]
+ * ```
+ */
+export function extractLawNames(text: string, options?: _ExtractOptions): _LawNameMatch[] {
+  return _extractLawNames(abbreviationEntries, text, options);
+}
