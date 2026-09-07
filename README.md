@@ -29,11 +29,11 @@ graph TB
     style Abbr fill:#fff4d6
 ```
 
-## 収録範囲（v0.2.0 時点）
+## 収録範囲（v0.5.0 時点。辞書の中身は v0.2.0 から変更なし）
 
 - **174 エントリ**（6 分野）
 - **法律・政令・省令・規則・憲法**（e-Gov 法令 API 配下、`source_mcp_hint='houki-egov'`）
-- **基本通達 8 件＋個別通達 1 件**（v0.2.0 追加分、`source_mcp_hint='houki-nta'`）
+- **基本通達 8 件＋個別通達 1 件**（`source_mcp_hint='houki-nta'`）
 
 | 分野 | 件数 | 例 |
 |---|---|---|
@@ -424,7 +424,9 @@ interface AbbreviationEntry {
 | `hanrei` *(将来)* | 判例 | houki-court |
 | `saiketsu` *(将来)* | 国税不服審判所裁決 | houki-saiketsu |
 
-v0.1.0 では `houki-egov` 管轄のみ。`houki-nta-mcp` 等の開発と並行してエントリを追加していきます。
+現在の管轄は `houki-egov`（165 件）と `houki-nta`（9 件）の 2 つです。`houki-mhlw-mcp` 等の開発と並行してエントリを追加していきます。
+
+> **MCP 側が取り込んでいる版について**: houki-egov-mcp 0.5.3 / houki-nta-mcp 0.10.2 の依存は `^0.4.1` で、0.x 系の `^` は minor を跨がないため 0.5.0 は入っていません。両 MCP が呼ぶのは `resolveAbbreviation` / `normalizeJpText` / `normalizeSearchQuery` の 3 つで、辞書も同一なので動作差はありません。本パッケージを minor で上げたときは MCP 側の依存範囲も上げて publish し直してください。
 
 ## ロードマップ
 
