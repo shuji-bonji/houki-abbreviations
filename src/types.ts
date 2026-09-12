@@ -7,7 +7,12 @@
  *   Architecture E で必要となる category / source_mcp_hint を追加。
  */
 
-/** e-Gov law_id の種別プレフィックス */
+/**
+ * e-Gov law_id の種別プレフィックス
+ *
+ * @since 0.1.0
+ * @group エントリの構造と取りうる値
+ */
 export const LAW_TYPE_CODES = {
   Act: 'AC',
   CabinetOrder: 'CO',
@@ -16,9 +21,20 @@ export const LAW_TYPE_CODES = {
   Rule: 'RU',
 } as const;
 
+/**
+ * `LAW_TYPE_CODES` のキー。法令種別の名前を表す。
+ *
+ * @since 0.1.0
+ * @group エントリの構造と取りうる値
+ */
 export type LawTypeCode = keyof typeof LAW_TYPE_CODES;
 
-/** ドメインタグ（実務分野での分類） */
+/**
+ * ドメインタグ（実務分野での分類）
+ *
+ * @since 0.1.0
+ * @group エントリの構造と取りうる値
+ */
 export const DOMAINS = [
   'tax',
   'labor',
@@ -28,6 +44,12 @@ export const DOMAINS = [
   'administrative',
 ] as const;
 
+/**
+ * `DOMAINS` の要素型。
+ *
+ * @since 0.1.0
+ * @group エントリの構造と取りうる値
+ */
 export type Domain = (typeof DOMAINS)[number];
 
 /**
@@ -38,6 +60,9 @@ export type Domain = (typeof DOMAINS)[number];
  * - 'kihon-tsutatsu' / 'kobetsu-tsutatsu' / 'qa-jirei' / 'tax-answer' は
  *   各省庁公式サイト配下（houki-nta-mcp 等）。
  * - 'hanrei' / 'saiketsu' は判例・裁決系。
+ *
+ * @since 0.1.0
+ * @group エントリの構造と取りうる値
  */
 export const CATEGORIES = [
   'constitution',
@@ -54,6 +79,12 @@ export const CATEGORIES = [
   'saiketsu',
 ] as const;
 
+/**
+ * `CATEGORIES` の要素型。
+ *
+ * @since 0.1.0
+ * @group エントリの構造と取りうる値
+ */
 export type Category = (typeof CATEGORIES)[number];
 
 /**
@@ -68,6 +99,9 @@ export type Category = (typeof CATEGORIES)[number];
  * - 'houki-jaish': 労災（労働安全衛生総合研究所）
  * - 'houki-court': 判例（裁判所サイト）
  * - 'houki-saiketsu': 国税不服審判所裁決
+ *
+ * @since 0.1.0
+ * @group エントリの構造と取りうる値
  */
 export const SOURCE_MCP_HINTS = [
   'houki-egov',
@@ -78,6 +112,12 @@ export const SOURCE_MCP_HINTS = [
   'houki-saiketsu',
 ] as const;
 
+/**
+ * `SOURCE_MCP_HINTS` の要素型。
+ *
+ * @since 0.1.0
+ * @group エントリの構造と取りうる値
+ */
 export type SourceMcpHint = (typeof SOURCE_MCP_HINTS)[number];
 
 /**
@@ -92,6 +132,9 @@ export type SourceMcpHint = (typeof SOURCE_MCP_HINTS)[number];
  * 運用状態（`fetched_at` 等）は各 MCP のローカル DB / キャッシュ側で管理し、
  * 判定は `freshness` モジュール（`judgeStaleness` / `computeDaysSince`）で
  * 行う。詳細は [`src/freshness.ts`](./freshness.ts) のヘッダ JSDoc を参照。
+ *
+ * @since 0.1.0
+ * @group エントリの構造と取りうる値
  */
 export interface AbbreviationEntry {
   /** 略称・通称。例: "消法", "民" */

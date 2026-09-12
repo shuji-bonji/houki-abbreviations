@@ -22,10 +22,20 @@ import { normalizeJpText } from './normalize.js';
 /* SearchByName                                                               */
 /* -------------------------------------------------------------------------- */
 
-/** 部分一致モード */
+/**
+ * 部分一致モード
+ *
+ * @since 0.4.0
+ * @group 検索とあいまい一致
+ */
 export type SearchMode = 'prefix' | 'contains' | 'suffix';
 
-/** searchByName のオプション */
+/**
+ * searchByName のオプション
+ *
+ * @since 0.4.0
+ * @group 検索とあいまい一致
+ */
 export interface SearchOptions {
   /** 検索モード (デフォルト 'contains') */
   mode?: SearchMode;
@@ -37,7 +47,12 @@ export interface SearchOptions {
   filter?: SearchFilter;
 }
 
-/** filter 構造。各キーは単一値・配列のどちらでも OK */
+/**
+ * filter 構造。各キーは単一値・配列のどちらでも OK
+ *
+ * @since 0.4.0
+ * @group 検索とあいまい一致
+ */
 export interface SearchFilter {
   domain?: Domain | Domain[];
   category?: Category | Category[];
@@ -118,7 +133,12 @@ function matchByMode(haystack: string, needle: string, mode: SearchMode): boolea
 /* FindSimilar (Levenshtein)                                                  */
 /* -------------------------------------------------------------------------- */
 
-/** findSimilar のオプション */
+/**
+ * findSimilar のオプション
+ *
+ * @since 0.4.0
+ * @group 検索とあいまい一致
+ */
 export interface FuzzyOptions {
   /** 最大編集距離 (デフォルト 2) */
   maxDistance?: number;
@@ -132,6 +152,13 @@ export interface FuzzyOptions {
   normalize?: boolean;
 }
 
+/**
+ * `findSimilar` が返す 1 件。マッチしたエントリと、どのキーに何文字差で
+ * 一致したかを持つ。
+ *
+ * @since 0.4.0
+ * @group 検索とあいまい一致
+ */
 export interface FuzzyMatch {
   /** マッチしたエントリ */
   entry: AbbreviationEntry;
@@ -252,6 +279,9 @@ function toArray<T>(v: T | T[] | undefined): T[] {
  *
  * 自前実装にした理由は外部依存を増やさないため (本パッケージは
  * 軽量データライブラリの方針なので、`fast-levenshtein` 等は引き込まない)。
+ *
+ * @since 0.4.0
+ * @group 検索とあいまい一致
  */
 export function levenshtein(a: string, b: string): number {
   if (a === b) return 0;

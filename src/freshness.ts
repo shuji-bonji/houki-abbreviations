@@ -81,6 +81,9 @@
  * - `'fresh'`: 直近に取得済み（既定: < 7 日）。利用可、警告不要
  * - `'stale'`: やや古い（既定: 7〜29 日）。利用可だが bulk DL を warning として返す
  * - `'outdated'`: 古い（既定: ≧ 30 日）。利用前に再取得を促す
+ *
+ * @since 0.4.1
+ * @group 鮮度の判定
  */
 export type StalenessLevel = 'fresh' | 'stale' | 'outdated';
 
@@ -90,6 +93,9 @@ export type StalenessLevel = 'fresh' | 'stale' | 'outdated';
  * 各 MCP は同じ感覚で staleness を判定するため本定数を参照する。
  * 個別の MCP で異なる閾値が必要な場合は `judgeStaleness` をラップして
  * MCP 固有の閾値を使う関数を作ってよい (本定数を上書きしない)。
+ *
+ * @since 0.4.1
+ * @group 鮮度の判定
  */
 export const STALENESS_THRESHOLDS = {
   /** fresh と判定する境界 (この日数 **未満** なら fresh) */
@@ -105,6 +111,8 @@ export const STALENESS_THRESHOLDS = {
  * （`fresh_days` / `stale_days`）に従って `'fresh' | 'stale' | 'outdated'`
  * を返す。
  *
+ * @since 0.4.1
+ * @group 鮮度の判定
  * @param daysSince 経過日数 (整数想定、負値は 0 に丸める呼び出し側責務)
  * @returns `'fresh'` | `'stale'` | `'outdated'`
  *
@@ -129,6 +137,8 @@ export function judgeStaleness(daysSince: number): StalenessLevel {
  * - 未来時刻 (now < fetched) は 0 に丸める
  * - パース不能な ISO 文字列は 0 を返す (呼び出し側で扱いを決める)
  *
+ * @since 0.4.1
+ * @group 鮮度の判定
  * @param fetchedAt ISO 8601 形式の取得時刻 (例: "2026-04-01T00:00:00Z")
  * @param nowMs Date.now() 相当 (テスト時に固定値を渡せる)
  */

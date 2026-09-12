@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 (none)
 
+## [0.5.1] - 2026-09-12
+
+📝 **patch リリース** — JSDoc とドキュメントのみ。公開 API・実行されるコードは変更なし。houki-hub が型定義から API リファレンスを生成できるようにするための下ごしらえ。
+
+### Documentation (JSDoc のみ — API 変更なし)
+
+- **全 42 export に `@since` と `@group` を追加**。houki-hub のサイトが `dist/index.d.ts` から API リファレンスを生成するようになり、「どの版で入ったか」「どの節に属するか」をコードの隣から取るため。実行時の挙動は変わらない。
+- **JSDoc の例の実数を現在の辞書に合わせた**: `listByDomain('tax')` の注記を 26 件 → 35 件、`listBySourceMcpHint` の注記を「v0.1.0 では全件 / まだ無し」→ houki-egov 165 件 / houki-nta 9 件。
+- **`AbbreviationStats` に付いていた `@returns` を `getAbbreviationStats` に移した**。関数の戻り値の説明が型側に付いていた。
+- **README の誤りを修正**: `searchByName` / `findSimilar` / `suggestCorrection` の第 1 引数を、内部関数の `entries` ではなく公開ラッパの `query` に直した（使用例のコードも同様）。API 節の先頭に、型定義から生成した完全な一覧（houki-hub のサイト）へのリンクを追加。
+
+生成されたリファレンス: <https://shuji-bonji.github.io/houki-hub/reference/lib/houki-abbreviations>
+
 ## [0.5.0] - 2026-07-14
 
 ✨ **minor リリース** — 逆引き API + 検証ヘルパを追加。当初 v0.5.0（逆引き）/ v0.6.0（検証）と分ける計画だったが、1 ブランチで同時実装したため v0.5.0 に統合してリリース（経緯は [docs/v0.5-v0.6-design.md](docs/v0.5-v0.6-design.md)）。
@@ -235,7 +248,8 @@ houki-nta-mcp v0.3.0-alpha.6 の `src/services/text-normalize.ts` の保守的�
 
 houki-hub-mcp v0.1.1 の `src/abbreviations/` をベースに、Architecture E（複数独立 MCP + meta-package + Skill）への転換に伴い独立パッケージ化。
 
-[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.5.1
 [0.5.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.5.0
 [0.4.1]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.4.1
 [0.4.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.4.0
