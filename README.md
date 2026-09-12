@@ -125,34 +125,31 @@ resolveAbbreviation('ＰＬ法');  // null（normalize: false がデフォルト
 
 `resolveAbbreviation` が**完全一致**しか返さないのに対し、本 API は**部分一致**と**あいまい一致**を提供します。LLM が "労働" のような不完全なキーワードや "労働基準法施行例"（"令" の typo）を投げてきた場合に、候補を返してリカバリーするためのものです。
 
+辞書は関数の側が持っているので、エントリ配列を渡す必要はありません。
+
 ```ts
-import {
-  abbreviationEntries,
-  searchByName,
-  findSimilar,
-  suggestCorrection,
-} from '@shuji-bonji/houki-abbreviations';
+import { searchByName, findSimilar, suggestCorrection } from '@shuji-bonji/houki-abbreviations';
 
 // 部分一致（contains がデフォルト）
-searchByName(abbreviationEntries, '労働');
+searchByName('労働');
 // → 労基法 / 労契法 / 労安衛法 / 労組法 ...
 
 // prefix モード：先頭一致
-searchByName(abbreviationEntries, '労働', { mode: 'prefix' });
+searchByName('労働', { mode: 'prefix' });
 
 // filter + limit
-searchByName(abbreviationEntries, '税法', {
+searchByName('税法', {
   mode: 'contains',
   filter: { domain: 'tax' },
   limit: 5,
 });
 
 // あいまい一致（typo 救済）
-findSimilar(abbreviationEntries, '労働基準法施行例');
+findSimilar('労働基準法施行例');
 // → [{ entry: <労基法施行令>, matchedKey: '労働基準法施行令', distance: 1 }, ...]
 
 // "もしかして" — formal だけ欲しい場合
-suggestCorrection(abbreviationEntries, '労働基準法施行例');
+suggestCorrection('労働基準法施行例');
 // → ['労働基準法施行令', ...]
 ```
 
@@ -303,6 +300,10 @@ CI で `npm run validate` を呼ぶと、`errors > 0` の場合に exit 1 を返
 
 ## API
 
+公開している 42 記号（値 25・型 17）の完全な一覧は、型定義から自動生成している
+[API リファレンス](https://shuji-bonji.github.io/houki-hub/reference/lib/houki-abbreviations)にあります。
+以下はよく使うものの抜粋です。
+
 ### `resolveAbbreviation(name: string, options?: ResolveAbbreviationOptions): AbbreviationEntry | null`
 
 略称・通称・正式名称のいずれかからエントリを引きます。前後の空白はトリムされます。完全一致のみ（部分一致なし）。見つからない場合は `null`。
@@ -333,15 +334,15 @@ CI で `npm run validate` を呼ぶと、`errors > 0` の場合に exit 1 を返
 
 辞書全体の統計（総数、ドメイン別、カテゴリ別、MCP 別）。
 
-### `searchByName(entries, query, options?): AbbreviationEntry[]`
+### `searchByName(query: string, options?: SearchOptions): AbbreviationEntry[]`
 
 部分一致検索。`mode`（`'prefix' | 'contains' | 'suffix'`、default `'contains'`）、`filter`（`domain` / `category` / `source_mcp_hint` を単一値または配列で）、`limit`（default `50`、上限 `500`）、`normalize`（default `true`）を受け取ります。空クエリは `[]` を返します。挙動と例は [検索 API 節](#検索-apiv040) を参照。
 
-### `findSimilar(entries, query, options?): FuzzyMatch[]`
+### `findSimilar(query: string, options?: FuzzyOptions): FuzzyMatch[]`
 
 Levenshtein 距離ベースのあいまい一致。`maxDistance`（default `2`）、`limit`（default `5`）、`sortByScore`（default `true`、距離昇順）、`filter`、`normalize` を受け取ります。各 `FuzzyMatch` は `{ entry, matchedKey, distance }`。
 
-### `suggestCorrection(entries, query, limit?): string[]`
+### `suggestCorrection(query: string, limit?: number): string[]`
 
 `findSimilar` の薄いラッパで、上位 N 件の `formal` だけを文字列配列で返します。LLM プロンプトに直接埋め込みやすい形。
 

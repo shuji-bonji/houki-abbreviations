@@ -52,6 +52,8 @@ function toHalfWidthAscii(s: string): string {
  *
  * 入力が空文字や `null`/`undefined` 相当（`!input`）の場合は空文字を返す。
  *
+ * @since 0.3.0
+ * @group 表記の正規化
  * @param input 正規化対象の文字列
  * @returns 半角化された文字列（前後の空白は trim 済み）
  *
@@ -95,6 +97,8 @@ export function normalizeJpText(input: string): string {
  * （`PL法` のような大文字混じりエントリを正しく解決するため、
  * width-only の `normalizeJpText` のみを使用）。
  *
+ * @since 0.3.0
+ * @group 表記の正規化
  * @param input 検索クエリ
  * @returns 正規化された検索クエリ
  *

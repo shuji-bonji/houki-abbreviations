@@ -55,6 +55,8 @@ const LAW_ID_CONSTITUTION = /^\d{3}CONSTITUTION$/;
  *
  * 将来 v0.6.x で e-Gov 全種別の正確な仕様確認後に対応予定。
  *
+ * @since 0.5.0
+ * @group 検証
  * @param law_id 判定対象の文字列
  * @returns 形式が妥当なら `true`、そうでなければ `false`
  *
@@ -81,6 +83,9 @@ export function isValidLawId(law_id: string): boolean {
 
 /**
  * 静的整合性チェックの error / warning 共通型。
+ *
+ * @since 0.5.0
+ * @group 検証
  */
 export interface ValidationIssue {
   /** 機械可読なコード（family 共通の error contract と同じ語彙を使う） */
@@ -93,6 +98,9 @@ export interface ValidationIssue {
 
 /**
  * 辞書全体の検証レポート。
+ *
+ * @since 0.5.0
+ * @group 検証
  */
 export interface ValidationReport {
   /** `errors.length === 0` のとき `true` */
@@ -291,6 +299,9 @@ export function validateAllEntries(entries: readonly AbbreviationEntry[]): Valid
 
 /**
  * テキスト中の法令名抽出結果。
+ *
+ * @since 0.5.0
+ * @group 検証
  */
 export interface LawNameMatch {
   /** マッチした辞書エントリ */
@@ -305,6 +316,9 @@ export interface LawNameMatch {
 
 /**
  * `extractLawNames` のオプション。
+ *
+ * @since 0.5.0
+ * @group 検証
  */
 export interface ExtractOptions {
   /**

@@ -80,7 +80,12 @@ import {
 } from './validate.js';
 export { isValidLawId } from './validate.js';
 
-/** 全分野を結合した辞書 */
+/**
+ * 全分野を結合した辞書
+ *
+ * @since 0.1.0
+ * @group 辞書の解決
+ */
 export const abbreviationEntries: readonly AbbreviationEntry[] = Object.freeze([
   ...(tax as AbbreviationEntry[]),
   ...(labor as AbbreviationEntry[]),
@@ -137,6 +142,9 @@ function getNormalizedLookupIndex(): Map<string, AbbreviationEntry> {
 
 /**
  * `resolveAbbreviation` に渡せるオプション。
+ *
+ * @since 0.3.0
+ * @group 辞書の解決
  */
 export interface ResolveAbbreviationOptions {
   /**
@@ -163,6 +171,8 @@ export interface ResolveAbbreviationOptions {
  * - 見つからなければ null
  * - `options.normalize` が `true` のとき、全角／半角の表記ゆらぎを吸収する
  *
+ * @since 0.1.0
+ * @group 辞書の解決
  * @param name 略称・通称・正式名称のいずれか
  * @param options 照合オプション（省略可）
  * @returns 該当エントリ、見つからなければ null
@@ -203,9 +213,11 @@ export function resolveAbbreviation(
 /**
  * 指定ドメインのエントリ一覧を返す。
  *
+ * @since 0.1.0
+ * @group 辞書の解決
  * @example
  * ```ts
- * listByDomain('tax')  // → 26 件の税法系エントリ
+ * listByDomain('tax')  // → 35 件の税法系エントリ
  * ```
  */
 export function listByDomain(domain: Domain): AbbreviationEntry[] {
@@ -215,6 +227,8 @@ export function listByDomain(domain: Domain): AbbreviationEntry[] {
 /**
  * 指定カテゴリのエントリ一覧を返す。
  *
+ * @since 0.1.0
+ * @group 辞書の解決
  * @example
  * ```ts
  * listByCategory('cabinet-order')  // → 政令系エントリ全件
@@ -232,10 +246,12 @@ export function listByCategory(category: Category): AbbreviationEntry[] {
  * ことで、管轄外の問い合わせを早期に「正しい MCP に誘導するエラー」として
  * 返せるようになる。
  *
+ * @since 0.1.0
+ * @group 辞書の解決
  * @example
  * ```ts
- * listBySourceMcpHint('houki-egov')  // → e-Gov 管轄全件（v0.1.0 では全件）
- * listBySourceMcpHint('houki-nta')   // → 国税庁管轄（v0.1.0 ではまだ無し）
+ * listBySourceMcpHint('houki-egov')  // → e-Gov 管轄 165 件
+ * listBySourceMcpHint('houki-nta')   // → 国税庁管轄 9 件
  * ```
  */
 export function listBySourceMcpHint(hint: SourceMcpHint): AbbreviationEntry[] {
@@ -243,9 +259,10 @@ export function listBySourceMcpHint(hint: SourceMcpHint): AbbreviationEntry[] {
 }
 
 /**
- * 辞書統計（起動時ログ・診断用）。
+ * `getAbbreviationStats` が返す辞書統計。起動時ログ・診断用。
  *
- * @returns 全件数、ドメイン別件数、カテゴリ別件数、MCP別件数
+ * @since 0.1.0
+ * @group 辞書の解決
  */
 export interface AbbreviationStats {
   total: number;
@@ -254,6 +271,13 @@ export interface AbbreviationStats {
   bySourceMcpHint: Record<string, number>;
 }
 
+/**
+ * 辞書全体の統計を返す。
+ *
+ * @since 0.1.0
+ * @group 辞書の解決
+ * @returns 全件数、ドメイン別件数、カテゴリ別件数、管轄 MCP 別件数
+ */
 export function getAbbreviationStats(): AbbreviationStats {
   const byDomain: Record<string, number> = {};
   const byCategory: Record<string, number> = {};
@@ -279,6 +303,8 @@ export function getAbbreviationStats(): AbbreviationStats {
  * 名前で検索 (部分一致)。`abbr` / `formal` / `aliases` のどれかにマッチする
  * エントリを返す。
  *
+ * @since 0.4.0
+ * @group 検索とあいまい一致
  * @example
  * ```ts
  * import { searchByName } from '@shuji-bonji/houki-abbreviations';
@@ -302,6 +328,8 @@ export function searchByName(query: string, options?: _SearchOptions): Abbreviat
  * あいまい一致 (Levenshtein 距離ベース)。「うろ覚え」入力で類似エントリを
  * 探すときに使う。
  *
+ * @since 0.4.0
+ * @group 検索とあいまい一致
  * @example
  * ```ts
  * import { findSimilar } from '@shuji-bonji/houki-abbreviations';
@@ -318,6 +346,8 @@ export function findSimilar(query: string, options?: _FuzzyOptions): _FuzzyMatch
  * 「もしかして」サジェスト。`findSimilar` の薄いラッパで、上位 N 件の
  * `formal` だけを文字列配列で返す。LLM プロンプトでそのまま使える形。
  *
+ * @since 0.4.0
+ * @group 検索とあいまい一致
  * @example
  * ```ts
  * suggestCorrection('労働基準法施行例');
@@ -338,6 +368,8 @@ void _levenshtein;
 /**
  * e-Gov `law_id` から辞書エントリを引く。完全一致のみ。
  *
+ * @since 0.5.0
+ * @group 逆引き
  * @example
  * ```ts
  * import { lookupByLawId } from '@shuji-bonji/houki-abbreviations';
@@ -357,6 +389,8 @@ export function lookupByLawId(law_id: string): AbbreviationEntry | null {
  * 漢数字↔算用数字の正規化は v0.5.0 ではサポートしない。呼び出し側で
  * 表記を揃える責務。
  *
+ * @since 0.5.0
+ * @group 逆引き
  * @example
  * ```ts
  * import { lookupByLawNum } from '@shuji-bonji/houki-abbreviations';
@@ -375,6 +409,8 @@ export function lookupByLawNum(law_num: string): AbbreviationEntry | null {
  *
  * 順序は `[abbr, formal, ...aliases]`、重複は除去済み。
  *
+ * @since 0.5.0
+ * @group 逆引き
  * @example
  * ```ts
  * import { getAllNames } from '@shuji-bonji/houki-abbreviations';
@@ -397,6 +433,8 @@ export function getAllNames(name: string): string[] {
 /**
  * 辞書全体の静的整合性をチェックする。CI 用途を想定。
  *
+ * @since 0.5.0
+ * @group 検証
  * @example
  * ```ts
  * import { validateAllEntries } from '@shuji-bonji/houki-abbreviations';
@@ -416,6 +454,8 @@ export function validateAllEntries(): _ValidationReport {
 /**
  * 入力テキスト中の **法令名らしき文字列** を辞書マッチで抽出する。
  *
+ * @since 0.5.0
+ * @group 検証
  * @example
  * ```ts
  * import { extractLawNames } from '@shuji-bonji/houki-abbreviations';
