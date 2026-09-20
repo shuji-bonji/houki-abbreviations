@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 (none)
 
+## [0.5.2] - 2026-09-20
+
+📝 **patch リリース** — README とパッケージのメタ情報のみ。公開 API・実行されるコードは変更なし。
+
+### Fixed
+
+- **README の行き先のないリンクを外した**（[#5](https://github.com/shuji-bonji/houki-abbreviations/issues/5)）。「鮮度判定 API」節にあった `memory houki_resilience_locality.md` へのリンクは、公開されていない文書を指しており、リンク先が GitHub のプロフィールページになっていた。設計判断の内容（検知ロジックは各 MCP に置き、集約は結果レイヤーで行う）は地の文として残した。
+
+### Changed
+
+- **`description` と `keywords` を GitHub の About と揃えた**（[#7](https://github.com/shuji-bonji/houki-abbreviations/issues/7)）。description は「法令略称・通称を law ID に解決する共有辞書である」ことが npm と GitHub の検索結果から分かる文に変更。keywords には `japanese-law` と `typescript` を追加し、GitHub 側の topics と食い違わないようにした。
+
 ## [0.5.1] - 2026-09-12
 
 📝 **patch リリース** — JSDoc とドキュメントのみ。公開 API・実行されるコードは変更なし。houki-hub が型定義から API リファレンスを生成できるようにするための下ごしらえ。
@@ -248,7 +260,8 @@ houki-nta-mcp v0.3.0-alpha.6 の `src/services/text-normalize.ts` の保守的�
 
 houki-hub-mcp v0.1.1 の `src/abbreviations/` をベースに、Architecture E（複数独立 MCP + meta-package + Skill）への転換に伴い独立パッケージ化。
 
-[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.5.2
 [0.5.1]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.5.1
 [0.5.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.5.0
 [0.4.1]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.4.1

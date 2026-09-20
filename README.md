@@ -184,7 +184,7 @@ suggestCorrection('労働基準法施行例');
 
 ### 鮮度判定 API（v0.4.1〜）
 
-houki-hub MCP family が **同じ感覚で `fetched_at` の staleness を判定する**ための共有ヘルパです。判定の **しきい値・型・純関数** だけを共通化し、DB アクセスやレスポンス整形は各 MCP 側に残します（[memory `houki_resilience_locality.md`](https://github.com/shuji-bonji) の「検知ロジックは各 MCP に置き、集約は結果レイヤーで」スタンスに従う設計判断）。
+houki-hub MCP family が **同じ感覚で `fetched_at` の staleness を判定する**ための共有ヘルパです。判定の **しきい値・型・純関数** だけを共通化し、DB アクセスやレスポンス整形は各 MCP 側に残します（検知ロジックは各 MCP に置き、集約は結果レイヤーで行う、という family 共通の設計方針に従っています）。
 
 > **重要**: `freshness` は **エントリ単位のフィールドではありません**。`AbbreviationEntry` には `freshness` 関連フィールドは存在せず、各 MCP が自前で持つ `fetched_at` を本パッケージのヘルパで判定する形です。
 
