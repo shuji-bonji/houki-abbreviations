@@ -1,16 +1,18 @@
 {
   "name": "@shuji-bonji/houki-abbreviations",
-  "version": "0.5.1",
-  "description": "Shared abbreviation dictionary for Japanese laws and regulations — used by houki-hub MCP family",
+  "version": "0.5.2",
+  "description": "Shared abbreviation dictionary for Japanese laws — resolves 法令略称・通称 to law IDs, used by the houki MCP family",
   "keywords": [
     "japan",
+    "japanese-law",
     "law",
+    "legal",
     "houki",
     "abbreviation",
     "dictionary",
+    "typescript",
     "tax",
     "labor",
-    "legal",
     "mcp"
   ],
   "author": "shuji-bonji",
