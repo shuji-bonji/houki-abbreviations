@@ -19,23 +19,42 @@ describe('isValidLawId', () => {
     expect(isValidLawId('505CO0000000034')).toBe(true);
   });
 
-  it('省令 (MO)', () => {
-    expect(isValidLawId('505MO0000000020')).toBe(true);
+  it('勅令 (IO)', () => {
+    expect(isValidLawId('320IO0000000730')).toBe(true);
   });
 
-  it('規則 (RU)', () => {
-    expect(isValidLawId('505RU0000000001')).toBe(true);
+  it('太政官布告 (DF) / 太政官達 (DT) — v0.6.0 から', () => {
+    expect(isValidLawId('105DF0000000337')).toBe(true);
+    expect(isValidLawId('108DT0000000152')).toBe(true);
+  });
+
+  it('省令 (M + 府省コード) — v0.6.0 から', () => {
+    expect(isValidLawId('340M50000040011')).toBe(true); // 所得税法施行規則
+    expect(isValidLawId('415M60000F4A003')).toBe(true); // 共同省令（16 進の府省コード）
+    expect(isValidLawId('122M10000001012')).toBe(true); // 明治の閣令
+  });
+
+  it('規則・庁令 (R + 府省コード) — v0.6.0 から', () => {
+    expect(isValidLawId('322R00000001001')).toBe(true); // 会計検査院規則
+    expect(isValidLawId('326R00000002002')).toBe(true); // 海上保安庁令
+  });
+
+  it('人事院規則 (RJNJ) / 内閣総理大臣決定 (RPMD) — v0.6.0 から', () => {
+    expect(isValidLawId('324RJNJ01001000')).toBe(true);
+    expect(isValidLawId('351RPMD12230000')).toBe(true);
   });
 
   it('憲法専用フォーマット', () => {
     expect(isValidLawId('321CONSTITUTION')).toBe(true);
   });
 
-  it('未対応の種別 (DF / M\\d{2} 等) は v0.5.0 では false', () => {
-    // e-Gov bulk data には DF 系・M\d{2} 系も存在するが、
-    // 正確な仕様未確定のため v0.5.0 では未対応。
-    // 将来 v0.6.x で e-Gov 全種別の仕様確認後に対応予定。
-    expect(isValidLawId('105DF0000000337')).toBe(false);
+  it('e-Gov に無い MO / RU は v0.6.0 から false', () => {
+    expect(isValidLawId('505MO0000000020')).toBe(false);
+    expect(isValidLawId('505RU0000000001')).toBe(false);
+  });
+
+  it('M 系の府省コードに 16 進以外の文字があれば不正', () => {
+    expect(isValidLawId('415M60000G4A003')).toBe(false);
   });
 
   it('未知の種別コード XX は不正', () => {

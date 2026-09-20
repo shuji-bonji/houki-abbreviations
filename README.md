@@ -29,7 +29,7 @@ graph TB
     style Abbr fill:#fff4d6
 ```
 
-## 収録範囲（v0.5.0 時点。辞書の中身は v0.2.0 から変更なし）
+## 収録範囲（v0.6.0 時点。辞書の中身は v0.2.0 から変更なし）
 
 - **174 エントリ**（6 分野）
 - **法律・政令・省令・規則・憲法**（e-Gov 法令 API 配下、`source_mcp_hint='houki-egov'`）
@@ -118,6 +118,23 @@ resolveAbbreviation('消　法', { normalize: true })?.formal;
 
 resolveAbbreviation('ＰＬ法');  // null（normalize: false がデフォルト）
 ```
+
+法令番号には専用の `normalizeLawNum` があります（v0.6.0〜）。漢数字（位取りの `二十五` と位ごとの `二五` の両方）・算用数字・全角数字を算用数字に揃え、`元年` を `1年` にし、空白を取り除きます。`lookupByLawNum` はこの関数で入力と辞書の両方を揃えてから比較します。
+
+```ts
+import { normalizeLawNum, kanjiToNumber } from '@shuji-bonji/houki-abbreviations';
+
+normalizeLawNum('昭和二十五年法律第百三十七号'); // '昭和25年法律第137号'
+normalizeLawNum('昭和２５年法律第１３７号');     // '昭和25年法律第137号'
+normalizeLawNum('昭和二五年法律第一三七号');     // '昭和25年法律第137号'
+normalizeLawNum('令和元年法律第一号');           // '令和1年法律第1号'
+
+kanjiToNumber('百三十七'); // 137
+kanjiToNumber('一三七');   // 137（位ごと）
+kanjiToNumber('十十');     // null（読めない並び）
+```
+
+揃えないもの: 元号の別表記（`S25`）、`第` `号` の省略、種別名（`法律` / `政令`）の補完。これらは表記の揺れではなく別の書き方なので、呼び出し側で揃えてください。
 
 正規化ルールは [houki-nta-mcp の Normalize-everywhere パターン](https://github.com/shuji-bonji/houki-nta-mcp) と同じで、漢字・ひらがな・カタカナ・中黒（`・`）は変更しません。詳細は [`src/normalize.ts`](src/normalize.ts) のドキュメントを参照。
 
@@ -226,15 +243,16 @@ import {
 lookupByLawId('363AC0000000108')?.formal;  // '消費税法'
 lookupByLawId('321CONSTITUTION')?.formal;  // '日本国憲法'
 
-// 法令番号（漢数字）から逆引き
+// 法令番号から逆引き（漢数字・算用数字・全角数字のどれでも同じエントリ。v0.6.0〜）
 lookupByLawNum('昭和六十三年法律第百八号')?.formal;  // '消費税法'
+lookupByLawNum('昭和63年法律第108号')?.formal;        // '消費税法'
 
 // エントリの全別表記を列挙（LLM プロンプト生成用）
 getAllNames('消法');
 // → ['消法', '消費税法', '消費税', 'インボイス', 'インボイス制度', ...]
 ```
 
-> **注意**: `lookupByLawNum` は v0.5.0 では **完全一致のみ**。漢数字↔算用数字の正規化は将来追加予定（`昭和63年法律第108号` のような算用数字表記は現状ヒットしません）。
+> `lookupByLawNum` は入力と辞書の `law_num` を `normalizeLawNum` で揃えてから比較します（v0.5.x は漢数字の完全一致のみでした）。元号の別表記（`S63`）や `第` `号` の省略は吸収しません。
 
 ### 検証 API（v0.5.0〜）
 
@@ -283,12 +301,17 @@ CI で `npm run validate` を呼ぶと、`errors > 0` の場合に exit 1 を返
 
 #### `isValidLawId` が認識するパターン
 
-| パターン | 例 | 説明 |
-|---|---|---|
-| `\d{3}(AC\|CO\|IO\|MO\|RU)\d{10}` | `363AC0000000108` | 標準: 元号(1)+年(2)+種別(2)+連番(10) |
-| `\d{3}CONSTITUTION` | `321CONSTITUTION` | 憲法専用 |
+2026-09-20 に e-Gov 法令 API v2（`GET /api/2/laws`）で取得した全 9,569 件の `law_id` を調べ、実在するすべての形を受け付けます（v0.6.0〜）。長さはすべて 15 文字です。
 
-> **未対応**: e-Gov の bulk data には他の種別コード（例: `DF` 系、`M\d{2}` 形式の省令系）も存在しますが、正確な仕様未確定のため v0.5.0 では未対応です。新種別の law_id を持つエントリを辞書に追加する場合は、本パッケージ側でパターンを拡張するまで `validateAllEntries` が `invalid_law_id` error を返します。
+| パターン | 件数 | 例 | 説明 |
+|---|---|---|---|
+| `\d{3}(AC\|CO\|IO\|DF\|DT)\d{10}` | 4,677 | `363AC0000000108` | 法律・政令・勅令・太政官布告・太政官達: 元号(1)+年(2)+種別(2)+番号(10) |
+| `\d{3}[MR][0-9A-F]{8}\d{3}` | 4,735 | `340M50000040011` | 省令・府令・庁令・委員会規則: 元号(1)+年(2)+`M`/`R`+府省コード(16 進 8 文字)+番号(3)。共同省令は `415M60000F4A003` のように英字が並ぶ |
+| `\d{3}RJNJ\d{8}` | 142 | `324RJNJ01001000` | 人事院規則 |
+| `\d{3}RPMD\d{8}` | 14 | `351RPMD12230000` | 内閣総理大臣決定 |
+| `\d{3}CONSTITUTION` | 1 | `321CONSTITUTION` | 憲法 |
+
+v0.5.x が受け付けていた `MO` / `RU` は e-Gov の実データに 1 件も無かったため v0.6.0 で外しました（省令は `M`、規則は `M` か `R` で始まります）。
 
 #### `extractLawNames` のオプション
 
@@ -313,6 +336,14 @@ CI で `npm run validate` を呼ぶと、`errors > 0` の場合に exit 1 を返
 ### `normalizeJpText(input: string): string`
 
 全角数字・全角 ASCII 文字・全角ハイフン（`－` → `-`）・全角チルダ（`～` `〜` → `~`）・全角スペース（`　` → ` `）を半角化します。漢字・かな・中黒は保持。`.trim()` 込み。
+
+### `normalizeLawNum(input: string): string`
+
+法令番号の漢数字（位取り・位ごと）・全角数字を算用数字に揃え、`元年` を `1年` にし、空白を取り除きます（v0.6.0〜）。`昭和二十五年法律第百三十七号` → `昭和25年法律第137号`。
+
+### `kanjiToNumber(input: string): number | null`
+
+漢数字だけの文字列を数値にします（v0.6.0〜）。位取り（`百三十七`）と位ごと（`一三七`）の両方を読み、どちらとも読めない並び（`十十`）は `null`。千の位までを扱います。
 
 ### `normalizeSearchQuery(input: string): string`
 
@@ -368,7 +399,7 @@ e-Gov `law_id` から辞書エントリを引きます。`law_id !== null` の�
 
 ### `lookupByLawNum(law_num): AbbreviationEntry | null`
 
-法令番号（漢数字表記）から辞書エントリを引きます。完全一致のみ（v0.5.0 では漢数字正規化なし）。
+法令番号から辞書エントリを引きます。入力と辞書の `law_num` を `normalizeLawNum` で揃えてから比較するので、漢数字・算用数字・全角数字のどれでも同じエントリが返ります（v0.6.0〜）。
 
 ### `getAllNames(name): string[]`
 
@@ -376,7 +407,7 @@ e-Gov `law_id` から辞書エントリを引きます。`law_id !== null` の�
 
 ### `isValidLawId(law_id): boolean`
 
-`law_id` の形式が e-Gov 仕様に沿うか純粋関数で判定。外部 API は叩きません。
+`law_id` の形式が e-Gov に実在する形（上の「`isValidLawId` が認識するパターン」）に沿うか純粋関数で判定。外部 API は叩きません。
 
 ### `validateAllEntries(): ValidationReport`
 
@@ -427,7 +458,7 @@ interface AbbreviationEntry {
 
 現在の管轄は `houki-egov`（165 件）と `houki-nta`（9 件）の 2 つです。`houki-mhlw-mcp` 等の開発と並行してエントリを追加していきます。
 
-> **MCP 側が取り込んでいる版について**: houki-egov-mcp 0.5.3 / houki-nta-mcp 0.10.2 の依存は `^0.4.1` で、0.x 系の `^` は minor を跨がないため 0.5.0 は入っていません。両 MCP が呼ぶのは `resolveAbbreviation` / `normalizeJpText` / `normalizeSearchQuery` の 3 つで、辞書も同一なので動作差はありません。本パッケージを minor で上げたときは MCP 側の依存範囲も上げて publish し直してください。
+> **MCP 側が取り込んでいる版について**: houki-egov-mcp 0.15.0 / houki-nta-mcp 0.18.2 の依存は `^0.4.1` で、0.x 系の `^` は minor を跨がないため 0.5.x / 0.6.0 は入っていません。両 MCP が呼ぶのは `resolveAbbreviation` / `normalizeJpText` / `normalizeSearchQuery` / `listBySourceMcpHint` の 4 つで、辞書も同一なので動作差はありません。本パッケージを minor で上げたときは MCP 側の依存範囲も上げて publish し直してください。
 
 ## ロードマップ
 

@@ -31,7 +31,12 @@ import administrative from './data/administrative.json' with { type: 'json' };
 
 export type { AbbreviationEntry, Category, Domain, LawTypeCode, SourceMcpHint } from './types.js';
 export { CATEGORIES, DOMAINS, LAW_TYPE_CODES, SOURCE_MCP_HINTS } from './types.js';
-export { normalizeJpText, normalizeSearchQuery } from './normalize.js';
+export {
+  normalizeJpText,
+  normalizeSearchQuery,
+  normalizeLawNum,
+  kanjiToNumber,
+} from './normalize.js';
 
 // v0.4.1 (Issue #15): family 共通の staleness 判定 (型 + 閾値 + 純関数のみ)
 export type { StalenessLevel } from './freshness.js';
@@ -384,10 +389,11 @@ export function lookupByLawId(law_id: string): AbbreviationEntry | null {
 }
 
 /**
- * 法令番号（漢数字表記）から辞書エントリを引く。完全一致のみ。
+ * 法令番号から辞書エントリを引く。
  *
- * 漢数字↔算用数字の正規化は v0.5.0 ではサポートしない。呼び出し側で
- * 表記を揃える責務。
+ * 入力と辞書の `law_num` の両方を `normalizeLawNum` に通してから比較するので、
+ * 漢数字（`昭和六十三年法律第百八号`）でも算用数字（`昭和63年法律第108号`）でも
+ * 全角数字でも同じエントリが返る（v0.6.0 から。v0.5.x は漢数字の完全一致のみ）。
  *
  * @since 0.5.0
  * @group 逆引き
@@ -396,7 +402,7 @@ export function lookupByLawId(law_id: string): AbbreviationEntry | null {
  * import { lookupByLawNum } from '@shuji-bonji/houki-abbreviations';
  *
  * lookupByLawNum('昭和六十三年法律第百八号')?.formal;  // '消費税法'
- * lookupByLawNum('昭和63年法律第108号');                 // null（v0.5.0 では正規化なし）
+ * lookupByLawNum('昭和63年法律第108号')?.formal;        // '消費税法'（v0.6.0 から算用数字でも引ける）
  * ```
  */
 export function lookupByLawNum(law_num: string): AbbreviationEntry | null {

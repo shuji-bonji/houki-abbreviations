@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 (none)
 
+## [0.6.0] - 2026-09-20
+
+✨ **minor リリース** — 法令番号の漢数字↔算用数字の正規化と、`isValidLawId` の e-Gov 実データ準拠（[#6](https://github.com/shuji-bonji/houki-abbreviations/issues/6)）。houki-hub#20 機能 4 / houki-hub#21 / ROADMAP 4 由来。
+
+### Added
+
+- **`normalizeLawNum(input)`**（`src/normalize.ts`）: 法令番号の表記を 1 つの形に揃える。漢数字（位取りの `二十五` と、人事院規則の番号や判例の引用で使う位ごとの `二五` の両方）・全角数字を算用数字にし、`元年` → `1年`、空白の除去、ダッシュ類の `-` への統一を行う。`昭和二十五年法律第百三十七号` / `昭和25年法律第137号` / `昭和２５年法律第１３７号` / `昭和二五年法律第一三七号` → すべて `昭和25年法律第137号`。元号の別表記（`S25`）と `第` `号` の省略は吸収しない（表記の揺れではなく別の書き方のため）。
+- **`kanjiToNumber(input)`**（同上）: 漢数字だけの文字列を数値にする。位取り（`百三十七` → 137、`一千` → 1000）と位ごと（`一三七` → 137、`三〇` → 30）を読み、どちらとも読めない並び（`十十`、`二〇十`）は `null`。千の位まで。houki-egov-mcp v0.7.0 の同名関数（条番号用・位取りのみ）と位取りの結果は同じで、位ごとの書き方を受け付ける点だけが違う。family で共有する候補。
+
+### Changed
+
+- **`lookupByLawNum` が算用数字・全角数字でも引けるようになった**: 入力と辞書の `law_num` の両方を `normalizeLawNum` に通してから比較する（Normalize-everywhere）。v0.5.x は漢数字の完全一致のみだった。Issue #6 の完了条件「`昭和二十五年法律第百三十七号` と `昭和25年法律第137号` が同じ結果を返す」をテストで固定。
+- **`isValidLawId` を e-Gov の実データに合わせた**: 2026-09-20 に e-Gov 法令 API v2 `GET /api/2/laws` で全 9,569 件の `law_id` を取得して調べ、実在するすべての形を受け付けるようにした（全件 15 文字）。
+  - 追加: `DF`（太政官布告）/ `DT`（太政官達）、`M` / `R` + 16 進の府省コード 8 文字 + 番号 3 桁（省令・府令・庁令・委員会規則。例 `340M50000040011` 所得税法施行規則、`415M60000F4A003` 共同省令）、`RJNJ` + 8 桁（人事院規則）、`RPMD` + 8 桁（内閣総理大臣決定）
+  - 削除: `MO` / `RU`。e-Gov の実データに 1 件も無い形だった（v0.5.x では `505MO0000000020` が `true` だったが v0.6.0 では `false`）。辞書の 9 件（`AC` 8 件・`CONSTITUTION` 1 件）には影響しない
+  - 9,569 件すべてで `isValidLawId` が `true`、`normalizeLawNum` の年と番号が API の `law_num_year` / `law_num_num` と一致することを確認済み（CI には含めない。手元での確認）
+- `src/index.test.ts` の辞書全件チェックを `isValidLawId` に一本化した（テスト側に持っていた緩い別パターン `[A-Z]{2}` を削除。計画 v0.5.1-v0.6.0 §1-3 の 2）。
+
+### Notes
+
+- 計画（`docs/v0.5.1-v0.6.0-plan.md`）で v0.6.0 に予定していた `expandToFormalNames` は v0.7.0 以降に送る。
+- minor を上げたので、houki-egov-mcp / houki-nta-mcp の依存 `^0.4.1` を `^0.6.0` に上げて publish し直す作業は別途（両 MCP が呼ぶ 4 関数の動作は変わらない）。
+
 ## [0.5.2] - 2026-09-20
 
 📝 **patch リリース** — README とパッケージのメタ情報のみ。公開 API・実行されるコードは変更なし。
@@ -260,7 +283,8 @@ houki-nta-mcp v0.3.0-alpha.6 の `src/services/text-normalize.ts` の保守的�
 
 houki-hub-mcp v0.1.1 の `src/abbreviations/` をベースに、Architecture E（複数独立 MCP + meta-package + Skill）への転換に伴い独立パッケージ化。
 
-[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.6.0
 [0.5.2]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.5.2
 [0.5.1]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.5.1
 [0.5.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.5.0
