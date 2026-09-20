@@ -20,16 +20,31 @@ import type { AbbreviationEntry, Category, SourceMcpHint } from './types.js';
 /* -------------------------------------------------------------------------- */
 
 /**
- * e-Gov の標準 law_id パターン（15 文字: 元号1+年2+種別2+連番10）。
+ * 法律・政令・勅令・太政官布告・太政官達（15 文字: 元号 1 + 年 2 + 種別 2 + 番号 10）。
  *
- * 種別コード:
  * - `AC` = Act（法律）
  * - `CO` = CabinetOrder（政令）
  * - `IO` = ImperialOrdinance（勅令）
- * - `MO` = MinisterialOrdinance（省令）
- * - `RU` = Rule（規則）
+ * - `DF` = 太政官布告（明治 5〜17 年）
+ * - `DT` = 太政官達（明治 8〜16 年）
  */
-const LAW_ID_STANDARD = /^\d{3}(AC|CO|IO|MO|RU)\d{10}$/;
+const LAW_ID_STANDARD = /^\d{3}(AC|CO|IO|DF|DT)\d{10}$/;
+
+/**
+ * 省令・府令・庁令・委員会規則（15 文字: 元号 1 + 年 2 + `M` か `R` + 府省コード 8 + 番号 3）。
+ *
+ * `M` の次の 1 文字は 1〜6、続く 7 文字は 16 進（`0-9A-F`）で、共同省令では
+ * `F` `A` `C` などが並ぶ（例 `415M60000F4A003` = 平成十五年内閣府・総務省・財務省・
+ * 厚生労働省・農林水産省・経済産業省・国土交通省令第三号）。`R` は会計検査院規則・
+ * 海上保安庁令など（例 `322R00000001001`）。
+ */
+const LAW_ID_MINISTERIAL = /^\d{3}[MR][0-9A-F]{8}\d{3}$/;
+
+/** 人事院規則（`RJNJ` + 8 桁。例 `324RJNJ01001000` = 昭和二十四年人事院規則一―一） */
+const LAW_ID_JINJIIN = /^\d{3}RJNJ\d{8}$/;
+
+/** 内閣総理大臣決定（`RPMD` + 月日 4 桁 + 連番 4 桁。例 `351RPMD12230000`） */
+const LAW_ID_PM_DECISION = /^\d{3}RPMD\d{8}$/;
 
 /** 憲法専用パターン（`321CONSTITUTION`） */
 const LAW_ID_CONSTITUTION = /^\d{3}CONSTITUTION$/;
@@ -42,18 +57,20 @@ const LAW_ID_CONSTITUTION = /^\d{3}CONSTITUTION$/;
  *
  * ## 認識する種別
  *
- * 現時点で本パッケージの辞書に実エントリが存在する種別のみ厳格に判定する:
+ * 2026-09-20 に e-Gov 法令 API v2 `GET /api/2/laws` で取得した全 9,569 件の
+ * `law_id` を調べ、実在するすべての形を受け付ける（v0.6.0、Issue #6）。
+ * 長さは全件 15 文字。
  *
- * - 標準: `AC` / `CO` / `IO` / `MO` / `RU`（15 文字）
- * - 憲法: `CONSTITUTION`（15 文字）
+ * | 形 | 件数 | 例 |
+ * |---|---|---|
+ * | `AC` / `CO` / `IO` / `DF` / `DT` + 10 桁 | 4,677 | `363AC0000000108`（消費税法） |
+ * | `M` / `R` + 16 進 8 文字 + 3 桁 | 4,735 | `340M50000040011`（所得税法施行規則） |
+ * | `RJNJ` + 8 桁 | 142 | `324RJNJ01001000`（人事院規則一―一） |
+ * | `RPMD` + 8 桁 | 14 | `351RPMD12230000`（内閣総理大臣決定） |
+ * | `CONSTITUTION` | 1 | `321CONSTITUTION` |
  *
- * e-Gov の bulk data には他の種別コード（例: `DF` 系、`M\d{2}` 形式の省令系
- * など）も存在することが確認されているが、**正確な仕様未確定** のため
- * v0.5.0 では未対応。新種別の law_id を持つエントリを辞書に追加する場合は、
- * 本パッケージ側でパターンを拡張するまで `validateAllEntries` が
- * `invalid_law_id` error を返すので注意。
- *
- * 将来 v0.6.x で e-Gov 全種別の正確な仕様確認後に対応予定。
+ * v0.5.x が受け付けていた `MO` / `RU` は e-Gov の実データに 1 件も無かったため
+ * v0.6.0 で外した（省令は `M`、規則は `M` か `R` で始まる）。
  *
  * @since 0.5.0
  * @group 検証
@@ -63,18 +80,24 @@ const LAW_ID_CONSTITUTION = /^\d{3}CONSTITUTION$/;
  * @example
  * ```ts
  * isValidLawId('363AC0000000108');  // true（消費税法）
+ * isValidLawId('340M50000040011');  // true（所得税法施行規則。v0.6.0 から）
+ * isValidLawId('105DF0000000337');  // true（太政官布告。v0.6.0 から）
  * isValidLawId('321CONSTITUTION');  // true（日本国憲法）
+ * isValidLawId('505MO0000000020');  // false（e-Gov に無い形。v0.5.x では true だった）
  * isValidLawId('AAA');              // false
  * isValidLawId('');                 // false
  * isValidLawId(' 363AC0000000108'); // false（前後空白は呼び出し側で trim）
- *
- * // 未対応の種別（v0.5.0 では false が返る）
- * isValidLawId('105DF0000000337');  // false（DF 種別は未対応）
  * ```
  */
 export function isValidLawId(law_id: string): boolean {
   if (typeof law_id !== 'string' || law_id.length === 0) return false;
-  return LAW_ID_STANDARD.test(law_id) || LAW_ID_CONSTITUTION.test(law_id);
+  return (
+    LAW_ID_STANDARD.test(law_id) ||
+    LAW_ID_MINISTERIAL.test(law_id) ||
+    LAW_ID_JINJIIN.test(law_id) ||
+    LAW_ID_PM_DECISION.test(law_id) ||
+    LAW_ID_CONSTITUTION.test(law_id)
+  );
 }
 
 /* -------------------------------------------------------------------------- */

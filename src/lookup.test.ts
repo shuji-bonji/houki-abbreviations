@@ -70,8 +70,16 @@ describe('lookupByLawNum', () => {
     expect(lookupByLawNum(fixtures, '昭和六十三年法律第百八号')?.formal).toBe('消費税法');
   });
 
-  it('算用数字表記は引けない (v0.5.0 では normalize なし)', () => {
-    expect(lookupByLawNum(fixtures, '昭和63年法律第108号')).toBeNull();
+  it('算用数字・全角数字・位ごとの漢数字でも引ける (v0.6.0 から normalizeLawNum で照合)', () => {
+    expect(lookupByLawNum(fixtures, '昭和63年法律第108号')?.formal).toBe('消費税法');
+    expect(lookupByLawNum(fixtures, '昭和６３年法律第１０８号')?.formal).toBe('消費税法');
+    expect(lookupByLawNum(fixtures, '昭和六三年法律第一〇八号')?.formal).toBe('消費税法');
+    expect(lookupByLawNum(fixtures, ' 昭和63年 法律 第108号 ')?.formal).toBe('消費税法');
+  });
+
+  it('第・号を省いた形や別の元号は引けない', () => {
+    expect(lookupByLawNum(fixtures, '昭和63年法律108号')).toBeNull();
+    expect(lookupByLawNum(fixtures, '平成63年法律第108号')).toBeNull();
   });
 
   it('law_num 未設定エントリは引けない', () => {

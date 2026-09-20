@@ -8,7 +8,7 @@
  * ## 関数一覧
  *
  * - {@link lookupByLawId} — e-Gov law_id から entry を引く
- * - {@link lookupByLawNum} — 法令番号（漢数字）から entry を引く
+ * - {@link lookupByLawNum} — 法令番号から entry を引く（漢数字・算用数字のどちらでも）
  * - {@link getAllNames} — abbr/formal/aliases いずれかから「全別表記」を返す
  *
  * すべての関数は `entries` を第一引数に取る純関数として実装し、
@@ -23,6 +23,7 @@
  * @see docs/v0.5-v0.6-design.md
  */
 
+import { normalizeLawNum } from './normalize.js';
 import type { AbbreviationEntry } from './types.js';
 
 /**
@@ -58,15 +59,17 @@ export function lookupByLawId(
 }
 
 /**
- * 法令番号（漢数字表記）から辞書エントリを引く。完全一致のみ。
+ * 法令番号から辞書エントリを引く。
  *
- * v0.5.0 では漢数字↔算用数字の正規化はサポートしない（呼び出し側で
- * 表記を揃える責務）。将来 `normalizeLawNum` を追加した際に拡張予定。
+ * 入力と `entry.law_num` の両方を {@link normalizeLawNum} に通してから比較する
+ * （v0.6.0、Issue #6）。そのため `昭和六十三年法律第百八号` / `昭和63年法律第108号` /
+ * `昭和６３年法律第１０８号` / `昭和六三年法律第一〇八号` はすべて同じエントリを返す。
+ * 元号の別表記（`S63`）や `第` `号` の省略は吸収しない。
  *
  * `entry.law_num !== undefined` のエントリのみが対象。
  *
  * @param entries 検索対象のエントリ配列
- * @param law_num 法令番号（例: '昭和六十三年法律第百八号'）
+ * @param law_num 法令番号（例: '昭和六十三年法律第百八号'、'昭和63年法律第108号'）
  * @returns 該当エントリ、見つからなければ `null`
  *
  * @example
@@ -74,8 +77,8 @@ export function lookupByLawId(
  * lookupByLawNum(abbreviationEntries, '昭和六十三年法律第百八号')?.formal;
  * // → '消費税法'
  *
- * lookupByLawNum(abbreviationEntries, '昭和63年法律第108号');
- * // → null（v0.5.0 では漢数字正規化なし）
+ * lookupByLawNum(abbreviationEntries, '昭和63年法律第108号')?.formal;
+ * // → '消費税法'（v0.6.0 から。v0.5.x では null だった）
  * ```
  */
 export function lookupByLawNum(
@@ -83,10 +86,10 @@ export function lookupByLawNum(
   law_num: string
 ): AbbreviationEntry | null {
   if (!law_num) return null;
-  const trimmed = law_num.trim();
-  if (!trimmed) return null;
+  const wanted = normalizeLawNum(law_num);
+  if (!wanted) return null;
   for (const entry of entries) {
-    if (entry.law_num === trimmed) return entry;
+    if (entry.law_num !== undefined && normalizeLawNum(entry.law_num) === wanted) return entry;
   }
   return null;
 }

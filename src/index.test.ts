@@ -9,13 +9,9 @@ import {
   CATEGORIES,
   DOMAINS,
   SOURCE_MCP_HINTS,
+  isValidLawId,
   type AbbreviationEntry,
 } from './index.js';
-
-// e-Gov law_id format:
-//   - 3桁(元号+年) + 2文字(種別) + 10桁(番号)  例: 363AC0000000108
-//   - 憲法のみ: "321CONSTITUTION"
-const LAW_ID_PATTERN = /^(?:\d{3}[A-Z]{2}\d{10}|\d{3}CONSTITUTION)$/;
 
 const VALID_LAW_TYPES = [
   'Act',
@@ -47,7 +43,8 @@ describe('abbreviation dictionary integrity', () => {
   it('law_id (when set) matches e-Gov format', () => {
     for (const e of abbreviationEntries) {
       if (e.law_id != null) {
-        expect(e.law_id, `${e.formal} has invalid law_id: ${e.law_id}`).toMatch(LAW_ID_PATTERN);
+        // 判定は isValidLawId に一本化する（テスト側に緩い別パターンを持たない）
+        expect(isValidLawId(e.law_id), `${e.formal} has invalid law_id: ${e.law_id}`).toBe(true);
       }
     }
   });
