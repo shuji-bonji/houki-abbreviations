@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は YYYY-MM-DD（PR #N）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/search.ts`（`searchByName`・`SearchOptions`・`SearchFilter`・`SearchMode`）、`src/index.ts`（`searchByName`）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加。`aliases` に通称を足したテストは houki-nta-mcp #3 に対応したもの）
 

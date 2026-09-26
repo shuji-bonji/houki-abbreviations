@@ -23,13 +23,13 @@
 
 仕様とコードを、同じリポジトリの別の資産として扱います。人が振る舞いを承認するのは仕様 PR と初版起こしだけです。実装 PR で問うのは「承認済みの文と、テストと、コードが同じか」で、振る舞いに何を許すかの判断は実装レビューへ戻しません。CI の `pr-scope`（`.github/scripts/check-pr-scope.mjs`）が、ブランチ名の接頭辞ごとに変えてよいパスを検査します。
 
-| ブランチ | 種類 | 変えてよいもの | 変えないもの |
-|---|---|---|---|
-| `spec/<yyyymmdd>-<slug>` | 仕様 PR | `specs/changes/<id>/`（proposal.md と差分の spec.md） | `src/`、テスト、辞書の JSON、`specs/current/`（proposal.md が「- 実装の変更: 不要」のときだけ `specs/current/` も書いてよい） |
-| `spec-init/<dir>` | 初版起こし | `specs/current/<dir>/spec.md`、テスト名に仕様 ID を足すこと | テストの期待値と本文、実装 |
-| それ以外（`fix/` `feat/` `docs/` `ci/` など） | 実装 PR など | テスト、`src/`（辞書の JSON を含む）、版と CHANGELOG、`specs/current/` への取り込み（最終コミット）、`specs/changes/` から `specs/releases/<tag>/` への移動 | `specs/changes/` の書き換え（未承認の意図の追加、承認済み差分の変更） |
+| ブランチ                                      | 種類         | 変えてよいもの                                                                                                                                              | 変えないもの                                                                                                                  |
+| --------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `spec/<yyyymmdd>-<slug>`                      | 仕様 PR      | `specs/changes/<id>/`（proposal.md と差分の spec.md）                                                                                                       | `src/`、テスト、辞書の JSON、`specs/current/`（proposal.md が「- 実装の変更: 不要」のときだけ `specs/current/` も書いてよい） |
+| `spec-init/<dir>`                             | 初版起こし   | `specs/current/<dir>/spec.md`、テスト名に仕様 ID を足すこと                                                                                                 | テストの期待値と本文、実装                                                                                                    |
+| それ以外（`fix/` `feat/` `docs/` `ci/` など） | 実装 PR など | テスト、`src/`（辞書の JSON を含む）、版と CHANGELOG、`specs/current/` への取り込み（最終コミット）、`specs/changes/` から `specs/releases/<tag>/` への移動 | `specs/changes/` の書き換え（未承認の意図の追加、承認済み差分の変更）                                                         |
 
-- 承認日は、人がマージの前にそのブランチで書きます。仕様 PR は proposal.md に「- 承認日: YYYY-MM-DD（PR #N）」、初版起こしと取り込みは `specs/current/<dir>/spec.md` に「- 承認日: YYYY-MM-DD」。日付は JST です。空欄なら `pr-scope` が止めます。
+- 承認日は、人がマージの前にそのブランチで書きます。仕様 PR は proposal.md に「- 承認日: 2026-09-27（PR #28）」、初版起こしと取り込みは `specs/current/<dir>/spec.md` に「- 承認日: YYYY-MM-DD」。日付は JST です。空欄なら `pr-scope` が止めます。
 - 仕様 PR をマージした後、新しい ID が `specs/changes/` にだけある間は `spec-ids check` を通します（テストを求めるのは `specs/current/` の ID だけ）。
 - `REMOVED` の差分では、テストを消すのは `specs/current/` から見出しを外す取り込みと同じコミットにします。
 - 辞書のエントリを足すだけの変更（`src/data/*.json`）は実装 PR です。`abbreviation_entries/spec.md` の約束（`abbr` が重複しない、など）はテストが検査するので、仕様 PR は要りません。約束そのものを変えるときは仕様 PR にします。
@@ -37,13 +37,13 @@
 
 ## 役割
 
-| 役割 | 書いてよいもの | 書いてはいけないもの |
-|---|---|---|
-| Spec Steward | `specs/changes/<id>/` の草案、初版起こしの `specs/current/` 草案 | 実装、テストの期待値、承認前の `specs/current/` の直接編集 |
-| Test Designer | 仕様 ID 付きの受入テスト | 実装を見て期待値を足すこと、仕様本文 |
-| Coder | 実装、版、CHANGELOG | `specs/current/`、テストを消して GREEN にすること |
-| Spec Auditor | 食い違いの報告（ID 単位で GREEN / 意図が古い / 実装が古い / テストが古い / 判断できない） | 仕様・実装・テストのどれも |
-| Spec Publisher | 承認済み差分の `specs/current/` への取り込み草案、`specs/releases/<tag>/` | 未承認の意図の追加 |
+| 役割           | 書いてよいもの                                                                            | 書いてはいけないもの                                       |
+| -------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Spec Steward   | `specs/changes/<id>/` の草案、初版起こしの `specs/current/` 草案                          | 実装、テストの期待値、承認前の `specs/current/` の直接編集 |
+| Test Designer  | 仕様 ID 付きの受入テスト                                                                  | 実装を見て期待値を足すこと、仕様本文                       |
+| Coder          | 実装、版、CHANGELOG                                                                       | `specs/current/`、テストを消して GREEN にすること          |
+| Spec Auditor   | 食い違いの報告（ID 単位で GREEN / 意図が古い / 実装が古い / テストが古い / 判断できない） | 仕様・実装・テストのどれも                                 |
+| Spec Publisher | 承認済み差分の `specs/current/` への取り込み草案、`specs/releases/<tag>/`                 | 未承認の意図の追加                                         |
 
 Steward と Coder と Auditor は同じ会話で起動しません。次の係には成果物のパスだけを渡し、要約して渡しません。
 

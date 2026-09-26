@@ -82,7 +82,9 @@ export function checkScope({ kind, changes, read, diffOf }) {
         if (noImpl && CURRENT_SPEC_RE.test(p)) continue;
         errors.push(
           `仕様 PR（spec/*）は specs/changes/ だけを変えます: ${p}${
-            CURRENT_SPEC_RE.test(p) ? '（specs/current/ を書くなら proposal.md に「- 実装の変更: 不要」）' : ''
+            CURRENT_SPEC_RE.test(p)
+              ? '（specs/current/ を書くなら proposal.md に「- 実装の変更: 不要」）'
+              : ''
           }`
         );
       }
@@ -94,7 +96,7 @@ export function checkScope({ kind, changes, read, diffOf }) {
       const text = read(c.path);
       if (!APPROVAL_RE.test(text) || !PR_NUMBER_RE.test(text.match(/^- 承認日:.*$/m)?.[0] ?? '')) {
         errors.push(
-          `承認日と PR 番号がありません（マージの前に「- 承認日: YYYY-MM-DD（PR #N）」を書く）: ${c.path}`
+          `承認日と PR 番号がありません（マージの前に「- 承認日: 2026-09-27（PR #28）」を書く）: ${c.path}`
         );
       }
     }
@@ -103,22 +105,32 @@ export function checkScope({ kind, changes, read, diffOf }) {
       if (CURRENT_SPEC_RE.test(c.path) && c.status !== 'D' && c.status !== 'R') continue;
       if (TEST_FILE_RE.test(c.path) && c.status === 'M') {
         if (!onlyIdsAdded(diffOf(c.path))) {
-          errors.push(`初版起こし（spec-init/*）はテスト名に仕様 ID を足すだけです。それ以外の変更があります: ${c.path}`);
+          errors.push(
+            `初版起こし（spec-init/*）はテスト名に仕様 ID を足すだけです。それ以外の変更があります: ${c.path}`
+          );
         }
         continue;
       }
       for (const p of touched(c)) {
-        errors.push(`初版起こし（spec-init/*）は specs/current/<dir>/spec.md とテスト名だけを変えます: ${p}`);
+        errors.push(
+          `初版起こし（spec-init/*）は specs/current/<dir>/spec.md とテスト名だけを変えます: ${p}`
+        );
       }
     }
   } else {
     for (const c of changes) {
-      if (c.status === 'R' && c.from.startsWith('specs/changes/') && c.path.startsWith('specs/releases/')) {
+      if (
+        c.status === 'R' &&
+        c.from.startsWith('specs/changes/') &&
+        c.path.startsWith('specs/releases/')
+      ) {
         continue;
       }
       for (const p of touched(c)) {
         if (p.startsWith('specs/changes/')) {
-          errors.push(`仕様 PR の外で specs/changes/ を変えています（許されるのは specs/releases/ への移動だけ）: ${p}`);
+          errors.push(
+            `仕様 PR の外で specs/changes/ を変えています（許されるのは specs/releases/ への移動だけ）: ${p}`
+          );
         }
       }
     }
