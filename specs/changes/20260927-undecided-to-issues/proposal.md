@@ -2,7 +2,7 @@
 
 - 対象: `specs/current/` の下の 23 本の `spec.md`（`## 未決` の節）
 - 実装の変更: 不要
-- 承認日:
+- 承認日: 2026-09-27 （PR #26）
 - 状態: この仕様 PR の中で `specs/current/` に反映する。次の実装 PR の最終コミットで `specs/releases/<tag>/` へ移す
 - 起こした日: 2026-09-27（JST）
 - 起こした役: Spec Steward
@@ -24,21 +24,21 @@ PR #10 の初版起こしで、「未決」に 116 件が残った。このう�
 - resolve_abbreviation 5（名前が重なったときは先のエントリを返す）は「テストを足す」書き方だったが、#14 で重なりを禁じると決めればテストは要らなくなる。先にテストを書くと未決定の振る舞いを固定するので、Issue へ移す
 - 既存の項目の番号は変えない（houki-hub の振り分けの表が番号で参照しているため）
 
-| Issue     | 判断                                                        | 移した未決                                                                                                                                                                                      |
-| --------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| #13 | エントリと公開定数の凍結                                    | abbreviation_entries 1、judge_staleness 4、list_by_category 1、list_by_domain 2、list_by_source_mcp_hint 1、lookup_by_law_id 3、lookup_by_law_num 5、public_constants 1、resolve_abbreviation 2 |
-| #14 | エントリをまたぐ名前の重複と、validateAllEntries が見逃す値 | abbreviation_entries 2、get_all_names 4、resolve_abbreviation 5、validate_all_entries 2・3                                                                                                      |
-| #15 | aliases に自分の abbr・formal と同じ値                      | abbreviation_entries 8、extract_law_names 1、validate_all_entries 4                                                                                                                             |
-| #16 | 件数と 0 件のキー                                           | abbreviation_entries 7、get_abbreviation_stats 1・2                                                                                                                                             |
-| #17 | 文書と実際の結果の食い違い                                  | abbreviation_entries 9、find_similar 1、list_by_domain 1、public_constants 3、resolve_abbreviation 1、suggest_correction 1、validate_all_entries 7                                              |
-| #18 | 壊れた取得時刻と鮮度判定                                    | compute_days_since 1〜5、judge_staleness 1・2                                                                                                                                                   |
-| #19 | extractLawNames のまたがる一致と全角                        | extract_law_names 2・3                                                                                                                                                                          |
-| #20 | 短い query と、一致した名前を候補に返すこと                 | find_similar 2、suggest_correction 2                                                                                                                                                            |
-| #21 | 関数ごとの全角・ダッシュ類・大文字の扱い                    | get_all_names 3、lookup_by_law_id 1、normalize_jp_text 3、normalize_search_query 1                                                                                                              |
-| #22 | limit の NaN と上限                                         | search_by_name 5、find_similar 8、suggest_correction 5（新しい項目）                                                                                                                            |
-| #23 | isValidLawId の厳しさ                                       | is_valid_law_id 1・2                                                                                                                                                                            |
-| #24 | 漢数字・大きな数・BMP 外の文字                              | kanji_to_number 2、levenshtein 1、normalize_law_num 1・5                                                                                                                                        |
-| #25 | 告示の category                                             | public_constants 5                                                                                                                                                                              |
+| Issue | 判断                                                        | 移した未決                                                                                                                                                                                      |
+| ----- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #13   | エントリと公開定数の凍結                                    | abbreviation_entries 1、judge_staleness 4、list_by_category 1、list_by_domain 2、list_by_source_mcp_hint 1、lookup_by_law_id 3、lookup_by_law_num 5、public_constants 1、resolve_abbreviation 2 |
+| #14   | エントリをまたぐ名前の重複と、validateAllEntries が見逃す値 | abbreviation_entries 2、get_all_names 4、resolve_abbreviation 5、validate_all_entries 2・3                                                                                                      |
+| #15   | aliases に自分の abbr・formal と同じ値                      | abbreviation_entries 8、extract_law_names 1、validate_all_entries 4                                                                                                                             |
+| #16   | 件数と 0 件のキー                                           | abbreviation_entries 7、get_abbreviation_stats 1・2                                                                                                                                             |
+| #17   | 文書と実際の結果の食い違い                                  | abbreviation_entries 9、find_similar 1、list_by_domain 1、public_constants 3、resolve_abbreviation 1、suggest_correction 1、validate_all_entries 7                                              |
+| #18   | 壊れた取得時刻と鮮度判定                                    | compute_days_since 1〜5、judge_staleness 1・2                                                                                                                                                   |
+| #19   | extractLawNames のまたがる一致と全角                        | extract_law_names 2・3                                                                                                                                                                          |
+| #20   | 短い query と、一致した名前を候補に返すこと                 | find_similar 2、suggest_correction 2                                                                                                                                                            |
+| #21   | 関数ごとの全角・ダッシュ類・大文字の扱い                    | get_all_names 3、lookup_by_law_id 1、normalize_jp_text 3、normalize_search_query 1                                                                                                              |
+| #22   | limit の NaN と上限                                         | search_by_name 5、find_similar 8、suggest_correction 5（新しい項目）                                                                                                                            |
+| #23   | isValidLawId の厳しさ                                       | is_valid_law_id 1・2                                                                                                                                                                            |
+| #24   | 漢数字・大きな数・BMP 外の文字                              | kanji_to_number 2、levenshtein 1、normalize_law_num 1・5                                                                                                                                        |
+| #25   | 告示の category                                             | public_constants 5                                                                                                                                                                              |
 
 件数: 移す前の未決 116 件に、分けた 3 件を足して 119 件。Issue に移すのは 52 件（既存 49 件と新しい 3 件）で、残るのは 67 件（テストを足す 63 件、テストを直す 4 件）。
 

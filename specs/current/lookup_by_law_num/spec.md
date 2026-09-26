@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #10）
+- 承認日: 2026-09-27 （PR #26）
 - 起こした元: v0.6.0 の `src/lookup.ts`（`lookupByLawNum`）、`src/index.ts`（`lookupByLawNum`）、`src/lookup.test.ts`、`src/normalize.test.ts`
 - 関連する Issue: houki-abbreviations #6（法令番号の漢数字・算用数字の正規化）
 
