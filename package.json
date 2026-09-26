@@ -53,6 +53,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@shuji-bonji/spec-ids": "^0.2.0",
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^2.1.9",
     "eslint": "^9.0.0",

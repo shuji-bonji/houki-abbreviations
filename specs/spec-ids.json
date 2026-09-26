@@ -1,0 +1,5 @@
+{
+  "domain": "ABBR",
+  "dirPrefix": "",
+  "tests": ["src/**/*.test.ts"]
+}

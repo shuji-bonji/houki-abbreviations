@@ -1,0 +1,21 @@
+# 仕様 ID とテストの突き合わせ（spec-ids check）。
+# 仕様の見出しの重複 / 仕様にあってテストに無い ID / テストにあって仕様に無い ID /
+# 見出しの機能とディレクトリ名の不一致、のどれかがあれば PR を止める。
+name: spec-gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  spec-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npx spec-ids check
