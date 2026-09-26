@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は YYYY-MM-DD（PR #N）
 - 起こした元: v0.6.0 の `src/index.ts`（`getAbbreviationStats`、`AbbreviationStats`）、`src/index.test.ts`
 - 関連する Issue: なし
 
@@ -80,6 +80,12 @@ flowchart TD
 
 `byDomain` には `DOMAINS` の 6 つの値（`tax` / `labor` / `accounting` / `commercial` / `civil` / `administrative`）すべてがキーとしてあり、どの値も 1 以上。
 
+### SPEC-ABBR-GET-ABBREVIATION-STATS-004 呼ぶたびに新しいオブジェクトを返す
+
+呼ぶたびに新しいオブジェクトを返す。`byDomain`・`byCategory`・`bySourceMcpHint` も呼ぶたびに新しいオブジェクトになる。返したオブジェクトやその中の値を書き換えても、次の呼び出しの結果は変わらない。
+
+例: `const s = getAbbreviationStats(); s.total = 0; s.byDomain.tax = 0; s.byCategory.law = 0` の後も、`getAbbreviationStats()` は `total: 174`、`byDomain.tax: 35`、`byCategory.law: 138` を返す。2 回呼んだ結果は別のオブジェクト（`!==`）で、`byDomain` なども別のオブジェクト。
+
 ## できないこと
 
 - 分野などで絞り込んだ件数を返すこと（引数は無い。絞り込んだ一覧は `listByDomain` / `listByCategory` / `listBySourceMcpHint`）
@@ -95,5 +101,5 @@ flowchart TD
 
 1. **件数が 0 の種別と MCP はキーが無い。** → houki-abbreviations #16
 2. **`AbbreviationStats` のキーの型が `string`。** → houki-abbreviations #16
-3. **返すオブジェクトは呼ぶたびに新しい。** 返したオブジェクトの `total` を書き換えても、次の呼び出しは 174 を返す。テストが無い。ID を振るのは受入テストを書いてから。
-4. **キーの並び。** `byCategory` などのキーは、その値が辞書に最初に出てくる順に並ぶ（`byCategory` は `law` / `cabinet-order` / `ministerial-ordinance` / `kihon-tsutatsu` / `kobetsu-tsutatsu` / `rule` / `constitution`）。並びを約束するのか決まっていない。テストが無い。ID を振るのは受入テストを書いてから。
+3. **返すオブジェクトは呼ぶたびに新しい。** → SPEC-ABBR-GET-ABBREVIATION-STATS-004
+4. **キーの並び。** → houki-abbreviations #16

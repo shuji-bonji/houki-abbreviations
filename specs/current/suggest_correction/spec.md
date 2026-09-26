@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は YYYY-MM-DD（PR #N）
 - 起こした元: v0.6.0 の `src/search.ts`（`suggestCorrection`）、`src/index.ts`（`suggestCorrection`）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加）
 
@@ -50,6 +50,24 @@ flowchart TD
 
 例: `suggestCorrection('法', 3)` は `['所得税法', '法人税法', '法人税法施行令']`。
 
+### SPEC-ABBR-SUGGEST-CORRECTION-003 limit を省くと 5 件で打ち切る
+
+`limit` を省くと、候補が 5 件を超えるときに 5 件で打ち切る。
+
+例: `suggestCorrection('法')` は `['所得税法', '法人税法', '法人税法施行令', '法人税法施行規則', '消費税法']` の 5 件（`suggestCorrection('法', 100)` は 100 件）。
+
+### SPEC-ABBR-SUGGEST-CORRECTION-004 1 未満の limit は 1 として扱う
+
+`limit` が 1 未満のとき（0・負の値）は 1 として扱い、候補があれば 1 件を返す。
+
+例: `suggestCorrection('法', 0)` と `suggestCorrection('法', -1)` はどちらも `['所得税法']`。
+
+### SPEC-ABBR-SUGGEST-CORRECTION-005 空の query には空配列を返す
+
+`query` が空文字か、前後の空白を除くと空になるときは、空配列を返す。エラーにはしない。
+
+例: `suggestCorrection('')` と `suggestCorrection('   ')` はどちらも `[]`。
+
 ## できないこと
 
 - 編集距離の上限（`maxDistance`）や `filter` を指定すること（指定したいときは `findSimilar` を使う）
@@ -64,6 +82,6 @@ flowchart TD
 
 1. **ドキュメントの例と実際の結果が違う。** → houki-abbreviations #17
 2. **一致した名前も「もしかして」に入る。** → houki-abbreviations #20
-3. **`limit` の既定値と 1 未満の値。** 既定の 5 件を確かめるテストが無い。`limit: 0` は 1 件（`['所得税法']`）を返す。`NaN` の扱いは未決 5。テストが無い。ID を振るのは受入テストを書いてから。
-4. **空の `query`。** `suggestCorrection('')` は `[]` を返す。テストが無い。ID を振るのは受入テストを書いてから。
+3. **`limit` の既定値と 1 未満の値。** → SPEC-ABBR-SUGGEST-CORRECTION-003、SPEC-ABBR-SUGGEST-CORRECTION-004
+4. **空の `query`。** → SPEC-ABBR-SUGGEST-CORRECTION-005
 5. **`limit` に `NaN` を渡したときの扱いと上限。** → houki-abbreviations #22

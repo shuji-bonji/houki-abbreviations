@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は YYYY-MM-DD（PR #N）
 - 起こした元: v0.6.0 の `src/lookup.ts`（`lookupByLawNum`）、`src/index.ts`（`lookupByLawNum`）、`src/lookup.test.ts`、`src/normalize.test.ts`
 - 関連する Issue: houki-abbreviations #6（法令番号の漢数字・算用数字の正規化）
 
@@ -79,6 +79,24 @@ flowchart TD
 
 例: `lookupByLawNum('')` は `null`。
 
+### SPEC-ABBR-LOOKUP-BY-LAW-NUM-007 空白だけの law_num には null を返す
+
+`law_num` が空白（半角スペース・タブなど）だけのときは `null` を返す。
+
+例: `lookupByLawNum('   ')` も `lookupByLawNum('\t')` も `null`。
+
+### SPEC-ABBR-LOOKUP-BY-LAW-NUM-008 数字の先頭の 0 を無視する
+
+年や番号の算用数字の先頭に 0 が付いていても、付いていないものと同じ法令番号として照合する。
+
+例: `lookupByLawNum('昭和063年法律第0108号')?.formal` は `'消費税法'`、`lookupByLawNum('昭和63年法律第00108号')?.formal` は `'消費税法'`。
+
+### SPEC-ABBR-LOOKUP-BY-LAW-NUM-009 元年と 1 年を同じ年として照合する
+
+`law_num` の `元年` と `1年`（`一年`）は同じ年として照合する。入力が `元年` でも辞書の `law_num` が `元年` でもよい。v0.6.0 の辞書には `元年` の `law_num` を持つエントリが無いので、辞書を差し替えて確かめる。
+
+例: `law_num` が `令和元年法律第一号` のエントリ 1 件だけの辞書で、`令和1年法律第1号`・`令和元年法律第一号`・`令和元年法律第01号` はどれもそのエントリを返す（`src/lookup.ts` の `lookupByLawNum(entries, law_num)` で確かめた）。
+
 ## できないこと
 
 - 元号の別表記（`S63` / `昭63`）を吸収すること（`lookupByLawNum('S63年法律第108号')` は `null`）
@@ -96,8 +114,8 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。テストの名前と中身が合っていない項目は、テストを直します（ID を振っていないものは、直してから振ります）。
 
-1. **テスト「Issue #6 の完了条件」が `null` 同士で通っている。** `src/normalize.test.ts` のこのテストは 2 つの呼び出しの結果が等しいことだけを確かめ、v0.6.0 の辞書に無い `昭和二十五年法律第百三十七号` を使っているので、正規化が働かなくても通る。辞書にある法令番号（`昭和六十三年法律第百八号` と `昭和63年法律第108号`）に直し、`null` でないことも確かめてから SPEC-ABBR-LOOKUP-BY-LAW-NUM-002 を付ける。
-2. **テスト「law_num 未設定エントリは引けない」の中身が名前と合っていない。** 中身は `lookupByLawNum(fixtures, '')` が `null` になることだけを確かめ、`law_num` を持たないエントリ（fixtures の `労基法`）を引こうとしていない。テストの中身を名前に合わせて直す（付けてある SPEC-ABBR-LOOKUP-BY-LAW-NUM-006 はそのまま）。
-3. **空白だけの `law_num`。** `lookupByLawNum('   ')` は `null` を返す。テストが無い。ID を振るのは受入テストを書いてから。
-4. **`元年` と数字の先頭の 0。** `令和元年` は `令和1年` と同じに扱い、`第0108号` は `第108号` と同じに扱う（`lookupByLawNum('昭和063年法律第0108号')?.formal` は `'消費税法'`）。v0.6.0 の辞書に `元年` の法令番号は無い。この関数の応答としてのテストが無い（揃え方そのもののテストは `normalizeLawNum` 側にある）。ID を振るのは受入テストを書いてから。
+1. **テスト「Issue #6 の完了条件」が `null` 同士で通っている。** → SPEC-ABBR-LOOKUP-BY-LAW-NUM-002（テストを直した。v0.6.1）
+2. **テスト「law_num 未設定エントリは引けない」の中身が名前と合っていない。** （テストを直した。v0.6.1）
+3. **空白だけの `law_num`。** → SPEC-ABBR-LOOKUP-BY-LAW-NUM-007
+4. **`元年` と数字の先頭の 0。** → SPEC-ABBR-LOOKUP-BY-LAW-NUM-008、SPEC-ABBR-LOOKUP-BY-LAW-NUM-009
 5. **返すエントリは辞書のオブジェクトそのもの。** → houki-abbreviations #13

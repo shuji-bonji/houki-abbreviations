@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は YYYY-MM-DD（PR #N）
 - 起こした元: v0.6.0 の `src/validate.ts`（`validateAllEntries`、型 `ValidationIssue` / `ValidationReport`）、`src/index.ts`（`validateAllEntries`）、`src/validate.test.ts`
 - 関連する Issue: なし
 
@@ -137,6 +137,36 @@ flowchart TD
 
 v0.6.0 の同梱辞書 174 件を検査すると `valid: true` を返す（`errors` は 0 件。v0.6.0 では `warnings` も 0 件だが、テストが確かめるのは `valid` だけ）。辞書を変えたときにこれが崩れないことを、辞書の回帰の確認に使う。
 
+### SPEC-ABBR-VALIDATE-ALL-ENTRIES-010 1 件のエントリの中で重なる別名は警告にする
+
+1 件のエントリの `aliases` に同じ値が 2 回あれば、`code: "duplicate_alias_within_entry"` の警告を返す。エラーにはしないので、これだけなら `valid` は `true` のまま。
+
+例: `{ abbr: "A1", formal: "F1", law_id: null, domain: "tax", category: "law", source_mcp_hint: "houki-egov", aliases: ["Q", "Q"] }` 1 件なら、`valid: true`、`errors: []` で、`warnings` は `duplicate_alias_within_entry` の 1 件（`message` は `同一エントリ内で aliases が重複: 'Q'（abbr=A1）`）。
+
+### SPEC-ABBR-VALIDATE-ALL-ENTRIES-011 law_id が空文字なら形の誤りにする
+
+`law_id: ""` は `null` と同じには扱わず、`code: "invalid_law_id"` のエラーを返す。
+
+例: 上の `A1` のエントリの `aliases` を除き、`law_id` を `""` にした 1 件なら、`valid: false` で、`errors` は `invalid_law_id` の 1 件。
+
+### SPEC-ABBR-VALIDATE-ALL-ENTRIES-012 形の誤った law_id でも重なれば重複のエラーにする
+
+形の誤った同じ `law_id` のエントリが 2 件あれば、`invalid_law_id` のエラーを 2 件（エントリごとに 1 件）と、`duplicate_law_id` のエラーを 1 件返す。
+
+例: `law_id: ""` のエントリが `A1` と `A2` の 2 件なら、`errors` は `invalid_law_id`（`A1`）、`invalid_law_id`（`A2`）、`duplicate_law_id`（`A2`）の 3 件。
+
+### SPEC-ABBR-VALIDATE-ALL-ENTRIES-013 エラーと警告には問題のあったエントリが付く
+
+`errors` と `warnings` のどの `ValidationIssue` にも `entry` が付き、問題のあったエントリそのもの（渡した配列の要素）を指す。`duplicate_abbr` と `duplicate_law_id` では、重なったうちの 2 件目以降のエントリを指す。
+
+例: `formal: ""` の `A1` のエントリ 1 件なら、`missing_required_field` のエラーの `entry` は渡したそのエントリ。同じ内容の `A1` のエントリを 2 件渡せば、`duplicate_abbr` のエラーの `entry` は 2 件目のエントリ。
+
+### SPEC-ABBR-VALIDATE-ALL-ENTRIES-014 エラーと警告の message に該当エントリの abbr が入る
+
+`ValidationIssue` の `message` は、該当エントリの `abbr` が空でなければ、その `abbr` を含む。文言そのものは約束にしない。
+
+例: `law_id: "INVALID"` の `A1` のエントリなら、`invalid_law_id` のエラーの `message` に `A1` が入る。`A1` のエントリと、`aliases: ["A1"]` を持つ `B1` のエントリの 2 件なら、`alias_collides_with_abbr` の警告の `message` に `B1` が入る。
+
 ## できないこと
 
 - 利用者が用意したエントリの配列を渡して検査すること（公開する `validateAllEntries` は引数を取らず、同梱の辞書だけを検査する）
@@ -151,10 +181,10 @@ v0.6.0 の同梱辞書 174 件を検査すると `valid: true` を返す（`erro
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **`duplicate_alias_within_entry` の警告。** 1 件のエントリの `aliases` に同じ値が 2 回あると、`duplicate_alias_within_entry` の警告を返す（例: `aliases: ["Q", "Q"]` → `同一エントリ内で aliases が重複: 'Q'（abbr=A1）`）。テストが無い。ID を振るのは受入テストを書いてから。
+1. **`duplicate_alias_within_entry` の警告。** → SPEC-ABBR-VALIDATE-ALL-ENTRIES-010
 2. **一覧に無い `category` を見逃す。** → houki-abbreviations #14
 3. **`formal` や別名どうしの重複を見逃す。** → houki-abbreviations #14
 4. **自分の `abbr` や `formal` と同じ別名を見逃す。** → houki-abbreviations #15
-5. **`law_id` が空文字のとき。** `law_id: ""` は `null` とは扱わず、`invalid_law_id` のエラーを返す。同じ誤った `law_id` のエントリが 2 件あると、`invalid_law_id` 2 件と `duplicate_law_id` 1 件を返す。テストが無い。ID を振るのは受入テストを書いてから。
-6. **`message` の文言と `entry` の有無。** テストは `code` だけを確かめていて、`message` の文言と、`entry` が付くことは確かめていない。ID を振るのは受入テストを書いてから。
+5. **`law_id` が空文字のとき。** → SPEC-ABBR-VALIDATE-ALL-ENTRIES-011、SPEC-ABBR-VALIDATE-ALL-ENTRIES-012
+6. **`message` の文言と `entry` の有無。** → SPEC-ABBR-VALIDATE-ALL-ENTRIES-013、SPEC-ABBR-VALIDATE-ALL-ENTRIES-014
 7. **`npm run validate` を CI で呼んでいない。** → houki-abbreviations #17

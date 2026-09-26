@@ -2,8 +2,13 @@
 
 - 対象: `specs/current/` の下の 20 本の `spec.md`（「できること」への追加）
 - 実装の変更: 不要（テストを足すだけ。`src/` は JSDoc の 1 か所だけ直す）
+<<<<<<< HEAD:specs/changes/20260927-untested-behaviors/proposal.md
 - 承認日: 2026-09-27（PR #27）
 - 状態: 承認待ち。実装 PR で受入テストを書き、その最終コミットで `specs/current/` に取り込む
+=======
+- 承認日:
+- 状態: 取り込み済み。実装は v0.6.1、`specs/current/` への取り込みは 2026-09-27（JST、実装 PR の最終コミット）
+>>>>>>> 010c266 (spec: 20260927-untested-behaviors を specs/current/ に取り込み、releases/v0.6.1/ へ移す):specs/releases/v0.6.1/20260927-untested-behaviors/proposal.md
 - 起こした日: 2026-09-27（JST）
 - 起こした役: Spec Steward
 - 関連: PR #10（初版起こし）、PR #26（未決のうち判断が要るものを Issue #13〜#25 に移した仕様 PR）

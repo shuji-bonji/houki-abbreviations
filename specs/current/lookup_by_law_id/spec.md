@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は YYYY-MM-DD（PR #N）
 - 起こした元: v0.6.0 の `src/lookup.ts`（`lookupByLawId`）、`src/index.ts`（`lookupByLawId`）、`src/lookup.test.ts`
 - 関連する Issue: なし
 
@@ -84,5 +84,5 @@ flowchart TD
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。テストの名前と中身が合っていない項目は、テストを直します（ID を振っていないものは、直してから振ります）。
 
 1. **大文字・小文字と全角・半角を区別する。** → houki-abbreviations #21
-2. **テスト「law_id=null のエントリはヒットしない」の中身が名前と合っていない。** 中身は `lookupByLawId(fixtures, '')` が `null` になることだけを確かめ、`law_id` が `null` のエントリ（fixtures の `労基法`）を引こうとしていない。文字列の引数が `null` のエントリに一致することは起きないので、振る舞いは SPEC-ABBR-LOOKUP-BY-LAW-ID-003・004 のとおり。テストの中身を名前に合わせて直す（付けてある SPEC-ABBR-LOOKUP-BY-LAW-ID-004 はそのまま）。
+2. **テスト「law_id=null のエントリはヒットしない」の中身が名前と合っていない。** （テストを直した。v0.6.1）
 3. **返すエントリは辞書のオブジェクトそのもの。** → houki-abbreviations #13
