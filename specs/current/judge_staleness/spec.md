@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/freshness.ts`（`judgeStaleness`、`StalenessLevel`）、`src/freshness.test.ts`
 - 関連する Issue: houki-abbreviations #3（JSDoc の強化）。共通化の発端は houki-nta-mcp #15
 
@@ -63,6 +63,12 @@ flowchart TD
 
 例: `30` → `"outdated"`、`100` → `"outdated"`。`computeDaysSince` で 2 か月前（`2026-03-08T00:00:00Z` から `2026-05-08T00:00:00Z`）の値（61）→ `"outdated"`。
 
+### SPEC-ABBR-JUDGE-STALENESS-004 小数の日数も境界の値と「未満」で比べて判定する
+
+`daysSince` が小数でも、整数のときと同じく `fresh_days`（7）・`stale_days`（30）と「未満」で比べて段階を返す。丸めはしない。
+
+例: `6.99` → `"fresh"`、`29.5` → `"stale"`、`29.999` → `"stale"`、`30.0` → `"outdated"`。
+
 ## できないこと
 
 - 取得時刻から経過日数を数えること（`computeDaysSince`）
@@ -78,5 +84,5 @@ flowchart TD
 
 1. **負の値は `fresh` になる。** → houki-abbreviations #18
 2. **`NaN` は `outdated` になる。** → houki-abbreviations #18
-3. **小数の日数。** `6.99` → `"fresh"`、`29.5` → `"stale"`。整数を想定しているが、小数でも「未満」の比較どおりに判定する。今の振る舞いのままでよい。テストが無い。ID を振るのは受入テストを書いてから。
+3. **小数の日数。** → SPEC-ABBR-JUDGE-STALENESS-004
 4. **`STALENESS_THRESHOLDS` を実行時に書き換えると判定が変わる。** → houki-abbreviations #13

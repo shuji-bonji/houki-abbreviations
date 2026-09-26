@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/normalize.ts`（`normalizeSearchQuery`）、`src/normalize.test.ts`
 - 関連する Issue: なし（v0.3.0 で houki-nta-mcp の正規化の一部を移したもの。CHANGELOG の 0.3.0）
 
@@ -79,6 +79,12 @@ flowchart TD
 
 `input` が空文字のときは `''` を返す。
 
+### SPEC-ABBR-NORMALIZE-SEARCH-QUERY-007 null と undefined には空文字を返す
+
+`input` が `null` または `undefined` のときは `''` を返す。
+
+例: `normalizeSearchQuery(null)` も `normalizeSearchQuery(undefined)` も `''`。
+
 ## できないこと
 
 - 大文字小文字を区別したまま揃えること（`normalizeJpText`）
@@ -93,4 +99,4 @@ flowchart TD
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
 1. **英字以外の大文字も小文字になる。** → houki-abbreviations #21
-2. **`null` / `undefined` を渡したとき。** `normalizeSearchQuery(null)` は `''` を返す。テストが無い。ID を振るのは受入テストを書いてから。
+2. **`null` / `undefined` を渡したとき。** → SPEC-ABBR-NORMALIZE-SEARCH-QUERY-007

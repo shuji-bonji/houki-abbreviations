@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/index.ts`（`resolveAbbreviation`、`ResolveAbbreviationOptions`）、`src/index.test.ts`、`src/normalize.test.ts`
 - 関連する Issue: なし
 
@@ -118,6 +118,30 @@ flowchart TD
 
 例: `resolveAbbreviation('PL法', { normalize: true })` は `resolveAbbreviation('PL法')` と同じオブジェクトを返す。`resolveAbbreviation('消法', { normalize: true })` は `formal: "消費税法"`、`resolveAbbreviation('個人情報保護法', { normalize: true })` は `abbr: "個情法"` のエントリを返す。
 
+### SPEC-ABBR-RESOLVE-ABBREVIATION-010 既定の照合でも前後の全角空白・タブ・改行を除く
+
+`options` を渡さないとき（`options.normalize` が `false`）も、`name` の前後にある全角空白（`　`）・タブ・改行を半角空白と同じく除いてから照合する。
+
+例: `resolveAbbreviation('　消法　')`（前後が全角空白）、`resolveAbbreviation('\t消法\n')`、`resolveAbbreviation('\r\n消法　\t')` はどれも `formal: "消費税法"` のエントリを返す。
+
+### SPEC-ABBR-RESOLVE-ABBREVIATION-011 normalize: false・空のオブジェクト・null の options は options を省いたときと同じ
+
+`options` に `{ normalize: false }`、`{}`、`null`、`undefined` のどれを渡しても、`options` を省いたときと同じ結果を返す。見つかるときは同じエントリ（同じオブジェクト）を返し、全角と半角の違いは吸収しない。
+
+例: `resolveAbbreviation('消法', { normalize: false })`、`resolveAbbreviation('消法', {})`、`resolveAbbreviation('消法', null)` はどれも `resolveAbbreviation('消法')` と同じオブジェクト（`formal: "消費税法"`）を返す。`resolveAbbreviation('ＰＬ法', { normalize: false })`、`resolveAbbreviation('ＰＬ法', {})`、`resolveAbbreviation('ＰＬ法', null)` はどれも `null`。
+
+### SPEC-ABBR-RESOLVE-ABBREVIATION-012 normalize: true でも別名からエントリを返す
+
+`options.normalize` が `true` のときも、`name` が辞書のエントリの別名（`aliases` の要素）と一致すればそのエントリを返す。全角英字を含む `name` は、半角にしたものが別名と一致すればそのエントリを返す。
+
+例: `resolveAbbreviation('消費税', { normalize: true })` は `resolveAbbreviation('消費税')` と同じオブジェクト（`abbr: "消法"`）を返す。`resolveAbbreviation('インボイス', { normalize: true })` も `abbr: "消法"` のエントリを返す。`resolveAbbreviation('ＡＭＬ', { normalize: true })` は別名 `AML` を持つ `abbr: "犯収法"` のエントリ、`resolveAbbreviation('ＪＰＫＩ法', { normalize: true })` は別名 `JPKI法` を持つ `abbr: "公的個人認証法"` のエントリを返す。
+
+### SPEC-ABBR-RESOLVE-ABBREVIATION-013 name が null・undefined のときは null を返す
+
+JavaScript から `name` に `null` または `undefined` を渡したときは、例外を投げずに `null` を返す。`options.normalize` が `true` でも同じ。
+
+例: `resolveAbbreviation(null)`、`resolveAbbreviation(undefined)`、`resolveAbbreviation(null, { normalize: true })`、`resolveAbbreviation(undefined, { normalize: true })` はどれも `null`。
+
 ## できないこと
 
 - 部分一致で探すこと（`searchByName`）
@@ -140,8 +164,8 @@ flowchart TD
 1. **README と JSDoc の `消　法` の例が実際の結果と違う。** → houki-abbreviations #17
 2. **返すエントリは凍結されておらず、書き換えると辞書に残る。** → houki-abbreviations #13
 3. **全角数字・全角ハイフン・全角チルダの吸収。** `normalize: true` はこれらも半角にするが、v0.6.0 の辞書（174 件）の略称・正式名称・別名には数字・ハイフン・チルダを含む名前が無い（英字を含むのは `IT書面一括法` / `AML` / `PL法` / `JPKI法` の 4 つだけ）ため、辞書を引いて確かめられない。テスト `{ normalize: true } absorbs full-width digits` は `消法` を引いているだけで、全角数字を渡していない。テストが無い。ID を振るのは受入テストを書いてから。
-4. **既定の照合で前後の全角空白・タブ・改行も除く。** `options` を渡さなくても、`resolveAbbreviation('　消法　')`（前後が全角空白）と `resolveAbbreviation('\t消法\n')` は `消費税法` のエントリを返す。JSDoc は「前後の空白はトリム」とだけ書いている。テストがあるのは前後の半角空白だけ。ID を振るのは受入テストを書いてから。
+4. **既定の照合で前後の全角空白・タブ・改行も除く。** → SPEC-ABBR-RESOLVE-ABBREVIATION-010
 5. **半角にした名前が複数のエントリで重なるときは先に登録されたエントリを返す。** → houki-abbreviations #14
-6. **`options.normalize` に `false` を明示したとき、`{}` や `null` を渡したとき。** どれも `options` を省いたときと同じ結果になる（`resolveAbbreviation('消法', { normalize: false })` / `resolveAbbreviation('消法', {})` / `resolveAbbreviation('消法', null)` はどれも `消費税法` のエントリ）。テスト `default ({ normalize: false }) does not absorb full-width variations` は名前に反して `options` を渡していない。テストが無い。ID を振るのは受入テストを書いてから。
-7. **`normalize: true` で別名から引くこと。** テスト `{ normalize: true } still works on aliases` が渡している `個人情報保護法` は、`個情法` のエントリの正式名称で、別名ではない。`normalize: true` で別名（例: `消費税`）から引くテストが無い。ID を振るのは受入テストを書いてから。
-8. **文字列でない `name`。** 型は `string` だけを受け付けるが、JavaScript から呼ぶと `null` と `undefined` は `null` を返し、`123` は `TypeError: name.trim is not a function` を投げる。テストが無い。ID を振るのは受入テストを書いてから。
+6. **`options.normalize` に `false` を明示したとき、`{}` や `null` を渡したとき。** → SPEC-ABBR-RESOLVE-ABBREVIATION-011
+7. **`normalize: true` で別名から引くこと。** → SPEC-ABBR-RESOLVE-ABBREVIATION-012
+8. **文字列でない `name`。** → SPEC-ABBR-RESOLVE-ABBREVIATION-013

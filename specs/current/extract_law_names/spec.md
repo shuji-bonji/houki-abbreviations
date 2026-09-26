@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/validate.ts`（`extractLawNames`、型 `ExtractOptions` / `LawNameMatch`）、`src/index.ts`（`extractLawNames`）、`src/validate.test.ts`
 - 関連する Issue: なし
 
@@ -115,6 +115,38 @@ flowchart TD
 
 例: `こんにちは世界` → `[]`。
 
+### SPEC-ABBR-EXTRACT-LAW-NAMES-010 preferLonger を指定しなければ true として扱う
+
+`options` に `preferLonger` を入れなければ、`preferLonger: true` と同じく、ほかの、より長い一致の範囲にすっぽり入る短い一致を返さない。
+
+例: `民法の解釈`、`{ minLength: 1 }`（`preferLonger` なし）→ `民`（位置 0、長さ 1）の一致は無く、`民法`（位置 0、長さ 2）の一致はある。同じ入力に `preferLonger: false` を足すと `民` の一致も返る。
+
+### SPEC-ABBR-EXTRACT-LAW-NAMES-011 minLength が 1 未満なら 1 として扱う
+
+`minLength` に 0 や負の数を渡すと、`minLength: 1` と同じく 1 文字のキーも探す。
+
+例: `民の規定`、`{ minLength: 0 }` → `matchedKey: "民"`、`position: 0` の一致がある。`{ minLength: -5 }` でも同じ。`minLength` を指定しなければ、同じ `民の規定` は `[]`。
+
+### SPEC-ABBR-EXTRACT-LAW-NAMES-012 同じ位置・同じ長さで別のエントリに一致したら両方を返す
+
+2 件の別のエントリが同じキーを持ち、そのキーが `text` に出てくれば、同じ `position`・同じ `length` の一致を、エントリごとに 1 件ずつ返す。どちらもほかの一致より短くはないので、`preferLonger: true` でも除かない。`abbr` が違うので、`dedupe: true` でも 1 件にしない。
+
+v0.6.0 の同梱辞書には、別のエントリどうしで同じキーが無い。この振る舞いは `src/validate.ts` の `extractLawNames(entries, text, options)` にエントリの配列を渡して確かめる。
+
+例: エントリ `{ abbr: "甲", formal: "甲法" }` と `{ abbr: "乙", formal: "乙法", aliases: ["甲法"] }` の 2 件、`甲法の規定` → 2 件。どちらも `matchedKey: "甲法"`、`position: 0`、`length: 2` で、1 件目の `entry.abbr` は `甲`、2 件目は `乙`。`{ dedupe: true }` を渡しても同じ 2 件。
+
+### SPEC-ABBR-EXTRACT-LAW-NAMES-013 dedupe: true では並べた順で最初の一致を残す
+
+`dedupe: true` のとき、同じエントリへの一致のうち、戻り値の並び（`position` の小さい順、同じ `position` なら `length` の大きい順）で最初の 1 件を残す。長いキーの一致が後ろにあっても、前の短いキーの一致を残す。
+
+例: `消法と消費税法`、`{ dedupe: true }` → 1 件。`matchedKey: "消法"`、`position: 0`（エントリは `消法`）。`消費税法`（位置 3）の一致は返さない。
+
+### SPEC-ABBR-EXTRACT-LAW-NAMES-014 text が null か undefined なら空の配列を返す
+
+`text` に `null` か `undefined` を渡すと、辞書を探さずに `[]` を返す。
+
+例: `extractLawNames(null)` と `extractLawNames(undefined)` は、どちらも `[]`。
+
 ## できないこと
 
 - 文脈を見て法令名かどうかを判断すること（`民法人の認可` の中の `民法` も一致として返す）
@@ -134,8 +166,8 @@ flowchart TD
 1. **同じ一致を 2 件返す。** → houki-abbreviations #15
 2. **2 つの法令名にまたがる短い一致を返す。** → houki-abbreviations #19
 3. **全角・半角の表記ゆれを吸収しない。** → houki-abbreviations #19
-4. **`preferLonger` の既定値が `true` であること。** テストは `preferLonger: true` を明示して確かめていて、省略したときに `true` として動くことは確かめていない。ID を振るのは受入テストを書いてから。
-5. **`minLength` に 1 未満を渡したとき。** `minLength: 0` や `minLength: -5` は 1 として扱う（`民の規定` → `民` の一致を返す）。テストが無い。ID を振るのは受入テストを書いてから。
-6. **同じ位置・同じ長さで別のエントリに一致したとき。** 両方を返す（片方がもう片方の範囲に「より長く」入るわけではないため `preferLonger` でも除かない）。v0.6.0 の同梱辞書には、別のエントリどうしで同じキーは無い。テストが無い。ID を振るのは受入テストを書いてから。
-7. **`dedupe: true` で残す 1 件。** 並べた順（位置の小さい順、同じ位置なら長い順）で最初の 1 件を残す。例: `消法と消費税法`、`{ dedupe: true }` → `matchedKey: "消法"`、`position: 0` の 1 件。どれを残すかのテストが無い（件数だけを確かめている）。ID を振るのは受入テストを書いてから。
-8. **`text` が文字列でないとき。** `null` と `undefined` は `[]` を返す（例外を投げない）。テストが無い。ID を振るのは受入テストを書いてから。
+4. **`preferLonger` の既定値が `true` であること。** → SPEC-ABBR-EXTRACT-LAW-NAMES-010
+5. **`minLength` に 1 未満を渡したとき。** → SPEC-ABBR-EXTRACT-LAW-NAMES-011
+6. **同じ位置・同じ長さで別のエントリに一致したとき。** → SPEC-ABBR-EXTRACT-LAW-NAMES-012
+7. **`dedupe: true` で残す 1 件。** → SPEC-ABBR-EXTRACT-LAW-NAMES-013
+8. **`text` が文字列でないとき。** → SPEC-ABBR-EXTRACT-LAW-NAMES-014

@@ -73,7 +73,7 @@ PR #10 の初版起こしで、「未決」のうち 63 件は「今の振る舞
 
 - ADDED の見出しを、各 `specs/current/<dir>/spec.md` の「できること」の末尾に足す
 - 「未決」の該当項目は消さずに、題と仕様 ID だけの 1 行（例: `3. **返す順序。** → SPEC-ABBR-LIST-BY-DOMAIN-003`）にする。項目の番号は変えない
-- `specs/current/<dir>/spec.md` の承認日の行に「差分 `20260927-untested-behaviors` は YYYY-MM-DD（PR #N）」を足す
+- `specs/current/<dir>/spec.md` の承認日の行に「差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）」を足す
 
 ## 人が判断すること
 

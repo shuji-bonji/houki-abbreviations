@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/index.ts`（`listByDomain`）、`src/index.test.ts`
 - 関連する Issue: なし
 
@@ -55,6 +55,24 @@ flowchart TD
 
 `DOMAINS` の 6 つの値のどれを渡しても、1 件以上のエントリを返す。v0.6.0 の件数は「戻り値」の表のとおり。
 
+### SPEC-ABBR-LIST-BY-DOMAIN-003 辞書の並びのまま返す
+
+返す配列の要素は、辞書（`abbreviationEntries`）での並びのまま並ぶ。`abbreviationEntries.filter((e) => e.domain === domain)` と同じエントリを同じ順で返す。
+
+例: `listByDomain('tax')` の先頭の 3 件は `所法` / `所令` / `所規`、`listByDomain('labor')` の先頭の 3 件は `労基法` / `労基則` / `労契法` で、どれも `abbreviationEntries` での順と同じ。
+
+### SPEC-ABBR-LIST-BY-DOMAIN-004 呼ぶたびに新しい配列を返す
+
+呼ぶたびに新しい配列を返す。返した配列に要素を足したり、配列から要素を除いたりしても、次の呼び出しの結果は変わらない。
+
+例: `const a = listByDomain('tax'); a.push({})` の後も、`listByDomain('tax')` は 35 件を返す。`a.splice(0)` の後も同じ。同じ引数で 2 回呼んだ結果は別の配列（`!==`）。
+
+### SPEC-ABBR-LIST-BY-DOMAIN-005 DOMAINS に無い値には空配列を返す
+
+JavaScript から `DOMAINS` に無い値を渡したときは、例外を投げずに空配列を返す。
+
+例: `listByDomain('xxx')` と `listByDomain('')` は `[]`。
+
 ## できないこと
 
 - 複数の分野をまとめて絞り込むこと（`searchByName` の `filter.domain` は配列を受け付ける）
@@ -70,6 +88,6 @@ flowchart TD
 
 1. **README の件数が実際と違う。** → houki-abbreviations #17
 2. **返すエントリは凍結されておらず、書き換えると辞書に残る。** → houki-abbreviations #13
-3. **返す順序。** 辞書の並び（`tax` の先頭は `所法` / `所令` / `所規`）のまま返す。順序を約束するのか決まっていない。テストが無い。ID を振るのは受入テストを書いてから。
-4. **返す配列は呼ぶたびに新しい。** `listByDomain('tax').push(…)` をしても、次の `listByDomain('tax')` は 35 件のまま。テストが無い。ID を振るのは受入テストを書いてから。
-5. **`DOMAINS` に無い値。** 型では受け付けないが、JavaScript から `listByDomain('xxx')` と呼ぶと例外を投げずに空配列を返す。テストが無い。ID を振るのは受入テストを書いてから。
+3. **返す順序。** → SPEC-ABBR-LIST-BY-DOMAIN-003
+4. **返す配列は呼ぶたびに新しい。** → SPEC-ABBR-LIST-BY-DOMAIN-004
+5. **`DOMAINS` に無い値。** → SPEC-ABBR-LIST-BY-DOMAIN-005
