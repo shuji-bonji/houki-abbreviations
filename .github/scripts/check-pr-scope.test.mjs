@@ -5,12 +5,13 @@ import { checkScope, kindOf, onlyIdsAdded, parseNameStatus } from './check-pr-sc
 const APPROVED_PROPOSAL = '# 差分\n\n- 承認日: 2026-09-25（PR #60）\n- 実装の変更: 要\n';
 const APPROVED_SPEC = '# 機能\n\n- 承認日: 2026-09-25（PR #60）\n';
 
-function run(kind, changes, files = {}, diffs = {}) {
+function run(kind, changes, files = {}, diffs = {}, released = new Set()) {
   return checkScope({
     kind,
     changes,
     read: (p) => files[p] ?? '',
     diffOf: (p) => diffs[p] ?? '',
+    released,
   });
 }
 
@@ -145,4 +146,11 @@ test('spec-ids init が作る specs/ の .gitkeep は、どの種類の PR で�
     assert.deepEqual(run(kind, keeps), []);
   }
   assert.equal(run('impl', [{ status: 'A', path: 'specs/changes/x/spec.md' }]).length, 1);
+});
+
+test('実装 PR: 取り込み済み（releases にある）差分の specs/changes/ に残ったファイルは消してよい', () => {
+  const d = { status: 'D', path: 'specs/changes/20260927-x/proposal.md' };
+  assert.deepEqual(run('impl', [d], {}, {}, new Set(['20260927-x'])), []);
+  // releases に無い差分を消すのは止める
+  assert.equal(run('impl', [d], {}, {}, new Set(['20260927-y'])).length, 1);
 });

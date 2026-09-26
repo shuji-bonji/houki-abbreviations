@@ -29,7 +29,7 @@
 | `spec-init/<dir>`                             | 初版起こし   | `specs/current/<dir>/spec.md`、テスト名に仕様 ID を足すこと                                                                                                 | テストの期待値と本文、実装                                                                                                    |
 | それ以外（`fix/` `feat/` `docs/` `ci/` など） | 実装 PR など | テスト、`src/`（辞書の JSON を含む）、版と CHANGELOG、`specs/current/` への取り込み（最終コミット）、`specs/changes/` から `specs/releases/<tag>/` への移動 | `specs/changes/` の書き換え（未承認の意図の追加、承認済み差分の変更）                                                         |
 
-- 承認日は、人がマージの前にそのブランチで書きます。仕様 PR は proposal.md に「- 承認日: 2026-09-27（PR #28）」、初版起こしと取り込みは `specs/current/<dir>/spec.md` に「- 承認日: YYYY-MM-DD」。日付は JST です。空欄なら `pr-scope` が止めます。
+- 承認日は、人がマージの前にそのブランチで書きます。仕様 PR は proposal.md に「- 承認日: YYYY-MM-DD（PR #N）」、初版起こしと取り込みは `specs/current/<dir>/spec.md` に「- 承認日: YYYY-MM-DD」。日付は JST です。空欄なら `pr-scope` が止めます。
 - 仕様 PR をマージした後、新しい ID が `specs/changes/` にだけある間は `spec-ids check` を通します（テストを求めるのは `specs/current/` の ID だけ）。
 - `REMOVED` の差分では、テストを消すのは `specs/current/` から見出しを外す取り込みと同じコミットにします。
 - 辞書のエントリを足すだけの変更（`src/data/*.json`）は実装 PR です。`abbreviation_entries/spec.md` の約束（`abbr` が重複しない、など）はテストが検査するので、仕様 PR は要りません。約束そのものを変えるときは仕様 PR にします。

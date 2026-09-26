@@ -16,7 +16,7 @@
  * 使い方（CI）: BASE_REF=origin/main HEAD_REF=<ブランチ名> node .github/scripts/check-pr-scope.mjs
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const ID_WITH_SPACE_RE = /SPEC-[A-Z]+-[A-Z0-9-]+-[0-9]{3}\s*/g;
@@ -27,6 +27,8 @@ const TEST_FILE_RE = /\.test\.[cm]?[jt]s$/;
 const CURRENT_SPEC_RE = /^specs\/current\/[^/]+\/spec\.md$/;
 const PROPOSAL_RE = /^specs\/changes\/[^/]+\/proposal\.md$/;
 /** `spec-ids init` が作る置き場の印。どの種類の PR で足しても消してもよい */
+/** `specs/changes/<id>/` の下のパス。<id> を取り出す */
+const CHANGE_PATH_RE = /^specs\/changes\/([^/]+)\//;
 const PLACEHOLDER_RE = /^specs\/(current|changes|releases)\/\.gitkeep$/;
 
 /** ブランチ名から PR の種類を決める */
@@ -65,10 +67,12 @@ export function onlyIdsAdded(unifiedDiff) {
 
 /**
  * 変更の一覧と、ファイルを読む関数から、違反の一覧を返す。
- * @param {{ kind: string, changes: Array<{status: string, path: string, from?: string}>, read: (p: string) => string, diffOf: (p: string) => string }} input
+ * `released` は `specs/releases/<tag>/` の下にある差分の <id> の集合。実装 PR では、取り込み済み（releases にある）差分の
+ * `specs/changes/<id>/` に残ったファイルを消すことを許す（マージで移動前のコピーが残ったときの片付け）。
+ * @param {{ kind: string, changes: Array<{status: string, path: string, from?: string}>, read: (p: string) => string, diffOf: (p: string) => string, released?: Set<string> }} input
  * @returns {string[]}
  */
-export function checkScope({ kind, changes, read, diffOf }) {
+export function checkScope({ kind, changes, read, diffOf, released = new Set() }) {
   const errors = [];
   const touched = (c) => [c.path, c.from].filter(Boolean);
   changes = changes.filter((c) => !PLACEHOLDER_RE.test(c.path));
@@ -96,7 +100,7 @@ export function checkScope({ kind, changes, read, diffOf }) {
       const text = read(c.path);
       if (!APPROVAL_RE.test(text) || !PR_NUMBER_RE.test(text.match(/^- 承認日:.*$/m)?.[0] ?? '')) {
         errors.push(
-          `承認日と PR 番号がありません（マージの前に「- 承認日: 2026-09-27（PR #28）」を書く）: ${c.path}`
+          `承認日と PR 番号がありません（マージの前に「- 承認日: YYYY-MM-DD（PR #N）」を書く）: ${c.path}`
         );
       }
     }
@@ -126,6 +130,9 @@ export function checkScope({ kind, changes, read, diffOf }) {
       ) {
         continue;
       }
+      if (c.status === 'D' && released.has(c.path.match(CHANGE_PATH_RE)?.[1] ?? '')) {
+        continue;
+      }
       for (const p of touched(c)) {
         if (p.startsWith('specs/changes/')) {
           errors.push(
@@ -149,6 +156,20 @@ function git(args) {
   return execFileSync('git', args, { encoding: 'utf8' });
 }
 
+/** `specs/releases/<tag>/<id>/` の <id> を集める */
+function releasedIds() {
+  const root = 'specs/releases';
+  if (!existsSync(root)) return new Set();
+  const ids = new Set();
+  for (const tag of readdirSync(root, { withFileTypes: true })) {
+    if (!tag.isDirectory()) continue;
+    for (const id of readdirSync(`${root}/${tag.name}`, { withFileTypes: true })) {
+      if (id.isDirectory()) ids.add(id.name);
+    }
+  }
+  return ids;
+}
+
 function main() {
   const base = process.env.BASE_REF ?? 'origin/main';
   const branch = process.env.HEAD_REF ?? git(['rev-parse', '--abbrev-ref', 'HEAD']).trim();
@@ -159,6 +180,7 @@ function main() {
     changes,
     read: (p) => readFileSync(p, 'utf8'),
     diffOf: (p) => git(['diff', '-U0', `${base}...HEAD`, '--', p]),
+    released: releasedIds(),
   });
   console.log(`branch: ${branch}（${kind}）、変更 ${changes.length} ファイル`);
   if (errors.length > 0) {
