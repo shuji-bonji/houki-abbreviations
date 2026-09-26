@@ -254,13 +254,106 @@ describe('lookupByLawNum() — 算用数字でも引ける', () => {
     expect(lookupByLawNum('昭和六三年法律第一〇八号')).toBe(byKanji);
   });
 
-  it('Issue #6 の完了条件: 昭和二十五年法律第百三十七号 と 昭和25年法律第137号 が同じ結果', () => {
-    expect(lookupByLawNum('昭和二十五年法律第百三十七号')).toBe(
-      lookupByLawNum('昭和25年法律第137号')
-    );
+  it('SPEC-ABBR-LOOKUP-BY-LAW-NUM-002 Issue #6 の完了条件: 昭和六十三年法律第百八号 と 昭和63年法律第108号 が同じエントリ', () => {
+    const byKanji = lookupByLawNum('昭和六十三年法律第百八号');
+    const byArabic = lookupByLawNum('昭和63年法律第108号');
+    expect(byKanji).not.toBeNull();
+    expect(byKanji?.formal).toBe('消費税法');
+    expect(byArabic).not.toBeNull();
+    expect(byArabic).toBe(byKanji);
   });
 
   it('SPEC-ABBR-LOOKUP-BY-LAW-NUM-002 憲法も引ける', () => {
     expect(lookupByLawNum('昭和21年憲法')?.formal).toBe('日本国憲法');
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20260927-untested-behaviors                                                 */
+/* -------------------------------------------------------------------------- */
+
+describe('normalizeJpText() — 20260927-untested-behaviors', () => {
+  it('SPEC-ABBR-NORMALIZE-JP-TEXT-009 null と undefined には空文字を返す', () => {
+    expect(normalizeJpText(null as unknown as string)).toBe('');
+    expect(normalizeJpText(undefined as unknown as string)).toBe('');
+  });
+
+  it('SPEC-ABBR-NORMALIZE-JP-TEXT-010 表に無い全角記号は変えない', () => {
+    expect(normalizeJpText('／（）＃＿！')).toBe('／（）＃＿！');
+  });
+
+  it('SPEC-ABBR-NORMALIZE-JP-TEXT-011 前後のタブ・改行・ノーブレークスペースも取り除く', () => {
+    expect(normalizeJpText('\t消法\n')).toBe('消法');
+    expect(normalizeJpText('\r\n消法\r\n')).toBe('消法');
+    expect(normalizeJpText('\u00A0消法\u00A0')).toBe('消法');
+  });
+
+  it('SPEC-ABBR-NORMALIZE-JP-TEXT-011 途中のタブは残す', () => {
+    expect(normalizeJpText('消\t法')).toBe('消\t法');
+  });
+});
+
+describe('normalizeLawNum() — 20260927-untested-behaviors', () => {
+  it('SPEC-ABBR-NORMALIZE-LAW-NUM-010 読めない漢数字の並びはそのまま残し、読める並びは算用数字にする', () => {
+    expect(kanjiToNumber('十十')).toBeNull();
+    expect(normalizeLawNum('昭和十十年法律第一号')).toBe('昭和十十年法律第1号');
+  });
+
+  it('SPEC-ABBR-NORMALIZE-LAW-NUM-011 空白で分かれた元年も 1 年にする', () => {
+    expect(normalizeLawNum('令和 元 年法律第一号')).toBe('令和1年法律第1号');
+  });
+
+  it('SPEC-ABBR-NORMALIZE-LAW-NUM-012 U+2015 以外のダッシュ類も半角ハイフンにする', () => {
+    const expected = '昭和24年人事院規則1-1';
+    for (const dash of ['\u2010', '\u2011', '\u2013', '\u2014', '\u2212']) {
+      expect(normalizeLawNum(`昭和二十四年人事院規則一${dash}一`)).toBe(expected);
+    }
+  });
+
+  it('SPEC-ABBR-NORMALIZE-LAW-NUM-013 罫線と長音は半角ハイフンにしない', () => {
+    expect(normalizeLawNum('昭和二十四年人事院規則一\u2500一')).toBe('昭和24年人事院規則1\u25001');
+    expect(normalizeLawNum('昭和二十四年人事院規則一\u30FC一')).toBe('昭和24年人事院規則1\u30FC1');
+  });
+
+  it('SPEC-ABBR-NORMALIZE-LAW-NUM-014 null と undefined には空文字を返す', () => {
+    expect(normalizeLawNum(null as unknown as string)).toBe('');
+    expect(normalizeLawNum(undefined as unknown as string)).toBe('');
+  });
+});
+
+describe('normalizeSearchQuery() — 20260927-untested-behaviors', () => {
+  it('SPEC-ABBR-NORMALIZE-SEARCH-QUERY-007 null と undefined には空文字を返す', () => {
+    expect(normalizeSearchQuery(null as unknown as string)).toBe('');
+    expect(normalizeSearchQuery(undefined as unknown as string)).toBe('');
+  });
+});
+
+describe('kanjiToNumber() — 20260927-untested-behaviors', () => {
+  it('SPEC-ABBR-KANJI-TO-NUMBER-005 位ごとの並びの先頭の〇は数に入れない', () => {
+    expect(kanjiToNumber('〇五')).toBe(5);
+    expect(kanjiToNumber('〇一三')).toBe(13);
+    expect(kanjiToNumber('〇〇')).toBe(0);
+  });
+
+  it('SPEC-ABBR-KANJI-TO-NUMBER-006 文字列でない値には null を返す', () => {
+    expect(kanjiToNumber(123 as unknown as string)).toBeNull();
+    expect(kanjiToNumber(null as unknown as string)).toBeNull();
+    expect(kanjiToNumber(undefined as unknown as string)).toBeNull();
+  });
+
+  it('SPEC-ABBR-KANJI-TO-NUMBER-007 空白を含む入力には null を返す', () => {
+    expect(kanjiToNumber(' 五')).toBeNull();
+    expect(kanjiToNumber('五 ')).toBeNull();
+    expect(kanjiToNumber('二十 五')).toBeNull();
+  });
+
+  it('SPEC-ABBR-KANJI-TO-NUMBER-008 単位の前の一は十・百でも 1 として読む', () => {
+    expect(kanjiToNumber('一十')).toBe(kanjiToNumber('十'));
+    expect(kanjiToNumber('一十')).toBe(10);
+    expect(kanjiToNumber('一百')).toBe(kanjiToNumber('百'));
+    expect(kanjiToNumber('一百')).toBe(100);
+    expect(kanjiToNumber('一千一百一十一')).toBe(kanjiToNumber('千百十一'));
+    expect(kanjiToNumber('一千一百一十一')).toBe(1111);
+    expect(kanjiToNumber('千百十')).toBe(1110);
   });
 });

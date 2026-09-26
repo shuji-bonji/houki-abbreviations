@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AbbreviationEntry } from './types.js';
 import { isValidLawId, validateAllEntries, extractLawNames } from './validate.js';
+import { extractLawNames as extractFromBundled } from './index.js';
 
 /* -------------------------------------------------------------------------- */
 /* isValidLawId                                                               */
@@ -255,5 +256,195 @@ describe('extractLawNames', () => {
 
   it('SPEC-ABBR-EXTRACT-LAW-NAMES-009 該当なしは空配列', () => {
     expect(extractLawNames(extractFixtures, 'こんにちは世界')).toEqual([]);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20260927-untested-behaviors                                                */
+/* -------------------------------------------------------------------------- */
+
+describe('isValidLawId（文字列でない値・全角）', () => {
+  it('SPEC-ABBR-IS-VALID-LAW-ID-011 文字列でない値は false', () => {
+    expect(isValidLawId(null as unknown as string)).toBe(false);
+    expect(isValidLawId(undefined as unknown as string)).toBe(false);
+    expect(isValidLawId(123 as unknown as string)).toBe(false);
+  });
+
+  it('SPEC-ABBR-IS-VALID-LAW-ID-012 全角の英字・数字を含むと false', () => {
+    expect(isValidLawId('363ＡC0000000108')).toBe(false);
+    expect(isValidLawId('363AC000000010８')).toBe(false);
+  });
+});
+
+const baseEntry: AbbreviationEntry = {
+  abbr: 'A1',
+  formal: 'F1',
+  law_id: null,
+  domain: 'tax',
+  category: 'law',
+  source_mcp_hint: 'houki-egov',
+};
+
+describe('validateAllEntries（警告・エラーの中身）', () => {
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-010 1 件の中で重なる別名は警告で、valid は true のまま', () => {
+    const entry: AbbreviationEntry = { ...baseEntry, aliases: ['Q', 'Q'] };
+    const r = validateAllEntries([entry]);
+    expect(r.valid).toBe(true);
+    expect(r.errors).toEqual([]);
+    expect(r.warnings.map((w) => w.code)).toEqual(['duplicate_alias_within_entry']);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-011 law_id が空文字なら invalid_law_id のエラー', () => {
+    const r = validateAllEntries([{ ...baseEntry, law_id: '' }]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.map((e) => e.code)).toEqual(['invalid_law_id']);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-012 形の誤った同じ law_id が 2 件なら invalid_law_id 2 件と duplicate_law_id 1 件', () => {
+    const a1: AbbreviationEntry = { ...baseEntry, law_id: '' };
+    const a2: AbbreviationEntry = { ...baseEntry, abbr: 'A2', formal: 'F2', law_id: '' };
+    const r = validateAllEntries([a1, a2]);
+    const summary = r.errors.map((e) => ({ code: e.code, abbr: e.entry?.abbr }));
+    expect(summary).toHaveLength(3);
+    expect(summary).toEqual(
+      expect.arrayContaining([
+        { code: 'invalid_law_id', abbr: 'A1' },
+        { code: 'invalid_law_id', abbr: 'A2' },
+        { code: 'duplicate_law_id', abbr: 'A2' },
+      ])
+    );
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-013 エラーの entry は渡したそのエントリを指す', () => {
+    const broken: AbbreviationEntry = { ...baseEntry, formal: '' };
+    const r = validateAllEntries([broken]);
+    const issue = r.errors.find((e) => e.code === 'missing_required_field');
+    expect(issue).toBeDefined();
+    expect(issue?.entry).toBe(broken);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-013 duplicate_abbr の entry は 2 件目のエントリ', () => {
+    const first: AbbreviationEntry = { ...baseEntry };
+    const second: AbbreviationEntry = { ...baseEntry };
+    const r = validateAllEntries([first, second]);
+    const issue = r.errors.find((e) => e.code === 'duplicate_abbr');
+    expect(issue).toBeDefined();
+    expect(issue?.entry).toBe(second);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-013 どのエラー・警告にも渡した配列の要素が entry として付く', () => {
+    const entries: AbbreviationEntry[] = [
+      { ...baseEntry, law_id: 'INVALID', aliases: ['Q', 'Q'] },
+      { ...baseEntry, abbr: 'B1', formal: '', aliases: ['A1'] },
+      { ...baseEntry, abbr: 'B1', formal: 'F3', law_id: '' },
+    ];
+    const r = validateAllEntries(entries);
+    const issues = [...r.errors, ...r.warnings];
+    expect(issues.length).toBeGreaterThan(0);
+    for (const issue of issues) {
+      expect(entries).toContain(issue.entry);
+    }
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-014 invalid_law_id のエラーの message に abbr が入る', () => {
+    const r = validateAllEntries([{ ...baseEntry, law_id: 'INVALID' }]);
+    const issue = r.errors.find((e) => e.code === 'invalid_law_id');
+    expect(issue).toBeDefined();
+    expect(issue?.message).toContain('A1');
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-014 alias_collides_with_abbr の警告の message に abbr が入る', () => {
+    const r = validateAllEntries([
+      { ...baseEntry },
+      { ...baseEntry, abbr: 'B1', formal: 'F2', aliases: ['A1'] },
+    ]);
+    const issue = r.warnings.find((w) => w.code === 'alias_collides_with_abbr');
+    expect(issue).toBeDefined();
+    expect(issue?.message).toContain('B1');
+  });
+});
+
+describe('extractLawNames（既定値・重なり・null）', () => {
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-010 preferLonger を指定しなければ短い包含一致を返さない', () => {
+    const matches = extractFromBundled('民法の解釈', { minLength: 1 });
+    expect(matches.some((m) => m.matchedKey === '民' && m.position === 0 && m.length === 1)).toBe(
+      false
+    );
+    expect(matches.some((m) => m.matchedKey === '民法' && m.position === 0 && m.length === 2)).toBe(
+      true
+    );
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-010 preferLonger: false を足すと短い一致も返る（対照）', () => {
+    const matches = extractFromBundled('民法の解釈', { minLength: 1, preferLonger: false });
+    expect(matches.some((m) => m.matchedKey === '民' && m.position === 0 && m.length === 1)).toBe(
+      true
+    );
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-011 minLength が 0 や負の数なら 1 として扱う', () => {
+    for (const minLength of [0, -5]) {
+      const matches = extractFromBundled('民の規定', { minLength });
+      expect(matches.some((m) => m.matchedKey === '民' && m.position === 0)).toBe(true);
+    }
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-011 minLength を指定しなければ 1 文字のキーは探さない（対照）', () => {
+    expect(extractFromBundled('民の規定')).toEqual([]);
+  });
+
+  const sameKeyFixtures: AbbreviationEntry[] = [
+    {
+      abbr: '甲',
+      formal: '甲法',
+      law_id: null,
+      domain: 'civil',
+      category: 'law',
+      source_mcp_hint: 'houki-egov',
+    },
+    {
+      abbr: '乙',
+      formal: '乙法',
+      law_id: null,
+      domain: 'civil',
+      category: 'law',
+      source_mcp_hint: 'houki-egov',
+      aliases: ['甲法'],
+    },
+  ];
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-012 同じ位置・同じ長さで別のエントリに一致したら両方を返す', () => {
+    const matches = extractLawNames(sameKeyFixtures, '甲法の規定');
+    expect(
+      matches.map((m) => ({
+        abbr: m.entry.abbr,
+        matchedKey: m.matchedKey,
+        position: m.position,
+        length: m.length,
+      }))
+    ).toEqual([
+      { abbr: '甲', matchedKey: '甲法', position: 0, length: 2 },
+      { abbr: '乙', matchedKey: '甲法', position: 0, length: 2 },
+    ]);
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-012 dedupe: true でも別のエントリなので 2 件のまま', () => {
+    const plain = extractLawNames(sameKeyFixtures, '甲法の規定');
+    const deduped = extractLawNames(sameKeyFixtures, '甲法の規定', { dedupe: true });
+    expect(deduped).toEqual(plain);
+    expect(deduped).toHaveLength(2);
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-013 dedupe: true では前にある短いキーの一致を残す', () => {
+    const matches = extractFromBundled('消法と消費税法', { dedupe: true });
+    expect(matches).toHaveLength(1);
+    expect(matches[0].matchedKey).toBe('消法');
+    expect(matches[0].position).toBe(0);
+    expect(matches[0].entry.abbr).toBe('消法');
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-014 text が null か undefined なら空の配列', () => {
+    expect(extractFromBundled(null as unknown as string)).toEqual([]);
+    expect(extractFromBundled(undefined as unknown as string)).toEqual([]);
   });
 });

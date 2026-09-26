@@ -108,3 +108,12 @@ describe('judgeStaleness × computeDaysSince の組合せ (典型シナリオ)',
     expect(judgeStaleness(days)).toBe('outdated');
   });
 });
+
+describe('judgeStaleness（小数の日数）', () => {
+  it('SPEC-ABBR-JUDGE-STALENESS-004 小数の日数も丸めずに境界と「未満」で比べる', () => {
+    expect(judgeStaleness(6.99)).toBe('fresh');
+    expect(judgeStaleness(29.5)).toBe('stale');
+    expect(judgeStaleness(29.999)).toBe('stale');
+    expect(judgeStaleness(30.0)).toBe('outdated');
+  });
+});
