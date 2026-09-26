@@ -132,8 +132,8 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **定数は実行時に書き換えられる。** 5 つの定数はどれも凍結されておらず、書き換えを止めているのは TypeScript の型だけ。JavaScript から `STALENESS_THRESHOLDS.fresh_days = 100` と代入すると、そのあとの `judgeStaleness(50)` は `"fresh"` になる。`DOMAINS.push("x")` のあと `DOMAINS.length` は `7`。README は `STALENESS_THRESHOLDS` を「上書きしない」と書いている。凍結するかを決める（辞書の `abbreviationEntries` は凍結されている）。
+1. **定数は実行時に書き換えられる。** → houki-abbreviations #13
 2. **`LAW_TYPE_CODES` の値を確かめるテストが無い。** `src/index.test.ts` の `law_type` の検査は、`LAW_TYPE_CODES` を使わずにテストの中に同じキーの一覧を別に書いている。種別コード（`AC` など）と `law_id` の対応も確かめていない。v0.6.0 で `law_id` と `law_type` の両方を持つ 8 件は、どれも `law_id` の 4〜5 文字目が `LAW_TYPE_CODES[law_type]` と一致する。テストが無い。ID を振るのは受入テストを書いてから。
-3. **`houki-jaish` の説明。** ソースの説明は「労災（労働安全衛生総合研究所）」だが、JAISH は中央労働災害防止協会の安全衛生情報センター（jaish.gr.jp）の略称で、労働安全衛生総合研究所（JNIOSH）とは別の機関。どちらを指すかを決め、説明を直す。
+3. **`houki-jaish` の説明。** → houki-abbreviations #17
 4. **値の一覧そのものを固定するテストが無い。** `CATEGORIES` の 12 値、`SOURCE_MCP_HINTS` の 6 値、`DOMAINS` の 6 値の中身と順序を確かめるテストが無い（002・003 は辞書が定数に収まることだけを確かめる）。値を減らしたり名前を変えたりすると、family の MCP サーバーの引数や応答が変わる。テストが無い。ID を振るのは受入テストを書いてから。
-5. **`CATEGORIES` の説明と e-Gov の範囲。** `SOURCE_MCP_HINTS` の `houki-egov` の説明は「法律・政令・省令・規則・告示」だが、`CATEGORIES` には告示に当たる値が無い。告示を辞書に入れるときの `category` を決める。
+5. **`CATEGORIES` の説明と e-Gov の範囲。** → houki-abbreviations #25

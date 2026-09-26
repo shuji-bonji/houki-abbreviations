@@ -166,12 +166,12 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **エントリのオブジェクトが凍結されていない。** 凍結されているのは配列だけで、各エントリとその `aliases` の配列は書き換えられる（`Object.isFrozen(abbreviationEntries[0])` は `false`）。書き換えるとパッケージ内の他の関数の結果も変わる。例: `abbreviationEntries[0].formal = "X"` のあと、`resolveAbbreviation("所法").formal` は `"X"` を返し、`resolveAbbreviation("所得税法")` も `formal: "X"` のエントリを返す。型は `readonly AbbreviationEntry[]` で、要素のフィールドは `readonly` ではない。利用側の書き換えを防ぐ意図なのか、配列だけを守る意図なのかを決める。
-2. **略称・正式名称・別名が別のエントリの間で重複しないこと。** テストが確かめているのは `abbr` の重複だけ（SPEC-ABBR-ABBREVIATION-ENTRIES-005）。v0.6.0 では `abbr` / `formal` / `aliases` を合わせても、`normalizeJpText` を通した後でも、別のエントリの間の重複は 0 件。ただし重複が入ったとき、`resolveAbbreviation` は通常の照合では後に並ぶエントリを、`normalize: true` の照合では先に並ぶエントリを返すことが `src/index.ts` のコメントから読み取れ、2 つの照合の結果が食い違う。辞書の約束として重複を禁じるかを決める。
+1. **エントリのオブジェクトが凍結されていない。** → houki-abbreviations #13
+2. **略称・正式名称・別名が別のエントリの間で重複しないこと。** → houki-abbreviations #14
 3. **並びの順。** 分野の JSON を `tax` → `labor` → `accounting` → `commercial` → `civil` → `administrative` の順に結合し、ファイル内の順を保つ。README は `searchByName` の返す順を「`abbreviationEntries` の並び」と書いており、利用者から見える順だが、並びを確かめるテストが無い。ID を振るのは受入テストを書いてから。
 4. **`law_id` フィールドが全エントリにあること。** `law_id` は型では必須（`string | null`）で、v0.6.0 では 174 件すべてに `law_id` のキーがある（`undefined` は 0 件）。JSON は型の宣言で読み込むだけで、実行時に形を確かめていないうえ、SPEC-ABBR-ABBREVIATION-ENTRIES-002 のテストは `law_id` を確かめない。ID を振るのは受入テストを書いてから。
 5. **各エントリの `domain` が JSON のファイル名と同じであること。** CONTRIBUTING.md は `src/data/{domain}.json` に足すと書いており、v0.6.0 では全件一致するが、テストはファイル名との一致を確かめない（`domain` が `DOMAINS` の値かどうかだけ）。ID を振るのは受入テストを書いてから。
 6. **管轄とカテゴリ・`law_id` の組み合わせ。** v0.6.0 では houki-nta 管轄の 9 件はすべて `domain: "tax"`・`law_id: null`、houki-egov 管轄の 165 件はすべて法令系のカテゴリ（`constitution` / `law` / `cabinet-order` / `ministerial-ordinance` / `rule`）で、`law_num` が入っているのは `law_id` が入っている 9 件だけ。テストが確かめているのは houki-nta 管轄のカテゴリ（SPEC-ABBR-ABBREVIATION-ENTRIES-009）だけで、残りの組み合わせはテストが無い。ID を振るのは受入テストを書いてから。
-7. **件数を約束にするか。** テストが固定しているのは総数と houki-egov 管轄の件数が 100 件を超えることだけで、総数 174 などの実数は固定していない。エントリを足すたびに変わる値なので約束にしないのか、版ごとに固定するのかを決める。
-8. **別名に正式名称と同じ値を入れているエントリ。** 33 件（`消基通` / `民` / `憲` など）の `aliases` に `formal` と同じ文字列が入っている。例: `消基通` の `aliases` は `["消費税法基本通達"]` で、`formal` と同じ。`getAllNames` は重複を除くので結果は変わらないが、辞書の書き方としてこれを許すかを決める。
-9. **ドキュメントの記述が今の辞書と合わない。** CONTRIBUTING.md の category の節は「v0.1.x では `constitution` ～ `rule` のみ実エントリあり」と書き、`src/types.ts` の `category` の説明も「v0.1.0 では法律 / 政令 / 省令 / 規則 / 憲法のみ実エントリあり」と書いているが、v0.6.0 には `kihon-tsutatsu` 8 件と `kobetsu-tsutatsu` 1 件がある。版の注記として残すのか、今の状態に書き直すのかを決める。
+7. **件数を約束にするか。** → houki-abbreviations #16
+8. **別名に正式名称と同じ値を入れているエントリ。** → houki-abbreviations #15
+9. **ドキュメントの記述が今の辞書と合わない。** → houki-abbreviations #17

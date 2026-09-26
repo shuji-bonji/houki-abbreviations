@@ -76,7 +76,7 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **負の値は `fresh` になる。** `judgeStaleness(-5)` → `"fresh"`、`judgeStaleness(-Infinity)` → `"fresh"`。JSDoc は「負値は 0 に丸めるのは呼び出し側の責務」としている。`computeDaysSince` の戻り値を渡すかぎり負にはならない。今のままでよいか、0 未満を検査するかを決める。
-2. **`NaN` は `outdated` になる。** `judgeStaleness(NaN)` → `"outdated"`。`computeDaysSince` は `nowMs` に `NaN` を渡されたときに `NaN` を返す（computeDaysSince の未決 5）。今のままでよいかを決める。
+1. **負の値は `fresh` になる。** → houki-abbreviations #18
+2. **`NaN` は `outdated` になる。** → houki-abbreviations #18
 3. **小数の日数。** `6.99` → `"fresh"`、`29.5` → `"stale"`。整数を想定しているが、小数でも「未満」の比較どおりに判定する。今の振る舞いのままでよい。テストが無い。ID を振るのは受入テストを書いてから。
-4. **`STALENESS_THRESHOLDS` を実行時に書き換えると判定が変わる。** `STALENESS_THRESHOLDS.fresh_days = 100` と代入すると、そのあとの `judgeStaleness(50)` は `"fresh"`。README は「上書きしない」と書いているが、書き換えを止めていない（公開定数の未決 1）。
+4. **`STALENESS_THRESHOLDS` を実行時に書き換えると判定が変わる。** → houki-abbreviations #13

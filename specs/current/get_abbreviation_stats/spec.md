@@ -93,7 +93,7 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **件数が 0 の種別と MCP はキーが無い。** `byCategory` と `bySourceMcpHint` には、辞書に 1 件以上ある値だけがキーとして入る。v0.6.0 では `byCategory` のキーは 12 種別のうち 7 つで、`getAbbreviationStats().byCategory.hanrei` は `0` ではなく `undefined`。`bySourceMcpHint` のキーは 6 つのうち `houki-egov` と `houki-nta` の 2 つ。`byDomain` は今の辞書では 6 分野すべてに 1 件以上あるので 6 キーそろうが、これは辞書の中身によるもので、0 件の分野ができればそのキーも無くなる。起動時のログで「0 件」を表示したい利用者は、キーが無いことを 0 と読み替える必要がある。0 のキーも入れるのか、今のままにするのかを決める。
-2. **`AbbreviationStats` のキーの型が `string`。** `byDomain` などの型は `Record<string, number>` で、`Record<Domain, number>` などになっていない。未決 1 をどちらにするかで型の書き方も変わる。
+1. **件数が 0 の種別と MCP はキーが無い。** → houki-abbreviations #16
+2. **`AbbreviationStats` のキーの型が `string`。** → houki-abbreviations #16
 3. **返すオブジェクトは呼ぶたびに新しい。** 返したオブジェクトの `total` を書き換えても、次の呼び出しは 174 を返す。テストが無い。ID を振るのは受入テストを書いてから。
 4. **キーの並び。** `byCategory` などのキーは、その値が辞書に最初に出てくる順に並ぶ（`byCategory` は `law` / `cabinet-order` / `ministerial-ordinance` / `kihon-tsutatsu` / `kobetsu-tsutatsu` / `rule` / `constitution`）。並びを約束するのか決まっていない。テストが無い。ID を振るのは受入テストを書いてから。

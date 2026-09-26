@@ -92,5 +92,5 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **英字以外の大文字も小文字になる。** JSDoc・CHANGELOG・テスト名は「ASCII 大文字 → 小文字」と書くが、実際には ASCII 以外の大文字も小文字になる。`normalizeSearchQuery('ⅠⅡ')`（ローマ数字 U+2160, U+2161）は `'ⅰⅱ'`、`normalizeSearchQuery('ΑΒΓ')` は `'αβγ'`、`normalizeSearchQuery('ÀÉ')` は `'àé'`。法令本文のローマ数字（`Ⅰ`）が DB 側と検索語側で同じ関数を通れば照合は合うが、ドキュメントとは食い違う。ASCII だけにするか、ドキュメントを直すかを人が決める。
+1. **英字以外の大文字も小文字になる。** → houki-abbreviations #21
 2. **`null` / `undefined` を渡したとき。** `normalizeSearchQuery(null)` は `''` を返す。テストが無い。ID を振るのは受入テストを書いてから。

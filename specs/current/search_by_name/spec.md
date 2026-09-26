@@ -113,4 +113,5 @@ flowchart TD
 1. **返す順は辞書の並び。** 結果は `abbreviationEntries` の並びのまま返す（`searchByName('労働')` の 12 件は辞書の 35〜42・45・46・52・54 番目）。1 つのエントリが略称と正式名称の両方に一致しても 1 回しか入らない。どちらもテストが無い。ID を振るのは受入テストを書いてから。
 2. **全角・半角の吸収（`normalize`）。** 既定の `normalize: true` では、全角英数字を半角にしてから比べる。`searchByName('ＰＬ法')` は `製造物責任法` を返し、`normalize: false` なら `[]`。テスト「normalize=true (default) で全角入力でもヒット」は `労働`（全角英数字を含まない）で引いているだけで、この振る舞いを確かめていない。ID を振るのは受入テストを書いてから。
 3. **filter.category と、filter の複数のキーの組み合わせ。** `filter.category` を渡すと `category` がその値のエントリだけを返す（`searchByName('通達', { filter: { category: ['kihon-tsutatsu'] } })` は `消基通` など 8 件）。複数のキーを渡すとすべてを満たすエントリだけを返す（`{ domain: 'tax', source_mcp_hint: 'houki-nta' }` で `税` を引くと 9 件）。空の配列はそのキーの絞り込みをしない（`{ domain: [] }` で `税` を引くと絞り込みなしと同じ 37 件）。どれもテストが無い。ID を振るのは受入テストを書いてから。
-4. **`limit` の境界値。** 既定の 50 件と、範囲外の値の扱いにテストが無い。実際には `limit: 0` と `limit: -3` は 1 件、`limit: 2.5` は 3 件、`limit: NaN` は打ち切らずに 167 件を返す。`NaN` のときに上限 500 も効かないのは意図か確かめる。同じ `NaN` を `findSimilar` に渡すと 0 件になり、2 つの関数で扱いが違う（find_similar の未決 5）。
+4. **`limit` の既定値と 1 未満の値。** 既定の 50 件と、1 未満の値の扱いにテストが無い。`limit: 0` と `limit: -3` は 1 件、`limit: 2.5` は 3 件を返す。`NaN` の扱いは未決 5。テストが無い。ID を振るのは受入テストを書いてから。
+5. **`limit` に `NaN` を渡したときの扱いと上限。** → houki-abbreviations #22

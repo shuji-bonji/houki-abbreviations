@@ -75,7 +75,7 @@ flowchart TD
 
 初版起こしで見つけた、意図か不具合かを人が決める項目です。決まったら「できること」に ID を振るか、`specs/changes/` の差分にします。
 
-意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
+意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。テストの名前と中身が合っていない項目は、テストを直します（ID を振っていないものは、直してから振ります）。
 
-1. **サロゲートペアの文字は 2 文字として数える。** JavaScript の文字列の長さ（UTF-16 の単位）で数えるので、`𠮷` のような BMP 外の文字は 1 文字でも 2 と数える。`levenshtein('𠮷', '吉')` は 2、`levenshtein('𠮷野家', '吉野家')` も 2（1 文字の置換なのに 2）。法令名に BMP 外の漢字が入ると `findSimilar` の `maxDistance` の判定がずれる。v0.6.0 の辞書の名前には BMP 外の文字は無い。意図か確かめる。
-2. **テストの describe 名が「内部 helper」。** `levenshtein` は `src/index.ts` から export され、README の API 節にも載っている公開の関数だが、テストの describe は「levenshtein (内部 helper)」。公開の関数として扱うかを決める。
+1. **サロゲートペアの文字は 2 文字として数える。** → houki-abbreviations #24
+2. **テストの describe 名が「内部 helper」。** `levenshtein` は `src/index.ts` から export され、README の API 節にも載っている公開の関数だが、テストの describe は「levenshtein (内部 helper)」。describe 名を公開の関数の名前に直す（describe には ID を付けない）。

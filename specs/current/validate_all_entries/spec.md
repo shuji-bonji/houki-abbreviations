@@ -152,9 +152,9 @@ v0.6.0 の同梱辞書 174 件を検査すると `valid: true` を返す（`erro
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
 1. **`duplicate_alias_within_entry` の警告。** 1 件のエントリの `aliases` に同じ値が 2 回あると、`duplicate_alias_within_entry` の警告を返す（例: `aliases: ["Q", "Q"]` → `同一エントリ内で aliases が重複: 'Q'（abbr=A1）`）。テストが無い。ID を振るのは受入テストを書いてから。
-2. **一覧に無い `category` を見逃す。** `category: "foo"` のように決められた値に無い `category` は、許容表を引けないので警告も出さない。`{ abbr: "A", formal: "F", law_id: null, domain: "x", category: "foo", source_mcp_hint: "houki-zzz" }` 1 件で `valid: true`、`warnings: []`（`domain: "x"` も見逃す）。辞書のテスト（`src/index.test.ts`）は `category` と `domain` と `source_mcp_hint` の値を確かめているが、この関数は確かめない。エラーにするかを決める。
-3. **`formal` や別名どうしの重複を見逃す。** 2 件のエントリの `formal` が同じでも、2 件のエントリが同じ別名を持っていても、別名がほかのエントリの `formal` と同じでも、エラーも警告も出さない。例: `{ abbr: "A1", formal: "F" }` と `{ abbr: "A2", formal: "F" }` の 2 件で `valid: true`、`warnings: []`。名前から 1 件に解決する関数（`resolveAbbreviation` など）が、どちらを返すか決まらなくなる。v0.6.0 の同梱辞書にはこの重複は無い。エラーか警告にするかを決める。
-4. **自分の `abbr` や `formal` と同じ別名を見逃す。** `aliases` に自分の `abbr` か `formal` と同じ値があっても警告しない。v0.6.0 の同梱辞書では 66 件のエントリがこれに当たる（例: `酒税法` は `abbr` と `formal` がどちらも `酒税法`、`民` は `formal: "民法"` で `aliases: ["民法"]`）。この重ね方のために `extractLawNames` が同じ一致を 2 件返す（extract_law_names の未決 1）。警告にするかを決める。
+2. **一覧に無い `category` を見逃す。** → houki-abbreviations #14
+3. **`formal` や別名どうしの重複を見逃す。** → houki-abbreviations #14
+4. **自分の `abbr` や `formal` と同じ別名を見逃す。** → houki-abbreviations #15
 5. **`law_id` が空文字のとき。** `law_id: ""` は `null` とは扱わず、`invalid_law_id` のエラーを返す。同じ誤った `law_id` のエントリが 2 件あると、`invalid_law_id` 2 件と `duplicate_law_id` 1 件を返す。テストが無い。ID を振るのは受入テストを書いてから。
 6. **`message` の文言と `entry` の有無。** テストは `code` だけを確かめていて、`message` の文言と、`entry` が付くことは確かめていない。ID を振るのは受入テストを書いてから。
-7. **`npm run validate` を CI で呼んでいない。** README には「CI で `npm run validate` を呼ぶと、`errors > 0` の場合に exit 1」とあるが、v0.6.0 の `.github/workflows/ci.yml` は lint・format:check・test・build だけを実行し、`npm run validate` は呼ばない。辞書の検査は `npm test` の中の SPEC-ABBR-VALIDATE-ALL-ENTRIES-009 のテストで行われている。また `npm run validate` は `dist/index.js` を読むので、`npm run build` の後でないと動かない。CI に足すか、README を直すかを決める。
+7. **`npm run validate` を CI で呼んでいない。** → houki-abbreviations #17

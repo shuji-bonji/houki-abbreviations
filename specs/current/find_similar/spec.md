@@ -103,10 +103,11 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **ドキュメントの例と実際の結果が違う。** `src/index.ts` と `src/search.ts` の JSDoc、README の使用例、`docs/v0.4.0-roadmap.md` は「`findSimilar('労働基準法施行例')` → `労基法施行令`（`matchedKey: '労働基準法施行令'`、`distance: 1`）」と書くが、v0.6.0 の辞書に `労働基準法施行令` のエントリは無い。実際の結果は `[{ entry: 労基則, matchedKey: "労働基準法施行規則", distance: 2 }]`（README のモード別の表はこちらと合っている）。テスト「1 文字 typo (例: 法 → 例) で distance=1 のヒットが返る」も、名前は distance 1 だが確かめているのは 2 以下であることだけ。
-2. **短い query は意味の違う短い略称に当たる。** 名前全体どうしの編集距離を比べるので、2〜3 文字の `query` は、字数の近い略称と 1〜2 の距離になる。`findSimilar('民法')` は `民`（`民法`、0）に続けて `所法`・`法法`・`消法`・`措法`（どれも 1）を返す。`findSimilar('法')` は `所法`・`法法`・`法令`・`法規`・`消法`（どれも 1）を返す。typo の救済として返してよい候補か確かめる。
+1. **ドキュメントの例と実際の結果が違う。** → houki-abbreviations #17
+2. **短い query は意味の違う短い略称に当たる。** → houki-abbreviations #20
 3. **全角・半角の吸収（`normalize`）。** 既定の `normalize: true` では、全角英数字を半角にしてから比べる。`findSimilar('ＰＬ法')` の先頭は `製造物責任法`（`matchedKey: "PL法"`、0）で、`normalize: false` では `製造物責任法` は入らない。`matchedKey` は半角にした後の文字列ではなく辞書の表記のまま返る。どれもテストが無い。ID を振るのは受入テストを書いてから。
 4. **`sortByScore: false` と、距離が同じときの順。** `sortByScore: false` のときは辞書の並びのまま `limit` 件で打ち切る（`findSimilar('労働基準法施行例', { maxDistance: 5, sortByScore: false })` は `所令`・`法令`・`消令`・`相令`・`通令`（どれも 5）で、距離 2 の `労基則` が入らない）。`distance` が同じエントリは辞書の並びを保つ。どちらもテストが無い。ID を振るのは受入テストを書いてから。
-5. **`limit` の境界値。** 既定の 5 件と、範囲外の値の扱いにテストが無い。実際には `limit: 0` と `limit: -1` は 1 件、`limit: NaN` は 0 件を返す。`searchByName` と違って上限（500）が無く、`NaN` の扱いも逆（`searchByName` は打ち切らない）。
+5. **`limit` の既定値と 1 未満の値。** 既定の 5 件と、1 未満の値の扱いにテストが無い。`limit: 0` と `limit: -1` は 1 件を返す。`NaN` の扱いは未決 8。テストが無い。ID を振るのは受入テストを書いてから。
 6. **`maxDistance` の既定値と 0 以下の値。** 既定の 2 を確かめるテストが無い。`maxDistance: 0` は一致だけを返し（`findSimilar('消費税', { maxDistance: 0 })` は別名 `消費税` に一致した `消法` の 1 件）、負の値は常に `[]`。ID を振るのは受入テストを書いてから。
 7. **`matchedKey` の選び方。** 1 つのエントリの中で距離が同じ名前が複数あるときは、略称・正式名称・別名の順で先に見たものが `matchedKey` になる。`matchedKey` の値を確かめるテストが無い。ID を振るのは受入テストを書いてから。
+8. **`limit` に `NaN` を渡したときの扱いと上限。** → houki-abbreviations #22

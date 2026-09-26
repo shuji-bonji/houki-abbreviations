@@ -137,11 +137,11 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **README と JSDoc の `消　法` の例が実際の結果と違う。** README の「正規化 API」節と `resolveAbbreviation` の JSDoc は `resolveAbbreviation('消　法', { normalize: true })` が `消費税法` を返す（全角空白を吸収する）と書いているが、実際は `null` を返す。`normalize: true` は全角空白を半角空白 `消 法` にするだけで、辞書には空白を含む名前が 1 件も無いため一致しない。`resolveAbbreviation('消費　税法', { normalize: true })` も `null`。例を直すのか、名前の途中の空白を取り除くようにするのかを決める。テスト `{ normalize: true } absorbs full-width spaces` はこの例を避けて前後の全角空白だけを確かめている。
-2. **返すエントリは凍結されておらず、書き換えると辞書に残る。** 辞書の配列 `abbreviationEntries` は凍結されているが、要素のエントリは凍結されていない（`Object.isFrozen(resolveAbbreviation('消法'))` は `false`）。`const e = resolveAbbreviation('消法'); e.formal = 'X'` とすると例外は出ず、以後の `resolveAbbreviation('消法').formal` は `'X'` になる。同じエントリを返す `listByDomain` などでも同じことが起きる。利用者が書き換えないことを前提にするのか、エントリも凍結するのかを決める。
+1. **README と JSDoc の `消　法` の例が実際の結果と違う。** → houki-abbreviations #17
+2. **返すエントリは凍結されておらず、書き換えると辞書に残る。** → houki-abbreviations #13
 3. **全角数字・全角ハイフン・全角チルダの吸収。** `normalize: true` はこれらも半角にするが、v0.6.0 の辞書（174 件）の略称・正式名称・別名には数字・ハイフン・チルダを含む名前が無い（英字を含むのは `IT書面一括法` / `AML` / `PL法` / `JPKI法` の 4 つだけ）ため、辞書を引いて確かめられない。テスト `{ normalize: true } absorbs full-width digits` は `消法` を引いているだけで、全角数字を渡していない。テストが無い。ID を振るのは受入テストを書いてから。
 4. **既定の照合で前後の全角空白・タブ・改行も除く。** `options` を渡さなくても、`resolveAbbreviation('　消法　')`（前後が全角空白）と `resolveAbbreviation('\t消法\n')` は `消費税法` のエントリを返す。JSDoc は「前後の空白はトリム」とだけ書いている。テストがあるのは前後の半角空白だけ。ID を振るのは受入テストを書いてから。
-5. **半角にした名前が複数のエントリで重なるときは先に登録されたエントリを返す。** `normalize: true` で辞書の名前を半角にしたとき、同じ名前が 2 件のエントリにあれば、辞書で先に来るエントリを返す（コードのコメントにある「先勝ち」）。v0.6.0 の辞書では、半角にする前も後も名前の重なりは 0 件。テストが無い。ID を振るのは受入テストを書いてから。
+5. **半角にした名前が複数のエントリで重なるときは先に登録されたエントリを返す。** → houki-abbreviations #14
 6. **`options.normalize` に `false` を明示したとき、`{}` や `null` を渡したとき。** どれも `options` を省いたときと同じ結果になる（`resolveAbbreviation('消法', { normalize: false })` / `resolveAbbreviation('消法', {})` / `resolveAbbreviation('消法', null)` はどれも `消費税法` のエントリ）。テスト `default ({ normalize: false }) does not absorb full-width variations` は名前に反して `options` を渡していない。テストが無い。ID を振るのは受入テストを書いてから。
 7. **`normalize: true` で別名から引くこと。** テスト `{ normalize: true } still works on aliases` が渡している `個人情報保護法` は、`個情法` のエントリの正式名称で、別名ではない。`normalize: true` で別名（例: `消費税`）から引くテストが無い。ID を振るのは受入テストを書いてから。
 8. **文字列でない `name`。** 型は `string` だけを受け付けるが、JavaScript から呼ぶと `null` と `undefined` は `null` を返し、`123` は `TypeError: name.trim is not a function` を投げる。テストが無い。ID を振るのは受入テストを書いてから。
