@@ -22,7 +22,7 @@ const VALID_LAW_TYPES = [
 ] as const;
 
 describe('abbreviation dictionary integrity', () => {
-  it('has entries across all 6 domains', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-001 SPEC-ABBR-GET-ABBREVIATION-STATS-003 SPEC-ABBR-PUBLIC-CONSTANTS-003 has entries across all 6 domains', () => {
     const stats = getAbbreviationStats();
     expect(stats.total).toBeGreaterThan(100);
     for (const d of DOMAINS) {
@@ -30,7 +30,7 @@ describe('abbreviation dictionary integrity', () => {
     }
   });
 
-  it('every entry has required fields (abbr, formal, domain, category, source_mcp_hint)', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-002 SPEC-ABBR-PUBLIC-CONSTANTS-002 every entry has required fields (abbr, formal, domain, category, source_mcp_hint)', () => {
     for (const e of abbreviationEntries) {
       expect(e.abbr, JSON.stringify(e)).toBeTruthy();
       expect(e.formal, JSON.stringify(e)).toBeTruthy();
@@ -40,7 +40,7 @@ describe('abbreviation dictionary integrity', () => {
     }
   });
 
-  it('law_id (when set) matches e-Gov format', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-003 law_id (when set) matches e-Gov format', () => {
     for (const e of abbreviationEntries) {
       if (e.law_id != null) {
         // 判定は isValidLawId に一本化する（テスト側に緩い別パターンを持たない）
@@ -49,7 +49,7 @@ describe('abbreviation dictionary integrity', () => {
     }
   });
 
-  it('law_type (when set) is a valid e-Gov type', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-004 law_type (when set) is a valid e-Gov type', () => {
     for (const e of abbreviationEntries) {
       if (e.law_type) {
         expect(VALID_LAW_TYPES, JSON.stringify(e)).toContain(e.law_type);
@@ -57,7 +57,7 @@ describe('abbreviation dictionary integrity', () => {
     }
   });
 
-  it('abbr values are unique across files', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-005 abbr values are unique across files', () => {
     const seen = new Map<string, AbbreviationEntry>();
     const dupes: string[] = [];
     for (const e of abbreviationEntries) {
@@ -71,7 +71,7 @@ describe('abbreviation dictionary integrity', () => {
     expect(dupes, `duplicate abbreviations:\n${dupes.join('\n')}`).toHaveLength(0);
   });
 
-  it('category and law_type are consistent', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-006 category and law_type are consistent', () => {
     // law_type が指定されているなら、category がそれに対応する値であること
     const expected: Record<string, string> = {
       Act: 'law',
@@ -89,14 +89,14 @@ describe('abbreviation dictionary integrity', () => {
     }
   });
 
-  it('constitution entry exists with proper category', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-007 constitution entry exists with proper category', () => {
     const constitution = abbreviationEntries.find((e) => e.category === 'constitution');
     expect(constitution).toBeDefined();
     expect(constitution?.formal).toBe('日本国憲法');
     expect(constitution?.law_id).toBe('321CONSTITUTION');
   });
 
-  it('houki-egov entries are the majority (法令系)', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-008 houki-egov entries are the majority (法令系)', () => {
     // v0.2.0: 通達系（houki-nta）が追加されたが、まだ法令系（houki-egov）が主体
     const egov = abbreviationEntries.filter((e) => e.source_mcp_hint === 'houki-egov');
     const nta = abbreviationEntries.filter((e) => e.source_mcp_hint === 'houki-nta');
@@ -104,7 +104,7 @@ describe('abbreviation dictionary integrity', () => {
     expect(egov.length).toBeGreaterThan(100); // v0.1.0 時点で 165 件
   });
 
-  it('houki-nta entries exist (v0.2.0 で追加)', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-009 houki-nta entries exist (v0.2.0 で追加)', () => {
     const nta = abbreviationEntries.filter((e) => e.source_mcp_hint === 'houki-nta');
     expect(nta.length).toBeGreaterThan(0);
     // 全て通達系カテゴリ
@@ -117,7 +117,7 @@ describe('abbreviation dictionary integrity', () => {
 });
 
 describe('resolveAbbreviation()', () => {
-  it('resolves known abbr', () => {
+  it('SPEC-ABBR-RESOLVE-ABBREVIATION-001 resolves known abbr', () => {
     const r = resolveAbbreviation('消法');
     expect(r).not.toBeNull();
     expect(r?.formal).toBe('消費税法');
@@ -127,23 +127,23 @@ describe('resolveAbbreviation()', () => {
     expect(r?.law_id).toBe('363AC0000000108');
   });
 
-  it('resolves by formal name', () => {
+  it('SPEC-ABBR-RESOLVE-ABBREVIATION-002 resolves by formal name', () => {
     const r = resolveAbbreviation('消費税法');
     expect(r?.abbr).toBe('消法');
   });
 
-  it('resolves by alias', () => {
+  it('SPEC-ABBR-RESOLVE-ABBREVIATION-003 resolves by alias', () => {
     expect(resolveAbbreviation('消費税')?.formal).toBe('消費税法');
   });
 
-  it('resolves popular 通称 via aliases', () => {
+  it('SPEC-ABBR-RESOLVE-ABBREVIATION-003 resolves popular 通称 via aliases', () => {
     expect(resolveAbbreviation('景品表示法')?.abbr).toBe('景表法');
     expect(resolveAbbreviation('PL法')?.formal).toBe('製造物責任法');
     expect(resolveAbbreviation('個人情報保護法')?.abbr).toBe('個情法');
     expect(resolveAbbreviation('独占禁止法')?.abbr).toBe('独禁法');
   });
 
-  it('resolves product-development law abbreviations', () => {
+  it('SPEC-ABBR-RESOLVE-ABBREVIATION-001 resolves product-development law abbreviations', () => {
     expect(resolveAbbreviation('電子署名法')?.domain).toBe('commercial');
     expect(resolveAbbreviation('資金決済法')?.domain).toBe('commercial');
     expect(resolveAbbreviation('犯収法')?.domain).toBe('commercial');
@@ -152,17 +152,17 @@ describe('resolveAbbreviation()', () => {
     expect(resolveAbbreviation('フリーランス新法')?.domain).toBe('labor');
   });
 
-  it('handles whitespace trimming', () => {
+  it('SPEC-ABBR-RESOLVE-ABBREVIATION-004 handles whitespace trimming', () => {
     expect(resolveAbbreviation('  消法  ')?.formal).toBe('消費税法');
   });
 
-  it('returns null for unknown names', () => {
+  it('SPEC-ABBR-RESOLVE-ABBREVIATION-005 returns null for unknown names', () => {
     expect(resolveAbbreviation('存在しない法律')).toBeNull();
     expect(resolveAbbreviation('')).toBeNull();
     expect(resolveAbbreviation('   ')).toBeNull();
   });
 
-  it('covers all 6 domains with representative abbreviations', () => {
+  it('SPEC-ABBR-RESOLVE-ABBREVIATION-001 covers all 6 domains with representative abbreviations', () => {
     expect(resolveAbbreviation('消法')?.domain).toBe('tax');
     expect(resolveAbbreviation('労基法')?.domain).toBe('labor');
     expect(resolveAbbreviation('公認会計士法')?.domain).toBe('accounting');
@@ -171,7 +171,7 @@ describe('resolveAbbreviation()', () => {
     expect(resolveAbbreviation('個情法')?.domain).toBe('administrative');
   });
 
-  it('resolves 憲法 as constitution category', () => {
+  it('SPEC-ABBR-RESOLVE-ABBREVIATION-001 resolves 憲法 as constitution category', () => {
     const r = resolveAbbreviation('憲法');
     expect(r?.formal).toBe('日本国憲法');
     expect(r?.category).toBe('constitution');
@@ -179,7 +179,7 @@ describe('resolveAbbreviation()', () => {
 });
 
 describe('listByDomain()', () => {
-  it('returns only entries with the given domain', () => {
+  it('SPEC-ABBR-LIST-BY-DOMAIN-001 returns only entries with the given domain', () => {
     const taxEntries = listByDomain('tax');
     expect(taxEntries.length).toBeGreaterThan(0);
     for (const e of taxEntries) {
@@ -187,7 +187,7 @@ describe('listByDomain()', () => {
     }
   });
 
-  it('all 6 domains return non-empty results', () => {
+  it('SPEC-ABBR-LIST-BY-DOMAIN-002 all 6 domains return non-empty results', () => {
     for (const d of DOMAINS) {
       expect(listByDomain(d).length, `domain ${d} should have entries`).toBeGreaterThan(0);
     }
@@ -195,7 +195,7 @@ describe('listByDomain()', () => {
 });
 
 describe('listByCategory()', () => {
-  it('returns only entries with the given category', () => {
+  it('SPEC-ABBR-LIST-BY-CATEGORY-001 returns only entries with the given category', () => {
     const laws = listByCategory('law');
     expect(laws.length).toBeGreaterThan(0);
     for (const e of laws) {
@@ -203,32 +203,32 @@ describe('listByCategory()', () => {
     }
   });
 
-  it('returns the constitution entry', () => {
+  it('SPEC-ABBR-LIST-BY-CATEGORY-002 returns the constitution entry', () => {
     const c = listByCategory('constitution');
     expect(c).toHaveLength(1);
     expect(c[0]?.formal).toBe('日本国憲法');
   });
 
-  it('returns cabinet-order entries', () => {
+  it('SPEC-ABBR-LIST-BY-CATEGORY-001 returns cabinet-order entries', () => {
     const co = listByCategory('cabinet-order');
     expect(co.length).toBeGreaterThan(0);
     expect(co.some((e) => e.formal.endsWith('施行令'))).toBe(true);
   });
 
-  it('returns kihon-tsutatsu entries (v0.2.0 で追加)', () => {
+  it('SPEC-ABBR-LIST-BY-CATEGORY-001 returns kihon-tsutatsu entries (v0.2.0 で追加)', () => {
     const kt = listByCategory('kihon-tsutatsu');
     expect(kt.length).toBeGreaterThan(0);
     expect(kt.some((e) => e.formal === '消費税法基本通達')).toBe(true);
   });
 
-  it('returns empty array for not-yet-populated categories', () => {
+  it('SPEC-ABBR-LIST-BY-CATEGORY-003 returns empty array for not-yet-populated categories', () => {
     expect(listByCategory('hanrei')).toHaveLength(0);
     expect(listByCategory('saiketsu')).toHaveLength(0);
   });
 });
 
 describe('listBySourceMcpHint()', () => {
-  it('returns houki-egov entries (法令系)', () => {
+  it('SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-001 returns houki-egov entries (法令系)', () => {
     const egov = listBySourceMcpHint('houki-egov');
     expect(egov.length).toBeGreaterThan(100);
     for (const e of egov) {
@@ -236,7 +236,7 @@ describe('listBySourceMcpHint()', () => {
     }
   });
 
-  it('returns houki-nta entries (v0.2.0 で追加)', () => {
+  it('SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-001 returns houki-nta entries (v0.2.0 で追加)', () => {
     const nta = listBySourceMcpHint('houki-nta');
     expect(nta.length).toBeGreaterThan(0);
     expect(nta.some((e) => e.formal === '消費税法基本通達')).toBe(true);
@@ -245,14 +245,14 @@ describe('listBySourceMcpHint()', () => {
     }
   });
 
-  it('returns empty array for not-yet-populated hints', () => {
+  it('SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-002 returns empty array for not-yet-populated hints', () => {
     expect(listBySourceMcpHint('houki-mhlw')).toHaveLength(0);
     expect(listBySourceMcpHint('houki-court')).toHaveLength(0);
   });
 });
 
 describe('getAbbreviationStats()', () => {
-  it('returns consistent total', () => {
+  it('SPEC-ABBR-GET-ABBREVIATION-STATS-001 SPEC-ABBR-GET-ABBREVIATION-STATS-002 returns consistent total', () => {
     const s = getAbbreviationStats();
     expect(s.total).toBe(abbreviationEntries.length);
     const sumByDomain = Object.values(s.byDomain).reduce((a, b) => a + b, 0);
@@ -263,7 +263,7 @@ describe('getAbbreviationStats()', () => {
     expect(sumByHint).toBe(s.total);
   });
 
-  it('contains all 6 domains in stats', () => {
+  it('SPEC-ABBR-GET-ABBREVIATION-STATS-003 SPEC-ABBR-PUBLIC-CONSTANTS-003 contains all 6 domains in stats', () => {
     const s = getAbbreviationStats();
     for (const d of DOMAINS) {
       expect(s.byDomain[d]).toBeGreaterThan(0);
@@ -272,7 +272,7 @@ describe('getAbbreviationStats()', () => {
 });
 
 describe('frozen entries', () => {
-  it('abbreviationEntries is read-only (frozen)', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-010 abbreviationEntries is read-only (frozen)', () => {
     expect(Object.isFrozen(abbreviationEntries)).toBe(true);
   });
 });
