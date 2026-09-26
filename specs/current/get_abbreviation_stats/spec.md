@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日:
+- 承認日: 2026-09-27 （PR #10）
 - 起こした元: v0.6.0 の `src/index.ts`（`getAbbreviationStats`、`AbbreviationStats`）、`src/index.test.ts`
 - 関連する Issue: なし
 
@@ -20,20 +20,35 @@
 
 `AbbreviationStats`。次の 4 つのフィールドを持つオブジェクト。
 
-| フィールド        | 型                       | 内容                                                                                        |
-| ----------------- | ------------------------ | ------------------------------------------------------------------------------------------- |
-| `total`           | `number`                 | 辞書のエントリの件数                                                                        |
-| `byDomain`        | `Record<string, number>` | キーは分野（`domain` の値）、値はその分野のエントリの件数                                   |
-| `byCategory`      | `Record<string, number>` | キーは種別（`category` の値）、値はその種別のエントリの件数                                 |
-| `bySourceMcpHint` | `Record<string, number>` | キーは本文を持つ MCP の名前（`source_mcp_hint` の値）、値はその MCP のエントリの件数       |
+| フィールド        | 型                       | 内容                                                                                 |
+| ----------------- | ------------------------ | ------------------------------------------------------------------------------------ |
+| `total`           | `number`                 | 辞書のエントリの件数                                                                 |
+| `byDomain`        | `Record<string, number>` | キーは分野（`domain` の値）、値はその分野のエントリの件数                            |
+| `byCategory`      | `Record<string, number>` | キーは種別（`category` の値）、値はその種別のエントリの件数                          |
+| `bySourceMcpHint` | `Record<string, number>` | キーは本文を持つ MCP の名前（`source_mcp_hint` の値）、値はその MCP のエントリの件数 |
 
 例: v0.6.0 では次の値を返す。
 
 ```json
 {
   "total": 174,
-  "byDomain": { "tax": 35, "labor": 28, "accounting": 9, "commercial": 31, "civil": 23, "administrative": 48 },
-  "byCategory": { "law": 138, "cabinet-order": 8, "ministerial-ordinance": 16, "kihon-tsutatsu": 8, "kobetsu-tsutatsu": 1, "rule": 2, "constitution": 1 },
+  "byDomain": {
+    "tax": 35,
+    "labor": 28,
+    "accounting": 9,
+    "commercial": 31,
+    "civil": 23,
+    "administrative": 48
+  },
+  "byCategory": {
+    "law": 138,
+    "cabinet-order": 8,
+    "ministerial-ordinance": 16,
+    "kihon-tsutatsu": 8,
+    "kobetsu-tsutatsu": 1,
+    "rule": 2,
+    "constitution": 1
+  },
   "bySourceMcpHint": { "houki-egov": 165, "houki-nta": 9 }
 }
 ```

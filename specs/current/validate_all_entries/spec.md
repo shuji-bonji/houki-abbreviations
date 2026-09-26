@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日:
+- 承認日: 2026-09-27 （PR #10）
 - 起こした元: v0.6.0 の `src/validate.ts`（`validateAllEntries`、型 `ValidationIssue` / `ValidationReport`）、`src/index.ts`（`validateAllEntries`）、`src/validate.test.ts`
 - 関連する Issue: なし
 
@@ -21,46 +21,46 @@
 
 `ValidationReport`。
 
-| フィールド | 型                  | 内容                                                                 |
-| ---------- | ------------------- | -------------------------------------------------------------------- |
-| `valid`    | `boolean`           | `errors` が 0 件なら `true`。警告があっても `true` のまま            |
-| `errors`   | `ValidationIssue[]` | エラーの一覧（辞書の誤り。CI を失敗させる対象）。無ければ `[]`       |
-| `warnings` | `ValidationIssue[]` | 警告の一覧（CI を失敗させない不整合）。無ければ `[]`                 |
+| フィールド | 型                  | 内容                                                           |
+| ---------- | ------------------- | -------------------------------------------------------------- |
+| `valid`    | `boolean`           | `errors` が 0 件なら `true`。警告があっても `true` のまま      |
+| `errors`   | `ValidationIssue[]` | エラーの一覧（辞書の誤り。CI を失敗させる対象）。無ければ `[]` |
+| `warnings` | `ValidationIssue[]` | 警告の一覧（CI を失敗させない不整合）。無ければ `[]`           |
 
 `ValidationIssue`（エラーと警告で同じ型）。
 
-| フィールド | 型                  | 内容                                                                                  |
-| ---------- | ------------------- | ------------------------------------------------------------------------------------- |
-| `code`     | `string`            | 種類を表す文字列。下の 2 つの表のどれか                                               |
+| フィールド | 型                  | 内容                                                                                            |
+| ---------- | ------------------- | ----------------------------------------------------------------------------------------------- |
+| `code`     | `string`            | 種類を表す文字列。下の 2 つの表のどれか                                                         |
 | `message`  | `string`            | 日本語の説明。該当する `abbr` や値を含む。例: `law_id の形式が不正です: 'INVALID'（abbr=消法）` |
-| `entry`    | `AbbreviationEntry` | 問題のあったエントリ。v0.6.0 の実装ではすべてのエラーと警告に付く（型の上では省略可） |
+| `entry`    | `AbbreviationEntry` | 問題のあったエントリ。v0.6.0 の実装ではすべてのエラーと警告に付く（型の上では省略可）           |
 
 エラーの種類（`errors` に入る）。
 
-| `code`                   | 起きる条件                                                                                                   | 仕様 ID |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------ | ------- |
+| `code`                   | 起きる条件                                                                                                                | 仕様 ID |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `missing_required_field` | `abbr` / `formal` / `domain` / `category` / `source_mcp_hint` のどれかが空（空文字・未設定）。欠けたフィールドごとに 1 件 | 006     |
-| `duplicate_abbr`         | 同じ `abbr` のエントリが 2 件以上ある。2 件目以降に 1 件ずつ                                                 | 002     |
-| `invalid_law_id`         | `law_id` が `null` でも未設定でもなく、`isValidLawId` が `false`                                             | 004     |
-| `duplicate_law_id`       | 同じ `law_id` のエントリが 2 件以上ある。2 件目以降に 1 件ずつ                                               | 003     |
+| `duplicate_abbr`         | 同じ `abbr` のエントリが 2 件以上ある。2 件目以降に 1 件ずつ                                                              | 002     |
+| `invalid_law_id`         | `law_id` が `null` でも未設定でもなく、`isValidLawId` が `false`                                                          | 004     |
+| `duplicate_law_id`       | 同じ `law_id` のエントリが 2 件以上ある。2 件目以降に 1 件ずつ                                                            | 003     |
 
 警告の種類（`warnings` に入る）。
 
-| `code`                         | 起きる条件                                                                                          | 仕様 ID |
-| ------------------------------ | --------------------------------------------------------------------------------------------------- | ------- |
-| `category_hint_mismatch`       | `category` に対して `source_mcp_hint` が下の許容表に無い                                            | 007     |
-| `alias_collides_with_abbr`     | `aliases` のどれかが、ほかのエントリの `abbr` と同じ                                                | 008     |
-| `duplicate_alias_within_entry` | 1 件のエントリの `aliases` に同じ値が 2 回以上ある                                                  | 未決 1  |
+| `code`                         | 起きる条件                                               | 仕様 ID |
+| ------------------------------ | -------------------------------------------------------- | ------- |
+| `category_hint_mismatch`       | `category` に対して `source_mcp_hint` が下の許容表に無い | 007     |
+| `alias_collides_with_abbr`     | `aliases` のどれかが、ほかのエントリの `abbr` と同じ     | 008     |
+| `duplicate_alias_within_entry` | 1 件のエントリの `aliases` に同じ値が 2 回以上ある       | 未決 1  |
 
 `category_hint_mismatch` の許容表（`category` ごとに許す `source_mcp_hint`）。
 
-| `category`                                                                                    | 許す `source_mcp_hint`        |
-| --------------------------------------------------------------------------------------------- | ----------------------------- |
-| `constitution` / `law` / `cabinet-order` / `imperial-ordinance` / `ministerial-ordinance` / `rule` | `houki-egov`                  |
-| `kihon-tsutatsu` / `kobetsu-tsutatsu`                                                         | `houki-nta` / `houki-mhlw`    |
-| `qa-jirei` / `tax-answer`                                                                     | `houki-nta`                   |
-| `hanrei`                                                                                      | `houki-court`                 |
-| `saiketsu`                                                                                    | `houki-saiketsu`              |
+| `category`                                                                                         | 許す `source_mcp_hint`     |
+| -------------------------------------------------------------------------------------------------- | -------------------------- |
+| `constitution` / `law` / `cabinet-order` / `imperial-ordinance` / `ministerial-ordinance` / `rule` | `houki-egov`               |
+| `kihon-tsutatsu` / `kobetsu-tsutatsu`                                                              | `houki-nta` / `houki-mhlw` |
+| `qa-jirei` / `tax-answer`                                                                          | `houki-nta`                |
+| `hanrei`                                                                                           | `houki-court`              |
+| `saiketsu`                                                                                         | `houki-saiketsu`           |
 
 ## 処理の流れ
 

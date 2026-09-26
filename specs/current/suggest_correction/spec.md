@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日:
+- 承認日: 2026-09-27 （PR #10）
 - 起こした元: v0.6.0 の `src/search.ts`（`suggestCorrection`）、`src/index.ts`（`suggestCorrection`）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加）
 
@@ -14,10 +14,10 @@
 
 ## 入力
 
-| 引数 | 必須 | 内容 |
-| --- | --- | --- |
+| 引数    | 必須 | 内容                                               |
+| ------- | ---- | -------------------------------------------------- |
 | `query` | 必須 | 誤っているかもしれない名前。例: `労働基準法施行例` |
-| `limit` | 任意 | 返す件数の上限。既定 5 |
+| `limit` | 任意 | 返す件数の上限。既定 5                             |
 
 編集距離の上限・絞り込み・全角と半角の扱いは指定できない。`findSimilar` の既定値（`maxDistance: 2`、`sortByScore: true`、`normalize: true`、`filter` なし）で探す。
 

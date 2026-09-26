@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日:
+- 承認日: 2026-09-27 （PR #10）
 - 起こした元: v0.6.0 の `src/search.ts`（`findSimilar`・`FuzzyOptions`・`FuzzyMatch`）、`src/index.ts`（`findSimilar`）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加）
 
@@ -14,14 +14,14 @@
 
 ## 入力
 
-| 引数 | 必須 | 内容 |
-| --- | --- | --- |
-| `query` | 必須 | 探す名前。例: `労働基準法` / `消費税法施行令例`。前後の空白は無視する |
-| `options.maxDistance` | 任意 | 返すエントリの編集距離の上限。既定 2 |
-| `options.limit` | 任意 | 返す件数の上限。既定 5。1 未満は 1 として扱う |
-| `options.sortByScore` | 任意 | 編集距離の小さい順に並べるか。既定 `true` |
-| `options.filter` | 任意 | 絞り込み。型は `SearchFilter`（`searchByName` と同じ）。キーは `domain` / `category` / `source_mcp_hint` で、それぞれ単一の値か配列を取る |
-| `options.normalize` | 任意 | 全角英数字・全角ハイフン・全角チルダ・全角スペースを半角にしてから比べるか。既定 `true` |
+| 引数                  | 必須 | 内容                                                                                                                                      |
+| --------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `query`               | 必須 | 探す名前。例: `労働基準法` / `消費税法施行令例`。前後の空白は無視する                                                                     |
+| `options.maxDistance` | 任意 | 返すエントリの編集距離の上限。既定 2                                                                                                      |
+| `options.limit`       | 任意 | 返す件数の上限。既定 5。1 未満は 1 として扱う                                                                                             |
+| `options.sortByScore` | 任意 | 編集距離の小さい順に並べるか。既定 `true`                                                                                                 |
+| `options.filter`      | 任意 | 絞り込み。型は `SearchFilter`（`searchByName` と同じ）。キーは `domain` / `category` / `source_mcp_hint` で、それぞれ単一の値か配列を取る |
+| `options.normalize`   | 任意 | 全角英数字・全角ハイフン・全角チルダ・全角スペースを半角にしてから比べるか。既定 `true`                                                   |
 
 型は `FuzzyOptions`。辞書は関数が持っている（v0.6.0 で 174 件）。エントリの配列を渡す引数は無い。
 
@@ -29,11 +29,11 @@
 
 `FuzzyMatch` の配列。1 件も無ければ空配列。1 つのエントリは 1 回だけ入る。
 
-| フィールド | 内容 |
-| --- | --- |
-| `entry` | 辞書のエントリ（`AbbreviationEntry`） |
+| フィールド   | 内容                                                                                                 |
+| ------------ | ---------------------------------------------------------------------------------------------------- |
+| `entry`      | 辞書のエントリ（`AbbreviationEntry`）                                                                |
 | `matchedKey` | そのエントリの略称・正式名称・別名のうち、`query` との編集距離が最も小さかった名前。辞書の表記のまま |
-| `distance` | `query` と `matchedKey` の編集距離（`levenshtein` の値）。0 は一致 |
+| `distance`   | `query` と `matchedKey` の編集距離（`levenshtein` の値）。0 は一致                                   |
 
 ## 処理の流れ
 

@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日:
+- 承認日: 2026-09-27 （PR #10）
 - 起こした元: v0.6.0 の `src/index.ts`（`abbreviationEntries`）、`src/types.ts`（`AbbreviationEntry`）、`src/data/*.json`、`CONTRIBUTING.md`、`src/index.test.ts`、`src/search.test.ts`
 - 関連する Issue: なし（`src/search.test.ts` の describe 名にある「Issue #3」は houki-nta-mcp #3。CHANGELOG の 0.4.0 を参照）
 
@@ -20,18 +20,18 @@
 
 ### 各エントリのフィールド
 
-| フィールド        | 必須 | 内容                                                                                                                                                                            |
-| ----------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `abbr`            | 必須 | 略称・通称。例: `消法` / `民` / `消基通`。辞書全体で重複しない                                                                                                                  |
-| `formal`          | 必須 | 正式名称。例: `消費税法` / `民法` / `消費税法基本通達`                                                                                                                          |
-| `law_id`          | 必須 | e-Gov の法令 ID。e-Gov で確かめたものだけ入る。確かめていないもの、e-Gov に無いもの（通達など）は `null`。例: `363AC0000000108` / `321CONSTITUTION`                              |
-| `law_num`         | 任意 | 法令番号（漢数字）。例: `昭和六十三年法律第百八号`                                                                                                                              |
-| `law_type`        | 任意 | e-Gov の法令種別。`Act` / `CabinetOrder` / `ImperialOrdinance` / `MinisterialOrdinance` / `Rule` のどれか。法令系のエントリにだけ付く。型では非推奨（`category` へ寄せる予定） |
-| `domain`          | 必須 | 分野。`DOMAINS` の値（`tax` / `labor` / `accounting` / `commercial` / `civil` / `administrative`）のどれか                                                                     |
+| フィールド        | 必須 | 内容                                                                                                                                                                                                                                    |
+| ----------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `abbr`            | 必須 | 略称・通称。例: `消法` / `民` / `消基通`。辞書全体で重複しない                                                                                                                                                                          |
+| `formal`          | 必須 | 正式名称。例: `消費税法` / `民法` / `消費税法基本通達`                                                                                                                                                                                  |
+| `law_id`          | 必須 | e-Gov の法令 ID。e-Gov で確かめたものだけ入る。確かめていないもの、e-Gov に無いもの（通達など）は `null`。例: `363AC0000000108` / `321CONSTITUTION`                                                                                     |
+| `law_num`         | 任意 | 法令番号（漢数字）。例: `昭和六十三年法律第百八号`                                                                                                                                                                                      |
+| `law_type`        | 任意 | e-Gov の法令種別。`Act` / `CabinetOrder` / `ImperialOrdinance` / `MinisterialOrdinance` / `Rule` のどれか。法令系のエントリにだけ付く。型では非推奨（`category` へ寄せる予定）                                                          |
+| `domain`          | 必須 | 分野。`DOMAINS` の値（`tax` / `labor` / `accounting` / `commercial` / `civil` / `administrative`）のどれか                                                                                                                              |
 | `category`        | 必須 | 文書の種類。`CATEGORIES` の値（`constitution` / `law` / `cabinet-order` / `imperial-ordinance` / `ministerial-ordinance` / `rule` / `kihon-tsutatsu` / `kobetsu-tsutatsu` / `qa-jirei` / `tax-answer` / `hanrei` / `saiketsu`）のどれか |
-| `source_mcp_hint` | 必須 | 本文を持つ MCP の名前。`SOURCE_MCP_HINTS` の値（`houki-egov` / `houki-nta` / `houki-mhlw` / `houki-jaish` / `houki-court` / `houki-saiketsu`）のどれか                       |
-| `aliases`         | 任意 | 別名の配列。通称・関連制度名・正式名称の別表記など。例: 消費税法の `インボイス` / `軽減税率`                                                                                     |
-| `note`            | 任意 | 備考の文                                                                                                                                                                        |
+| `source_mcp_hint` | 必須 | 本文を持つ MCP の名前。`SOURCE_MCP_HINTS` の値（`houki-egov` / `houki-nta` / `houki-mhlw` / `houki-jaish` / `houki-court` / `houki-saiketsu`）のどれか                                                                                  |
+| `aliases`         | 任意 | 別名の配列。通称・関連制度名・正式名称の別表記など。例: 消費税法の `インボイス` / `軽減税率`                                                                                                                                            |
+| `note`            | 任意 | 備考の文                                                                                                                                                                                                                                |
 
 エントリは取得日時などの運用上の状態を持たない（鮮度の判定は `judgeStaleness` の担当）。
 
@@ -43,17 +43,17 @@
 
 以下は v0.6.0 の辞書を node で数えた値です。テストで固定している値ではありません（未決 7）。
 
-| 数え方                 | 件数                                                                                                                                        |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| 総数                   | 174                                                                                                                                         |
-| 分野別                 | `tax` 35 / `labor` 28 / `accounting` 9 / `commercial` 31 / `civil` 23 / `administrative` 48                                                 |
-| カテゴリ別             | `law` 138 / `ministerial-ordinance` 16 / `cabinet-order` 8 / `kihon-tsutatsu` 8 / `rule` 2 / `kobetsu-tsutatsu` 1 / `constitution` 1。他の 5 種は 0 |
-| 管轄別                 | `houki-egov` 165 / `houki-nta` 9。他の 4 種は 0                                                                                             |
-| `law_id` が入っている  | 9（`所法` / `法法` / `消法` / `労基法` / `育介法` / `会社` / `商` / `民` / `憲`）。残り 165 は `null`                                       |
-| `law_num` が入っている | 9（`law_id` が入っている 9 件と同じ）                                                                                                       |
-| `law_type` が入っている | 164（入っていないのは houki-nta 管轄の 9 件と `憲`）                                                                                        |
-| `aliases` が入っている | 94                                                                                                                                          |
-| `note` が入っている    | 41                                                                                                                                          |
+| 数え方                  | 件数                                                                                                                                                |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 総数                    | 174                                                                                                                                                 |
+| 分野別                  | `tax` 35 / `labor` 28 / `accounting` 9 / `commercial` 31 / `civil` 23 / `administrative` 48                                                         |
+| カテゴリ別              | `law` 138 / `ministerial-ordinance` 16 / `cabinet-order` 8 / `kihon-tsutatsu` 8 / `rule` 2 / `kobetsu-tsutatsu` 1 / `constitution` 1。他の 5 種は 0 |
+| 管轄別                  | `houki-egov` 165 / `houki-nta` 9。他の 4 種は 0                                                                                                     |
+| `law_id` が入っている   | 9（`所法` / `法法` / `消法` / `労基法` / `育介法` / `会社` / `商` / `民` / `憲`）。残り 165 は `null`                                               |
+| `law_num` が入っている  | 9（`law_id` が入っている 9 件と同じ）                                                                                                               |
+| `law_type` が入っている | 164（入っていないのは houki-nta 管轄の 9 件と `憲`）                                                                                                |
+| `aliases` が入っている  | 94                                                                                                                                                  |
+| `note` が入っている     | 41                                                                                                                                                  |
 
 houki-nta 管轄の 9 件は `消基通` / `所基通` / `法基通` / `相基通` / `通基通` / `徴基通` / `措通` / `印基通`（以上 `kihon-tsutatsu`）と `電帳法取通`（`kobetsu-tsutatsu`）。9 件とも `domain: "tax"`、`law_id: null`。
 
@@ -137,12 +137,12 @@ flowchart TD
 
 次のエントリは、`aliases` に次の値を含む。
 
-| `abbr`           | `aliases` に含む値                             |
-| ---------------- | ---------------------------------------------- |
-| `消法`           | `インボイス` / `適格請求書` / `軽減税率`       |
-| `所法`           | `ふるさと納税` / `寄附金控除`                   |
-| `電帳法`         | `電子帳簿保存` / `電帳`                         |
-| `マイナンバー法` | `マイナ` / `個人番号`                           |
+| `abbr`           | `aliases` に含む値                       |
+| ---------------- | ---------------------------------------- |
+| `消法`           | `インボイス` / `適格請求書` / `軽減税率` |
+| `所法`           | `ふるさと納税` / `寄附金控除`            |
+| `電帳法`         | `電子帳簿保存` / `電帳`                  |
+| `マイナンバー法` | `マイナ` / `個人番号`                    |
 
 これにより、略称・正式名称を知らずに通称で引いても、それぞれの法律のエントリに行き着く（引き方は `resolveAbbreviation` と `searchByName` の担当）。
 

@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日:
+- 承認日: 2026-09-27 （PR #10）
 - 起こした元: v0.6.0 の `src/types.ts`（`CATEGORIES`、`DOMAINS`、`LAW_TYPE_CODES`、`SOURCE_MCP_HINTS`）、`src/freshness.ts`（`STALENESS_THRESHOLDS`）、`src/freshness.test.ts`、`src/index.test.ts`
 - 関連する Issue: houki-abbreviations #3（`STALENESS_THRESHOLDS` の JSDoc の強化）。`STALENESS_THRESHOLDS` の共通化の発端は houki-nta-mcp #15
 
@@ -21,33 +21,33 @@
 
 辞書エントリの `domain`（実務の分野）がとりうる値の一覧。`listByDomain` の引数や `getAbbreviationStats` の `byDomain` のキーに使う。6 つの値を持つ。
 
-| 値               | 分野     | 件数 |
-| ---------------- | -------- | ---- |
-| `tax`            | 税務     | 35   |
-| `labor`          | 労務     | 28   |
-| `accounting`     | 会計     | 9    |
-| `commercial`     | 商事     | 31   |
-| `civil`          | 民事     | 23   |
-| `administrative` | 行政     | 48   |
+| 値               | 分野 | 件数 |
+| ---------------- | ---- | ---- |
+| `tax`            | 税務 | 35   |
+| `labor`          | 労務 | 28   |
+| `accounting`     | 会計 | 9    |
+| `commercial`     | 商事 | 31   |
+| `civil`          | 民事 | 23   |
+| `administrative` | 行政 | 48   |
 
 ### `CATEGORIES`
 
 辞書エントリの `category`（法律・通達・判例など、どの種類の文書か）がとりうる値の一覧。`listByCategory` の引数や `getAbbreviationStats` の `byCategory` のキーに使う。12 の値を持つ。
 
-| 値                      | 文書の種類               | 本文を持つ MCP サーバー | 件数 |
-| ----------------------- | ------------------------ | ----------------------- | ---- |
-| `constitution`          | 憲法                     | houki-egov-mcp          | 1    |
-| `law`                   | 法律                     | houki-egov-mcp          | 138  |
-| `cabinet-order`         | 政令                     | houki-egov-mcp          | 8    |
-| `imperial-ordinance`    | 勅令                     | houki-egov-mcp          | 0    |
-| `ministerial-ordinance` | 省令                     | houki-egov-mcp          | 16   |
-| `rule`                  | 規則                     | houki-egov-mcp          | 2    |
-| `kihon-tsutatsu`        | 基本通達                 | houki-nta-mcp など      | 8    |
-| `kobetsu-tsutatsu`      | 個別通達                 | houki-nta-mcp など      | 1    |
-| `qa-jirei`              | 質疑応答事例             | houki-nta-mcp など      | 0    |
-| `tax-answer`            | タックスアンサー         | houki-nta-mcp など      | 0    |
-| `hanrei`                | 判例                     | （未定）                | 0    |
-| `saiketsu`              | 裁決                     | （未定）                | 0    |
+| 値                      | 文書の種類       | 本文を持つ MCP サーバー | 件数 |
+| ----------------------- | ---------------- | ----------------------- | ---- |
+| `constitution`          | 憲法             | houki-egov-mcp          | 1    |
+| `law`                   | 法律             | houki-egov-mcp          | 138  |
+| `cabinet-order`         | 政令             | houki-egov-mcp          | 8    |
+| `imperial-ordinance`    | 勅令             | houki-egov-mcp          | 0    |
+| `ministerial-ordinance` | 省令             | houki-egov-mcp          | 16   |
+| `rule`                  | 規則             | houki-egov-mcp          | 2    |
+| `kihon-tsutatsu`        | 基本通達         | houki-nta-mcp など      | 8    |
+| `kobetsu-tsutatsu`      | 個別通達         | houki-nta-mcp など      | 1    |
+| `qa-jirei`              | 質疑応答事例     | houki-nta-mcp など      | 0    |
+| `tax-answer`            | タックスアンサー | houki-nta-mcp など      | 0    |
+| `hanrei`                | 判例             | （未定）                | 0    |
+| `saiketsu`              | 裁決             | （未定）                | 0    |
 
 件数 0 の値は、辞書にまだエントリが無い種類として先に定義している。
 
@@ -82,10 +82,10 @@ e-Gov の法令種別の名前と、e-Gov の法令 ID（`law_id`）の 4〜5 �
 
 鮮度の判定（`judgeStaleness`）の境界の日数。family のどの MCP サーバーも同じ境界で `fresh` / `stale` / `outdated` を判定するために共有する。
 
-| キー         | 値   | 意味                                                          |
-| ------------ | ---- | ------------------------------------------------------------- |
-| `fresh_days` | `7`  | 経過日数がこの値未満なら `fresh`                              |
-| `stale_days` | `30` | 経過日数がこの値未満なら `stale`、この値以上なら `outdated`   |
+| キー         | 値   | 意味                                                        |
+| ------------ | ---- | ----------------------------------------------------------- |
+| `fresh_days` | `7`  | 経過日数がこの値未満なら `fresh`                            |
+| `stale_days` | `30` | 経過日数がこの値未満なら `stale`、この値以上なら `outdated` |
 
 7 日は週 1 回の確認、30 日は月 1 回の一括取得を想定した値（houki-nta-mcp v0.6.0 で決めた値）。違う境界が要る MCP サーバーは、この定数を書き換えずに自分の判定関数を書く。
 

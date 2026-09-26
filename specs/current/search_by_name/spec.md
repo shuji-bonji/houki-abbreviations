@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日:
+- 承認日: 2026-09-27 （PR #10）
 - 起こした元: v0.6.0 の `src/search.ts`（`searchByName`・`SearchOptions`・`SearchFilter`・`SearchMode`）、`src/index.ts`（`searchByName`）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加。`aliases` に通称を足したテストは houki-nta-mcp #3 に対応したもの）
 
@@ -14,13 +14,13 @@
 
 ## 入力
 
-| 引数 | 必須 | 内容 |
-| --- | --- | --- |
-| `query` | 必須 | 探す文字列。例: `労働` / `施行令` / `インボイス`。前後の空白は無視する |
-| `options.mode` | 任意 | 一致の仕方。`contains`（既定。どこかに含む）/ `prefix`（先頭が一致）/ `suffix`（末尾が一致）。型は `SearchMode` |
-| `options.filter` | 任意 | 絞り込み。型は `SearchFilter`。キーは `domain` / `category` / `source_mcp_hint` で、それぞれ単一の値か配列を取る |
-| `options.limit` | 任意 | 返す件数の上限。既定 50。1 未満は 1、500 を超える値は 500 として扱う |
-| `options.normalize` | 任意 | 全角英数字・全角ハイフン・全角チルダ・全角スペースを半角にしてから比べるか。既定 `true` |
+| 引数                | 必須 | 内容                                                                                                             |
+| ------------------- | ---- | ---------------------------------------------------------------------------------------------------------------- |
+| `query`             | 必須 | 探す文字列。例: `労働` / `施行令` / `インボイス`。前後の空白は無視する                                           |
+| `options.mode`      | 任意 | 一致の仕方。`contains`（既定。どこかに含む）/ `prefix`（先頭が一致）/ `suffix`（末尾が一致）。型は `SearchMode`  |
+| `options.filter`    | 任意 | 絞り込み。型は `SearchFilter`。キーは `domain` / `category` / `source_mcp_hint` で、それぞれ単一の値か配列を取る |
+| `options.limit`     | 任意 | 返す件数の上限。既定 50。1 未満は 1、500 を超える値は 500 として扱う                                             |
+| `options.normalize` | 任意 | 全角英数字・全角ハイフン・全角チルダ・全角スペースを半角にしてから比べるか。既定 `true`                          |
 
 辞書は関数が持っている（v0.6.0 で 174 件）。エントリの配列を渡す引数は無い。
 
