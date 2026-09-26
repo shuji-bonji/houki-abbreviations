@@ -27,6 +27,29 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
+  pr-scope:
+    # PR の種類（ブランチ名の接頭辞）ごとに、変えてよいパスと承認日を検査する（AGENTS.md「PR の種類」）
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test the scope checker
+        run: node --test .github/scripts/check-pr-scope.test.mjs
+
+      - name: Check PR scope
+        run: node .github/scripts/check-pr-scope.mjs
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+
   test:
     runs-on: ubuntu-latest
     strategy:
