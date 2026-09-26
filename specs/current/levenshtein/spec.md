@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/search.ts`（`levenshtein`）、`src/index.ts`（`levenshtein` の再 export）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加）
 
@@ -78,4 +78,4 @@ flowchart TD
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。テストの名前と中身が合っていない項目は、テストを直します（ID を振っていないものは、直してから振ります）。
 
 1. **サロゲートペアの文字は 2 文字として数える。** → houki-abbreviations #24
-2. **テストの describe 名が「内部 helper」。** `levenshtein` は `src/index.ts` から export され、README の API 節にも載っている公開の関数だが、テストの describe は「levenshtein (内部 helper)」。describe 名を公開の関数の名前に直す（describe には ID を付けない）。
+2. **テストの describe 名が「内部 helper」。** （テストを直した。v0.6.1）

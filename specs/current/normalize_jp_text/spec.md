@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/normalize.ts`（`normalizeJpText`）、`src/normalize.test.ts`
 - 関連する Issue: なし（v0.3.0 で houki-nta-mcp の正規化の一部を移したもの。CHANGELOG の 0.3.0）
 
@@ -99,6 +99,24 @@ flowchart TD
 
 例: `normalizeJpText('１の３・１の４共-1')` は `'1の3・1の4共-1'`。`normalizeJpText('ｱｲｳｴｵ')` は `'ｱｲｳｴｵ'`。`normalizeJpText('第１条第２項第３号')` は `'第1条第2項第3号'`。
 
+### SPEC-ABBR-NORMALIZE-JP-TEXT-009 null と undefined には空文字を返す
+
+`input` が `null` または `undefined` のときは `''` を返す。
+
+例: `normalizeJpText(null)` も `normalizeJpText(undefined)` も `''`。
+
+### SPEC-ABBR-NORMALIZE-JP-TEXT-010 表に無い全角記号は変えない
+
+戻り値の表に無い全角記号（`／` `（` `）` `＃` `＿` `！` など）は半角にしない。
+
+例: `normalizeJpText('／（）＃＿！')` は `'／（）＃＿！'`。
+
+### SPEC-ABBR-NORMALIZE-JP-TEXT-011 前後のタブ・改行・ノーブレークスペースも取り除く
+
+前後の空白として取り除くのは、半角スペース・全角スペースのほか、タブ・改行（`\n` `\r`）・ノーブレークスペース（U+00A0）も含む。途中にあるタブは残す。
+
+例: `normalizeJpText('\t消法\n')` は `'消法'`、`normalizeJpText('\r\n消法\r\n')` は `'消法'`、`normalizeJpText(' 消法 ')` は `'消法'`、`normalizeJpText('消\t法')` は `'消\t法'`。
+
 ## できないこと
 
 - 英大文字を小文字にすること、続いた空白を 1 つにまとめること（`normalizeSearchQuery`）
@@ -112,7 +130,7 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **`null` / `undefined` を渡したとき。** JSDoc は「`null`/`undefined` 相当（`!input`）の場合は空文字を返す」と書き、実際に `normalizeJpText(null)` も `normalizeJpText(undefined)` も `''` を返す。テスト名は「empty / falsy input」だが、確かめているのは `''` だけ。テストが無い。ID を振るのは受入テストを書いてから。
-2. **表以外の全角記号を変えない。** `normalizeJpText('／（）＃＿！')` は `'／（）＃＿！'` のまま。JSDoc は「記号（全角スラッシュ等）は範囲外として保持する」と書く。テストが無い。ID を振るのは受入テストを書いてから。
+1. **`null` / `undefined` を渡したとき。** → SPEC-ABBR-NORMALIZE-JP-TEXT-009
+2. **表以外の全角記号を変えない。** → SPEC-ABBR-NORMALIZE-JP-TEXT-010
 3. **全角ハイフン以外のダッシュ類を変えない。** → houki-abbreviations #21
-4. **取り除く「前後の空白」の範囲。** 半角スペースだけでなく、タブ・改行・ノーブレークスペース（U+00A0）も取り除く（`normalizeJpText('\t消法\n')` も `normalizeJpText(' 消法 ')` も `'消法'`）。テストは半角スペースと全角スペースだけ。ID を振るのは受入テストを書いてから。
+4. **取り除く「前後の空白」の範囲。** → SPEC-ABBR-NORMALIZE-JP-TEXT-011

@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/index.ts`（`listBySourceMcpHint`）、`src/index.test.ts`
 - 関連する Issue: なし
 
@@ -59,6 +59,24 @@ flowchart TD
 
 例: `listBySourceMcpHint('houki-mhlw')` と `listBySourceMcpHint('houki-court')` は `[]`。
 
+### SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-003 辞書の並びのまま返す
+
+返す配列の要素は、辞書（`abbreviationEntries`）での並びのまま並ぶ。`abbreviationEntries.filter((e) => e.source_mcp_hint === hint)` と同じエントリを同じ順で返す。
+
+例: `listBySourceMcpHint('houki-egov')` の先頭の 3 件は `所法` / `所令` / `所規`、`listBySourceMcpHint('houki-nta')` の先頭の 3 件は `消基通` / `所基通` / `法基通` で、どれも `abbreviationEntries` での順と同じ。
+
+### SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-004 呼ぶたびに新しい配列を返す
+
+呼ぶたびに新しい配列を返す。返した配列に要素を足したり、配列から要素を除いたりしても、次の呼び出しの結果は変わらない。
+
+例: `const a = listBySourceMcpHint('houki-nta'); a.push({})` の後も、`listBySourceMcpHint('houki-nta')` は 9 件を返す。`a.splice(0)` の後も同じ。同じ引数で 2 回呼んだ結果は別の配列（`!==`）。
+
+### SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-005 SOURCE_MCP_HINTS に無い値には空配列を返す
+
+JavaScript から `SOURCE_MCP_HINTS` に無い値を渡したときは、例外を投げずに空配列を返す。大文字と小文字は区別する。
+
+例: `listBySourceMcpHint('xxx')` と `listBySourceMcpHint('HOUKI-EGOV')` は `[]`。
+
 ## できないこと
 
 - 複数の MCP をまとめて絞り込むこと（`searchByName` の `filter.source_mcp_hint` は配列を受け付ける）
@@ -74,7 +92,7 @@ flowchart TD
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
 1. **返すエントリは凍結されておらず、書き換えると辞書に残る。** → houki-abbreviations #13
-2. **返す順序。** 辞書の並びのまま返す。順序を約束するのか決まっていない。テストが無い。ID を振るのは受入テストを書いてから。
-3. **返す配列は呼ぶたびに新しい。** 返した配列に要素を足しても、次の呼び出しの結果は変わらない。テストが無い。ID を振るのは受入テストを書いてから。
-4. **`SOURCE_MCP_HINTS` に無い値。** 型では受け付けないが、JavaScript から `listBySourceMcpHint('xxx')` と呼ぶと例外を投げずに空配列を返す。テストが無い。ID を振るのは受入テストを書いてから。
-5. **`houki-jaish` と `houki-saiketsu`。** v0.6.0 では空配列を返すが、テストが確かめているのは `houki-mhlw` と `houki-court` だけ。ID を振るのは受入テストを書いてから。
+2. **返す順序。** → SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-003
+3. **返す配列は呼ぶたびに新しい。** → SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-004
+4. **`SOURCE_MCP_HINTS` に無い値。** → SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-005
+5. **`houki-jaish` と `houki-saiketsu`。** → SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-002（テストを足した）

@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/types.ts`（`CATEGORIES`、`DOMAINS`、`LAW_TYPE_CODES`、`SOURCE_MCP_HINTS`）、`src/freshness.ts`（`STALENESS_THRESHOLDS`）、`src/freshness.test.ts`、`src/index.test.ts`
 - 関連する Issue: houki-abbreviations #3（`STALENESS_THRESHOLDS` の JSDoc の強化）。`STALENESS_THRESHOLDS` の共通化の発端は houki-nta-mcp #15
 
@@ -119,6 +119,38 @@ flowchart TD
 
 例: v0.6.0 で最も少ない `accounting` は 9 件。
 
+### SPEC-ABBR-PUBLIC-CONSTANTS-004 LAW_TYPE_CODES は 5 つの法令種別と種別コードの対応を持つ
+
+`LAW_TYPE_CODES` は次の 5 つのキーと値を持ち、これ以外のキーを持たない。
+
+| キー                   | 値   |
+| ---------------------- | ---- |
+| `Act`                  | `AC` |
+| `CabinetOrder`         | `CO` |
+| `ImperialOrdinance`    | `IO` |
+| `MinisterialOrdinance` | `MO` |
+| `Rule`                 | `RU` |
+
+例: `LAW_TYPE_CODES.Act` → `"AC"`、`LAW_TYPE_CODES.MinisterialOrdinance` → `"MO"`。
+
+### SPEC-ABBR-PUBLIC-CONSTANTS-005 law_id と law_type の両方を持つエントリは、law_id の種別コードが LAW_TYPE_CODES と一致する
+
+辞書（`abbreviationEntries`）で `law_id` が `null` でなく `law_type` も持つエントリは、どれも `law_id` の 4〜5 文字目が `LAW_TYPE_CODES[law_type]` と同じ値になっている。
+
+例: `消法` は `law_id: "363AC0000000108"`・`law_type: "Act"` で、4〜5 文字目の `AC` が `LAW_TYPE_CODES.Act` と同じ。`law_type` を持たない `憲`（`321CONSTITUTION`）は対象外。
+
+### SPEC-ABBR-PUBLIC-CONSTANTS-006 DOMAINS は 6 つの値をこの順で持つ
+
+`DOMAINS` は `["tax", "labor", "accounting", "commercial", "civil", "administrative"]` で、値と順序がこのとおりになっている。
+
+### SPEC-ABBR-PUBLIC-CONSTANTS-007 CATEGORIES は 12 の値をこの順で持つ
+
+`CATEGORIES` は `["constitution", "law", "cabinet-order", "imperial-ordinance", "ministerial-ordinance", "rule", "kihon-tsutatsu", "kobetsu-tsutatsu", "qa-jirei", "tax-answer", "hanrei", "saiketsu"]` で、値と順序がこのとおりになっている。
+
+### SPEC-ABBR-PUBLIC-CONSTANTS-008 SOURCE_MCP_HINTS は 6 つの値をこの順で持つ
+
+`SOURCE_MCP_HINTS` は `["houki-egov", "houki-nta", "houki-mhlw", "houki-jaish", "houki-court", "houki-saiketsu"]` で、値と順序がこのとおりになっている。
+
 ## できないこと
 
 - 値を追加・変更する手段を持つこと（値を変えるにはこのパッケージの新しい版が要る）
@@ -133,7 +165,7 @@ flowchart TD
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
 1. **定数は実行時に書き換えられる。** → houki-abbreviations #13
-2. **`LAW_TYPE_CODES` の値を確かめるテストが無い。** `src/index.test.ts` の `law_type` の検査は、`LAW_TYPE_CODES` を使わずにテストの中に同じキーの一覧を別に書いている。種別コード（`AC` など）と `law_id` の対応も確かめていない。v0.6.0 で `law_id` と `law_type` の両方を持つ 8 件は、どれも `law_id` の 4〜5 文字目が `LAW_TYPE_CODES[law_type]` と一致する。テストが無い。ID を振るのは受入テストを書いてから。
+2. **`LAW_TYPE_CODES` の値を確かめるテストが無い。** → SPEC-ABBR-PUBLIC-CONSTANTS-004、SPEC-ABBR-PUBLIC-CONSTANTS-005
 3. **`houki-jaish` の説明。** → houki-abbreviations #17
-4. **値の一覧そのものを固定するテストが無い。** `CATEGORIES` の 12 値、`SOURCE_MCP_HINTS` の 6 値、`DOMAINS` の 6 値の中身と順序を確かめるテストが無い（002・003 は辞書が定数に収まることだけを確かめる）。値を減らしたり名前を変えたりすると、family の MCP サーバーの引数や応答が変わる。テストが無い。ID を振るのは受入テストを書いてから。
+4. **値の一覧そのものを固定するテストが無い。** → SPEC-ABBR-PUBLIC-CONSTANTS-006、SPEC-ABBR-PUBLIC-CONSTANTS-007、SPEC-ABBR-PUBLIC-CONSTANTS-008
 5. **`CATEGORIES` の説明と e-Gov の範囲。** → houki-abbreviations #25

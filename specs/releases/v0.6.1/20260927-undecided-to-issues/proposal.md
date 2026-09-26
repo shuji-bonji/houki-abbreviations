@@ -3,7 +3,7 @@
 - 対象: `specs/current/` の下の 23 本の `spec.md`（`## 未決` の節）
 - 実装の変更: 不要
 - 承認日: 2026-09-27 （PR #26）
-- 状態: この仕様 PR の中で `specs/current/` に反映する。次の実装 PR の最終コミットで `specs/releases/<tag>/` へ移す
+- 状態: 取り込み済み。この仕様 PR（#26）の中で `specs/current/` に反映し、v0.6.1 の実装 PR の最終コミットで `specs/releases/v0.6.1/` へ移した
 - 起こした日: 2026-09-27（JST）
 - 起こした役: Spec Steward
 - 関連する Issue: PR #10（初版起こし）、#13〜#25（移した先）

@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/index.ts`（`abbreviationEntries`）、`src/types.ts`（`AbbreviationEntry`）、`src/data/*.json`、`CONTRIBUTING.md`、`src/index.test.ts`、`src/search.test.ts`
 - 関連する Issue: なし（`src/search.test.ts` の describe 名にある「Issue #3」は houki-nta-mcp #3。CHANGELOG の 0.4.0 を参照）
 
@@ -146,6 +146,36 @@ flowchart TD
 
 これにより、略称・正式名称を知らずに通称で引いても、それぞれの法律のエントリに行き着く（引き方は `resolveAbbreviation` と `searchByName` の担当）。
 
+### SPEC-ABBR-ABBREVIATION-ENTRIES-012 分野の JSON ファイルの順に結合し、ファイルの中の順を保って並ぶ
+
+`abbreviationEntries` は、`src/data/tax.json` → `labor.json` → `accounting.json` → `commercial.json` → `civil.json` → `administrative.json` の順に各ファイルのエントリをつなげた並びになる。各ファイルの中のエントリは、ファイルに書かれた順のまま並ぶ。`searchByName` などが返す順は、この並びに従う。
+
+例: v0.6.0 では先頭が `所法`（`tax.json` の先頭）、`labor` の最初のエントリ `労基法` は 36 番目（添字 35）、末尾が `デジ庁設置法`（`administrative.json` の末尾）。`searchByName("基通")` は `消基通` / `所基通` / `法基通` / `相基通` / `通基通` / `徴基通` / `印基通` を `tax.json` に書かれた順で返す。
+
+### SPEC-ABBR-ABBREVIATION-ENTRIES-013 全エントリが law_id のキーを持ち、値は文字列か null である
+
+どのエントリも `law_id` のキーを持ち、その値は文字列か `null` のどちらか。`undefined` のエントリやキーの無いエントリは無い。
+
+例: `所法` の `law_id` は `"340AC0000000033"`、`消基通` の `law_id` は `null`。
+
+### SPEC-ABBR-ABBREVIATION-ENTRIES-014 各エントリの domain は、そのエントリが書かれた JSON ファイルの名前と同じである
+
+`src/data/<domain>.json` に書かれたエントリの `domain` は、どれもファイル名の `<domain>` と同じ値を持つ。
+
+例: `tax.json` の `電帳法取通` は `domain: "tax"`、`administrative.json` の `憲` は `domain: "administrative"`。
+
+### SPEC-ABBR-ABBREVIATION-ENTRIES-015 houki-nta 管轄のエントリは law_id が null である
+
+`source_mcp_hint` が `houki-nta` のエントリは、どれも `law_id` が `null`。通達などは e-Gov の法令 ID を持たない。
+
+例: `消基通`・`措通`・`電帳法取通` の `law_id` はどれも `null`。
+
+### SPEC-ABBR-ABBREVIATION-ENTRIES-016 houki-egov 管轄のエントリは法令系のカテゴリだけである
+
+`source_mcp_hint` が `houki-egov` のエントリの `category` は、どれも `constitution` / `law` / `cabinet-order` / `imperial-ordinance` / `ministerial-ordinance` / `rule` のどれか。
+
+例: `憲` は `constitution`、`所法` は `law`。v0.6.0 では `imperial-ordinance` のエントリは無い。
+
 ## できないこと
 
 - 名前からエントリを 1 件引くこと（`resolveAbbreviation`）
@@ -168,10 +198,10 @@ flowchart TD
 
 1. **エントリのオブジェクトが凍結されていない。** → houki-abbreviations #13
 2. **略称・正式名称・別名が別のエントリの間で重複しないこと。** → houki-abbreviations #14
-3. **並びの順。** 分野の JSON を `tax` → `labor` → `accounting` → `commercial` → `civil` → `administrative` の順に結合し、ファイル内の順を保つ。README は `searchByName` の返す順を「`abbreviationEntries` の並び」と書いており、利用者から見える順だが、並びを確かめるテストが無い。ID を振るのは受入テストを書いてから。
-4. **`law_id` フィールドが全エントリにあること。** `law_id` は型では必須（`string | null`）で、v0.6.0 では 174 件すべてに `law_id` のキーがある（`undefined` は 0 件）。JSON は型の宣言で読み込むだけで、実行時に形を確かめていないうえ、SPEC-ABBR-ABBREVIATION-ENTRIES-002 のテストは `law_id` を確かめない。ID を振るのは受入テストを書いてから。
-5. **各エントリの `domain` が JSON のファイル名と同じであること。** CONTRIBUTING.md は `src/data/{domain}.json` に足すと書いており、v0.6.0 では全件一致するが、テストはファイル名との一致を確かめない（`domain` が `DOMAINS` の値かどうかだけ）。ID を振るのは受入テストを書いてから。
-6. **管轄とカテゴリ・`law_id` の組み合わせ。** v0.6.0 では houki-nta 管轄の 9 件はすべて `domain: "tax"`・`law_id: null`、houki-egov 管轄の 165 件はすべて法令系のカテゴリ（`constitution` / `law` / `cabinet-order` / `ministerial-ordinance` / `rule`）で、`law_num` が入っているのは `law_id` が入っている 9 件だけ。テストが確かめているのは houki-nta 管轄のカテゴリ（SPEC-ABBR-ABBREVIATION-ENTRIES-009）だけで、残りの組み合わせはテストが無い。ID を振るのは受入テストを書いてから。
+3. **並びの順。** → SPEC-ABBR-ABBREVIATION-ENTRIES-012
+4. **`law_id` フィールドが全エントリにあること。** → SPEC-ABBR-ABBREVIATION-ENTRIES-013
+5. **各エントリの `domain` が JSON のファイル名と同じであること。** → SPEC-ABBR-ABBREVIATION-ENTRIES-014
+6. **管轄とカテゴリ・`law_id` の組み合わせ。** → SPEC-ABBR-ABBREVIATION-ENTRIES-015、SPEC-ABBR-ABBREVIATION-ENTRIES-016（`law_num` を持つのが `law_id` を持つエントリだけであること、houki-nta 管轄の `domain` は約束にしない）
 7. **件数を約束にするか。** → houki-abbreviations #16
 8. **別名に正式名称と同じ値を入れているエントリ。** → houki-abbreviations #15
 9. **ドキュメントの記述が今の辞書と合わない。** → houki-abbreviations #17

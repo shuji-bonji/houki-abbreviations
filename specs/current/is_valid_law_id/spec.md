@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/validate.ts`（`isValidLawId`）、`src/index.ts`（そのまま再 export）、`src/validate.test.ts`
 - 関連する Issue: houki-abbreviations #6（e-Gov の実データに合わせる）
 
@@ -107,6 +107,18 @@ flowchart TD
 
 例: `363ac0000000108` は `false`。
 
+### SPEC-ABBR-IS-VALID-LAW-ID-011 文字列でない値は受け付けない
+
+`law_id` に文字列でない値を渡すと `false` を返す。
+
+例: `null`、`undefined`、`123` は、どれも `false`。
+
+### SPEC-ABBR-IS-VALID-LAW-ID-012 全角の英数字は受け付けない
+
+英字か数字のどれかが全角なら `false` を返す。半角に直してから判定することはしない。
+
+例: `363ＡC0000000108`（`Ａ` が全角）と `363AC000000010８`（`８` が全角）は `false`。
+
 ## できないこと
 
 - その `law_id` の法令が e-Gov に実在するかを確かめること（形だけを見る。実在の確認は e-Gov API を呼ぶ `scripts/verify-law-ids.mjs` で、パッケージには含まれない）
@@ -122,5 +134,5 @@ flowchart TD
 
 1. **先頭 3 桁（元号と年）の値を確かめない。** → houki-abbreviations #23
 2. **M の形の府省コードの 1 文字目が、実装の注記と違う範囲まで通る。** → houki-abbreviations #23
-3. **文字列でない値は `false`。** `null` / `undefined` / `123` を渡すと例外を投げずに `false` を返す。テストが無い。ID を振るのは受入テストを書いてから。
-4. **全角の英数字は `false`。** `363ＡC0000000108`（`Ａ` が全角）や `363AC000000010８`（`８` が全角）は `false` を返す（半角にしてから判定しない）。テストが無い。ID を振るのは受入テストを書いてから。
+3. **文字列でない値は `false`。** → SPEC-ABBR-IS-VALID-LAW-ID-011
+4. **全角の英数字は `false`。** → SPEC-ABBR-IS-VALID-LAW-ID-012

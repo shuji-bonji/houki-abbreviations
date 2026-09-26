@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
 - 起こした元: v0.6.0 の `src/lookup.ts`（`getAllNames`）、`src/index.ts`（`getAllNames`）、`src/lookup.test.ts`
 - 関連する Issue: なし
 
@@ -74,6 +74,24 @@ flowchart TD
 
 例: `getAllNames('')` と `getAllNames('   ')` はどちらも `[]`。
 
+### SPEC-ABBR-GET-ALL-NAMES-006 同じ文字列の名前は最初の 1 つだけを返す
+
+エントリの `abbr`・`formal`・`aliases` に同じ文字列が 2 回以上あるときは、`abbr`・`formal`・`aliases` の順で最初に出たものだけを残し、後のものは返さない。残した名前の順は SPEC-ABBR-GET-ALL-NAMES-001 と同じ。
+
+例: `abbr` と `formal` がどちらも `酒税法` のエントリでは、`getAllNames('酒税法')` は `['酒税法']`。`formal` と別名がどちらも `消費税法基本通達` のエントリでは、`getAllNames('消基通')` は `['消基通', '消費税法基本通達']`。
+
+### SPEC-ABBR-GET-ALL-NAMES-007 name の前後の空白を除いてから引く
+
+`name` の前後にある空白（スペース・タブ・改行）を取り除いてから辞書と照合する。
+
+例: `getAllNames(' 消法 ')` と `getAllNames('\t消費税法\n')` は、どちらも `getAllNames('消法')` と同じ配列。
+
+### SPEC-ABBR-GET-ALL-NAMES-008 呼ぶたびに新しい配列を返す
+
+戻り値は呼び出しごとに作った配列で、書き換えても辞書や次の呼び出しの結果は変わらない。
+
+例: `getAllNames('消法')` の戻り値に `push('x')` し、先頭を `'y'` に書き換えても、次の `getAllNames('消法')` は先頭が `消法` の 12 件。2 回の呼び出しの戻り値は同じ配列（`===`）ではない。
+
 ## できないこと
 
 - 部分一致やあいまい一致で探すこと（完全一致だけ。部分一致は `searchByName`、似た名前の候補は `findSimilar` / `suggestCorrection`）
@@ -88,8 +106,8 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **同じ名前の重複を除く。** `abbr`・`formal`・`aliases` に同じ文字列があるときは、最初の 1 つだけを残す。v0.6.0 の辞書では 174 件中 66 件のエントリに重複がある（`abbr` と `formal` が同じ `酒税法` など 33 件を含む）。例: `getAllNames('酒税法')` は `['酒税法']`。テスト「順序は abbr → formal → aliases (重複除去後)」の fixtures（`労基法`）には重複が無く、重複を除くことを確かめていない。ID を振るのは受入テストを書いてから。
-2. **前後の空白を無視する。** `getAllNames(' 消法 ')` は `getAllNames('消法')` と同じ配列を返す。テストが無い。ID を振るのは受入テストを書いてから。
+1. **同じ名前の重複を除く。** → SPEC-ABBR-GET-ALL-NAMES-006
+2. **前後の空白を無視する。** → SPEC-ABBR-GET-ALL-NAMES-007
 3. **全角・半角の表記ゆれを吸収しない。** → houki-abbreviations #21
 4. **複数のエントリが同じ名前を持つときにどれを返すか。** → houki-abbreviations #14
-5. **呼ぶたびに新しい配列を返す。** 戻り値の配列を書き換えても、次の呼び出しの結果は変わらない（`getAllNames('消法')` に `push` しても、次の `getAllNames('消法')` は 12 件）。テストが無い。ID を振るのは受入テストを書いてから。
+5. **呼ぶたびに新しい配列を返す。** → SPEC-ABBR-GET-ALL-NAMES-008

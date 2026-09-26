@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 (none)
 
+## [0.6.1] - 2026-09-27
+
+📝 **patch リリース** — テストと JSDoc のみ。公開 API・実行されるコードは変更なし。
+
+### Tests
+
+- 初版仕様の「未決」のうち、今の振る舞いのままでよくテストが無かった項目に仕様 ID を振り（`specs/changes/20260927-untested-behaviors/`、81 件）、受入テスト 94 件を足した。実行されるコードは変わらない。
+- テストの名前と中身が合っていなかった 4 件を直した（`lookupByLawNum` の Issue #6 の完了条件のテストが辞書に無い法令番号で両側 `null` のまま通っていた、など）。
+
+### Documentation
+
+- `normalizeLawNum` の JSDoc で、`-` に揃えるダッシュ類の一覧に `‑`（U+2011）を足した。実装は v0.6.0 から U+2011 も変換している。
+
 ## [0.6.0] - 2026-09-20
 
 ✨ **minor リリース** — 法令番号の漢数字↔算用数字の正規化と、`isValidLawId` の e-Gov 実データ準拠（[#6](https://github.com/shuji-bonji/houki-abbreviations/issues/6)）。houki-hub#20 機能 4 / houki-hub#21 / ROADMAP 4 由来。
