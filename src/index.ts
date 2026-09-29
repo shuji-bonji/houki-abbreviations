@@ -192,9 +192,10 @@ export interface ResolveAbbreviationOptions {
    *   v0.2.0 までと同じ挙動で、後方互換性が保たれる。
    * - `true`: 入力を `normalizeJpText` で正規化したうえで、
    *   同様に正規化されたインデックスから照合する。
-   *   全角ハイフン／チルダ／数字／全角 ASCII 文字／全角スペースの
+   *   ダッシュ類／チルダ／数字／全角 ASCII 文字／全角スペースの
    *   揺れを吸収する。**大文字小文字は保持する**ため、`PL法` と `pl法` は
-   *   別物として扱われる。
+   *   別物として扱われる。全角スペースは半角スペースになるだけで取り除かれない
+   *   （前後の空白は取り除く）。
    *
    * @default false
    */
@@ -224,9 +225,10 @@ export interface ResolveAbbreviationOptions {
  * resolveAbbreviation('存在しない')                   // → null
  *
  * // 正規化モード（v0.3.0〜）
- * resolveAbbreviation('消　法', { normalize: true }); // → 消費税法（全角スペース吸収）
- * resolveAbbreviation('ＰＬ法', { normalize: true }); // → 製造物責任法（全角→半角）
- * resolveAbbreviation('ＰＬ法');                       // → null（normalize: false がデフォルト）
+ * resolveAbbreviation('　消法　', { normalize: true }); // → 消費税法（前後の全角スペース吸収）
+ * resolveAbbreviation('消　法', { normalize: true });   // → null（途中の空白は取り除かない）
+ * resolveAbbreviation('ＰＬ法', { normalize: true });   // → 製造物責任法（全角→半角）
+ * resolveAbbreviation('ＰＬ法');                         // → null（normalize: false がデフォルト）
  * ```
  */
 export function resolveAbbreviation(

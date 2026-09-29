@@ -57,14 +57,15 @@ houki-abbreviations は houki-hub MCP family の共通辞書層です。エン�
 | `imperial-ordinance` | 戦前 | （戦後の追加は基本的に無し） |
 | `ministerial-ordinance` | 各大臣 | ◯◯法施行規則 |
 | `rule` | 各庁 | 各種規則 |
-| `kihon-tsutatsu` | 各省庁長官 | ◯◯基本通達 *(houki-nta-mcp 開発時に追加)* |
+| `kokuji` | 各省庁 | 告示 *(houki-nta / houki-mhlw。e-Gov 法令 API は告示を持たないので `law_id` は `null`)* |
+| `kihon-tsutatsu` | 各省庁長官 | ◯◯基本通達 *(houki-nta)* |
 | `kobetsu-tsutatsu` | 各省庁 | 個別通達 *(houki-nta / houki-mhlw)* |
 | `qa-jirei` | 各省庁 | 質疑応答事例 *(houki-nta)* |
 | `tax-answer` | 国税庁 | タックスアンサー *(houki-nta)* |
 | `hanrei` | 裁判所 | 判例 *(houki-court)* |
 | `saiketsu` | 審判所 | 裁決 *(houki-saiketsu)* |
 
-v0.1.x では `constitution` ～ `rule` のみ実エントリあり。
+実エントリがあるのは `constitution` ～ `rule` の法令系と、`kihon-tsutatsu`（8 件）・`kobetsu-tsutatsu`（1 件）です。
 
 ### source_mcp_hint の選び方
 
@@ -72,16 +73,18 @@ v0.1.x では `constitution` ～ `rule` のみ実エントリあり。
 
 | hint | 担当範囲 |
 |---|---|
-| `houki-egov` | e-Gov 法令API（法律・政令・省令・規則・告示） |
-| `houki-nta` | 国税庁通達・Q&A・タックスアンサー |
-| `houki-mhlw` | 厚労省通達・通知 |
-| `houki-jaish` | 労災（労働安全衛生総合研究所） |
+| `houki-egov` | e-Gov 法令API（憲法・法律・政令・勅令・府省令・規則。告示は持たない） |
+| `houki-nta` | 国税庁通達・告示・Q&A・タックスアンサー |
+| `houki-mhlw` | 厚労省通達・告示・通知 |
+| `houki-jaish` | 労働安全衛生の通達（JAISH: 安全衛生情報センター） |
 | `houki-court` | 判例（裁判所サイト） |
 | `houki-saiketsu` | 国税不服審判所裁決 |
 
 ## 重複チェック
 
 `abbr` フィールドは全 JSON ファイル横断でユニークである必要があります。テストが落ちるので衝突したら別の略称を選んでください。
+
+v0.7.0 からは、名前（`abbr` / `formal` / `aliases`）が `normalizeJpText` を通した後もエントリをまたいで重ならないこと（`duplicate_name`）と、`aliases` に自分の `abbr` / `formal` と同じ値を入れないこと（`alias_equals_own_name`）も `validateAllEntries` のエラーです。`abbr` と `formal` が同じ値（`酒税法` など）は許します。`domain` / `category` / `source_mcp_hint` に一覧に無い値を入れるとエラー（`invalid_domain` / `invalid_category` / `invalid_source_mcp_hint`）になります。`npm run build && npm run validate` で確かめられます。
 
 ## 開発
 

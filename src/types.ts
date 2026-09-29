@@ -106,7 +106,7 @@ export type Category = (typeof CATEGORIES)[number];
  * - 'houki-egov': e-Gov 法令API (憲法・法律・政令・勅令・府省令・規則。告示は持たない)
  * - 'houki-nta': 国税庁通達・告示・Q&A・タックスアンサー
  * - 'houki-mhlw': 厚労省通達・告示・通知
- * - 'houki-jaish': 労災（労働安全衛生総合研究所）
+ * - 'houki-jaish': 労働安全衛生の通達（JAISH: 安全衛生情報センター）
  * - 'houki-court': 判例（裁判所サイト）
  * - 'houki-saiketsu': 国税不服審判所裁決
  *
@@ -217,8 +217,9 @@ export interface AbbreviationEntry {
   /**
    * 法令カテゴリ。どの種類のテキストか（法律本体・通達・判例 等）。
    *
-   * v0.1.0 では「法律 / 政令 / 省令 / 規則 / 憲法」のみ実エントリあり。
-   * 'kihon-tsutatsu' 以降は houki-nta-mcp 開発時に追加される。
+   * 実エントリがあるのは法令系（'constitution' 〜 'rule'）と、'kihon-tsutatsu'（8 件）・
+   * 'kobetsu-tsutatsu'（1 件）。'kokuji' / 'qa-jirei' / 'tax-answer' / 'hanrei' / 'saiketsu' は
+   * 辞書にまだエントリが無い種類として先に定義している。
    */
   category: Category;
 
