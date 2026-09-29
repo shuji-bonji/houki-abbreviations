@@ -19,7 +19,14 @@
  * ```
  */
 
-import type { AbbreviationEntry, Category, Domain, SourceMcpHint } from './types.js';
+import type {
+  AbbreviationEntry,
+  Category,
+  Domain,
+  GetAllNamesOptions,
+  LookupByLawIdOptions,
+  SourceMcpHint,
+} from './types.js';
 import { normalizeJpText } from './normalize.js';
 
 import tax from './data/tax.json' with { type: 'json' };
@@ -29,7 +36,15 @@ import commercial from './data/commercial.json' with { type: 'json' };
 import civil from './data/civil.json' with { type: 'json' };
 import administrative from './data/administrative.json' with { type: 'json' };
 
-export type { AbbreviationEntry, Category, Domain, LawTypeCode, SourceMcpHint } from './types.js';
+export type {
+  AbbreviationEntry,
+  Category,
+  Domain,
+  GetAllNamesOptions,
+  LawTypeCode,
+  LookupByLawIdOptions,
+  SourceMcpHint,
+} from './types.js';
 export { CATEGORIES, DOMAINS, LAW_TYPE_CODES, SOURCE_MCP_HINTS } from './types.js';
 export {
   normalizeJpText,
@@ -373,8 +388,13 @@ void _levenshtein;
 /**
  * e-Gov `law_id` から辞書エントリを引く。完全一致のみ。
  *
+ * `options.normalize` が `true` のとき、全角英数字を半角にしてから比べる（v0.7.0 から）。
+ * 小文字は大文字にしない。既定は `false` で、v0.6.1 までと同じ結果を返す。
+ *
  * @since 0.5.0
  * @group 逆引き
+ * @param law_id e-Gov の law_id
+ * @param options 照合オプション（省略可）
  * @example
  * ```ts
  * import { lookupByLawId } from '@shuji-bonji/houki-abbreviations';
@@ -382,10 +402,15 @@ void _levenshtein;
  * lookupByLawId('363AC0000000108')?.formal;  // '消費税法'
  * lookupByLawId('321CONSTITUTION')?.formal;  // '日本国憲法'
  * lookupByLawId('999XX0000000000');          // null
+ * lookupByLawId('３６３AC0000000108', { normalize: true })?.formal; // '消費税法'（v0.7.0 から）
+ * lookupByLawId('３６３AC0000000108');                              // null
  * ```
  */
-export function lookupByLawId(law_id: string): AbbreviationEntry | null {
-  return _lookupByLawId(abbreviationEntries, law_id);
+export function lookupByLawId(
+  law_id: string,
+  options?: LookupByLawIdOptions
+): AbbreviationEntry | null {
+  return _lookupByLawId(abbreviationEntries, law_id, options);
 }
 
 /**
@@ -414,9 +439,13 @@ export function lookupByLawNum(law_num: string): AbbreviationEntry | null {
  * **全別表記** を文字列配列で返す。
  *
  * 順序は `[abbr, formal, ...aliases]`、重複は除去済み。
+ * `options.normalize` が `true` のとき、全角英数字・ダッシュ類・全角チルダ・全角スペースを
+ * 半角にしてから比べる（v0.7.0 から）。返す名前は辞書の表記のまま。既定は `false`。
  *
  * @since 0.5.0
  * @group 逆引き
+ * @param name 略称・正式名・別名のいずれか
+ * @param options 照合オプション（省略可）
  * @example
  * ```ts
  * import { getAllNames } from '@shuji-bonji/houki-abbreviations';
@@ -424,12 +453,15 @@ export function lookupByLawNum(law_num: string): AbbreviationEntry | null {
  * getAllNames('消法');
  * // → ['消法', '消費税法', '消費税', 'インボイス', 'インボイス制度', ...]
  *
+ * getAllNames('ＰＬ法', { normalize: true });
+ * // → ['製造物責任法', 'PL法']（v0.7.0 から。normalize なしなら []）
+ *
  * getAllNames('存在しない');
  * // → []
  * ```
  */
-export function getAllNames(name: string): string[] {
-  return _getAllNames(abbreviationEntries, name);
+export function getAllNames(name: string, options?: GetAllNamesOptions): string[] {
+  return _getAllNames(abbreviationEntries, name, options);
 }
 
 /* -------------------------------------------------------------------------- */

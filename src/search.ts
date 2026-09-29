@@ -277,6 +277,10 @@ function toArray<T>(v: T | T[] | undefined): T[] {
  * Levenshtein 距離 (動的計画法、O(m*n) 時間 / O(min(m,n)) 空間)。
  * 文字単位の挿入 / 削除 / 置換コストはすべて 1。
  *
+ * 文字はコードポイント単位で数える（v0.7.0 から）。サロゲートペアで表す文字
+ * （`𠮷` U+20BB7 など）は 1 文字で、`levenshtein('𠮷', '吉')` は 1
+ * （v0.6.1 までは UTF-16 の単位で数えて 2 だった）。
+ *
  * 自前実装にした理由は外部依存を増やさないため (本パッケージは
  * 軽量データライブラリの方針なので、`fast-levenshtein` 等は引き込まない)。
  *
@@ -285,6 +289,11 @@ function toArray<T>(v: T | T[] | undefined): T[] {
  */
 export function levenshtein(a: string, b: string): number {
   if (a === b) return 0;
+  return levenshteinCodePoints(Array.from(a), Array.from(b));
+}
+
+/** コードポイントの配列どうしの Levenshtein 距離 */
+function levenshteinCodePoints(a: readonly string[], b: readonly string[]): number {
   if (a.length === 0) return b.length;
   if (b.length === 0) return a.length;
 

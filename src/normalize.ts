@@ -8,9 +8,10 @@
  *
  * - **触らないもの**: 中黒 `・`、「共」「の」「条」「項」「章」「節」「款」、
  *   漢数字、全角ひらがな・カタカナ、半角カナ
- * - **触るもの**: 全角ハイフン `－` → `-`、全角チルダ `～`/`〜` → `~`、
- *   全角数字 `０-９` → `0-9`、全角 ASCII 文字 `Ａ-Ｚ`/`ａ-ｚ` → `A-Z`/`a-z`、
- *   全角スペース `　` → 半角
+ * - **触るもの**: ダッシュ類 `－` `‐` `‑` `–` `—` `―` `−` → `-`、
+ *   全角チルダ `～`/`〜` → `~`、全角数字 `０-９` → `0-9`、
+ *   全角 ASCII 文字 `Ａ-Ｚ`/`ａ-ｚ` → `A-Z`/`a-z`、全角スペース `　` → 半角
+ *   （罫線 `─` と長音 `ー` はダッシュ類に含めない）
  *
  * houki-nta-mcp v0.3.0-alpha.6 で確立された Normalize-everywhere パターンを
  * 共通パッケージに昇格したもの（DB 投入と検索クエリで同じ関数を通す方針）。
@@ -42,13 +43,44 @@ function toHalfWidthAscii(s: string): string {
 }
 
 /**
+ * ダッシュ類。全角ハイフン `－`（U+FF0D）、`‐`（U+2010）、`‑`（U+2011）、`–`（U+2013）、
+ * `—`（U+2014）、`―`（U+2015）、`−`（U+2212）。`normalizeJpText` と `normalizeLawNum` で
+ * 同じ範囲を `-`（U+002D）にする。罫線 `─`（U+2500）と長音 `ー`（U+30FC）は含めない。
+ */
+const DASH_LIKE = /[－‐‑–—―−]/g;
+
+/**
+ * `normalizeJpText` の変換のうち、前後の空白を取り除く手前まで（1 文字を 1 文字に置き換える
+ * 変換だけ）を行う。文字数と位置が変わらないので、`extractLawNames` の `normalize` のように
+ * 元の文字列の位置を保ちたいときに使う（パッケージの外には出さない）。
+ *
+ * @internal
+ */
+export function normalizeJpChars(input: string): string {
+  if (!input) return '';
+  let s = input;
+  // 全角数字・ASCII 文字 → 半角
+  s = toHalfWidthAscii(s);
+  // ダッシュ類 → 半角ハイフン
+  s = s.replace(DASH_LIKE, '-');
+  // 全角チルダ（FULLWIDTH TILDE / WAVE DASH）→ 半角チルダ
+  s = s.replace(/[～〜]/g, '~');
+  // 全角スペース → 半角
+  s = s.replace(/　/g, ' ');
+  return s;
+}
+
+/**
  * 日本語テキストの全角ゆらぎを保守的に半角化する。
  *
- * 数値表記・ASCII 文字・特定記号（ハイフン、チルダ、スペース）の全角／半角
+ * 数値表記・ASCII 文字・特定記号（ダッシュ類、チルダ、スペース）の全角／半角
  * 表記揺れを吸収するための関数。**大文字小文字は保持する**ため、
  * 「ＰＬ法」→「PL法」のように元の casing は変わらない。
+ * ダッシュ類は `－` `‐` `‑` `–` `—` `―` `−` の 7 文字を `-` にする（v0.7.0 から。
+ * v0.6.1 までは全角ハイフン `－` だけだった）。罫線 `─` と長音 `ー` は変えない。
  *
- * 漢字・ひらがな・カタカナ・中黒（・）・各種句読点は変更しない。
+ * 漢字・ひらがな・カタカナ・中黒（・）・各種句読点は変更しない。どの変換も
+ * 1 文字を 1 文字に置き換えるので、文字数が変わるのは前後の空白を取り除くときだけ。
  *
  * 入力が空文字や `null`/`undefined` 相当（`!input`）の場合は空文字を返す。
  *
@@ -60,6 +92,7 @@ function toHalfWidthAscii(s: string): string {
  * @example
  * ```ts
  * normalizeJpText('１８３－２');     // '183-2'
+ * normalizeJpText('１８３―２');     // '183-2'（U+2015 などのダッシュ類も。v0.7.0 から）
  * normalizeJpText('183～193共-1');  // '183~193共-1'（チルダのみ半角化）
  * normalizeJpText('ＰＬ法');         // 'PL法'（大文字保持）
  * normalizeJpText('  消法  ');      // '消法'（trim）
@@ -68,24 +101,17 @@ function toHalfWidthAscii(s: string): string {
  */
 export function normalizeJpText(input: string): string {
   if (!input) return '';
-  let s = input;
-  // 全角数字・ASCII 文字 → 半角
-  s = toHalfWidthAscii(s);
-  // 全角ハイフン → 半角ハイフン
-  s = s.replace(/－/g, '-');
-  // 全角チルダ（FULLWIDTH TILDE / WAVE DASH）→ 半角チルダ
-  s = s.replace(/[～〜]/g, '~');
-  // 全角スペース → 半角
-  s = s.replace(/　/g, ' ');
   // 前後の空白を除去
-  return s.trim();
+  return normalizeJpChars(input).trim();
 }
 
 /**
  * 検索クエリ向けの積極的な正規化。
  *
  * `normalizeJpText` の処理に加えて以下を行う:
- * - ASCII 大文字 → 小文字（case folding）
+ * - ASCII 大文字 `A`〜`Z` → 小文字（全角の `Ａ`〜`Ｚ` は半角にしたうえで小文字）。
+ *   小文字にするのはこの 52 字だけで、ローマ数字 `Ⅰ`・ギリシャ文字 `Α`・`À` などは
+ *   変えない（v0.7.0 から。v0.6.1 までは `toLowerCase` で英字以外も小文字にしていた）
  * - 連続する空白文字 → 単一の半角スペース
  *
  * houki-nta-mcp の FTS5 検索のように、ユーザー入力の表記ゆれを最大限
@@ -113,8 +139,8 @@ export function normalizeSearchQuery(input: string): string {
   if (!input) return '';
   // まず保守的な正規化（width のみ）
   let s = normalizeJpText(input);
-  // ASCII 大文字 → 小文字
-  s = s.toLowerCase();
+  // ASCII 大文字 → 小文字（A〜Z だけ。表に無い文字は変えない）
+  s = s.replace(/[A-Z]/g, (ch) => ch.toLowerCase());
   // 連続する空白を単一の半角スペースへ
   s = s.replace(/\s+/g, ' ');
   return s;
@@ -139,11 +165,22 @@ const KANJI_DIGITS: Readonly<Record<string, number>> = {
 
 const KANJI_UNITS: Readonly<Record<string, number>> = { 十: 10, 百: 100, 千: 1000 };
 
-/** 漢数字として扱う文字の並び（位取りの単位 十百千 と、位ごとの表記に使う 〇 を含む） */
-const KANJI_NUMERAL_RUN = /[〇一二三四五六七八九十百千]+/g;
-
 /** 全体が漢数字だけでできているか */
 const KANJI_NUMERAL_ONLY = /^[〇一二三四五六七八九十百千]+$/;
+
+/**
+ * 位ごとの書き方で読む文字数の上限。`number` で正確に表せる 15 桁まで
+ * （`Number.MAX_SAFE_INTEGER` は 16 桁の 9007199254740991）。16 文字以上は `null`。
+ */
+const MAX_POSITIONAL_DIGITS = 15;
+
+/**
+ * `normalizeLawNum` で算用数字にする漢数字の並び。年・番号の位置にあるものだけ:
+ * 直前が `第` か `-`、または直後が `年` `号` `-`（`-` は `normalizeJpChars` で揃えた後のダッシュ）。
+ * 地名や語の一部（`千葉県` `一般`）の漢数字は変えない（v0.7.0 から）。
+ */
+const KANJI_NUMERAL_AT_NUMBER_POSITION =
+  /(?<=[第-])[〇一二三四五六七八九十百千]+|[〇一二三四五六七八九十百千]+(?=[年号-])/g;
 
 /**
  * 漢数字を数値にする。
@@ -158,7 +195,8 @@ const KANJI_NUMERAL_ONLY = /^[〇一二三四五六七八九十百千]+$/;
  *   判例の引用（`昭二五・一〇・二五`）がこの書き方。
  *
  * 2 つの書き方が混ざった並び（`二〇十`）は `null`。1 文字（`五`）はどちらの
- * 読み方でも同じ値になる。
+ * 読み方でも同じ値になる。位ごとの書き方は 15 文字まで読み、16 文字以上は値を
+ * 正確に表せないので丸めずに `null` を返す（v0.7.0 から）。
  *
  * houki-egov-mcp v0.7.0 の `kanjiToNumber`（条番号用。位取りのみ）と同じ名前で、
  * 位取りの読み方はそちらと同じ結果を返す。位ごとの書き方を受け付ける点だけが違う。
@@ -183,7 +221,8 @@ export function kanjiToNumber(input: string): number | null {
 
   const hasUnit = /[十百千]/.test(input);
   if (!hasUnit) {
-    // 位ごとの書き方: 1 文字ずつ桁として並べる
+    // 位ごとの書き方: 1 文字ずつ桁として並べる。16 文字以上は丸めずに null
+    if (input.length > MAX_POSITIONAL_DIGITS) return null;
     let n = 0;
     for (const ch of input) {
       n = n * 10 + KANJI_DIGITS[ch];
@@ -221,13 +260,16 @@ export function kanjiToNumber(input: string): number | null {
  *
  * 行うこと:
  *
- * 1. `normalizeJpText` と同じ全角 → 半角の変換（数字・英字・ハイフン・空白）
+ * 1. `normalizeJpText` と同じ全角 → 半角の変換（数字・英字・ダッシュ類 `―` `－` `‐` `‑` `–` `—` `−`
+ *    → `-`・チルダ・空白）。人事院規則の `一―一` のダッシュもここで `-` になる
  * 2. 空白をすべて取り除く（`昭和25年 法律 第137号` → `昭和25年法律第137号`）
  * 3. `元年` → `1年`（`令和元年` → `令和1年`）
- * 4. 漢数字の並びを算用数字にする（{@link kanjiToNumber}。位取りと位ごとの両方）。
- *    読めない並びはそのまま残す
- * 5. 算用数字の先頭の 0 を取る（`第0137号` → `第137号`）
- * 6. ダッシュ類（`―` `－` `‐` `‑` `–` `—` `−`）を `-` に揃える（人事院規則の `一―一` → `1-1`）
+ * 4. 年・番号の位置にある漢数字の並びを算用数字にする（{@link kanjiToNumber}。位取りと
+ *    位ごとの両方）。対象は直後が `年` か `号`、直前が `第`、直前か直後が `-` のどれかに
+ *    当たる並びだけで、地名や語の一部の漢数字（`千葉県` `一般`）は変えない（v0.7.0 から。
+ *    v0.6.1 までは `千葉県` → `1000葉県` になっていた）。読めない並びはそのまま残す
+ * 5. 算用数字の先頭の 0 を取る（`第0137号` → `第137号`）。桁数の上限は無く、数値に
+ *    変換して丸めることはしない（v0.7.0 から）
  *
  * 行わないこと: 元号の別表記（`S25` / `昭25`）、`第` や `号` の有無の吸収、
  * 法令の種別名（`法律` / `政令`）の補完。これらは表記の揺れではなく別の書き方なので、
@@ -256,11 +298,11 @@ export function normalizeLawNum(input: string): string {
   let s = normalizeJpText(input);
   s = s.replace(/\s+/g, '');
   s = s.replace(/元年/g, '1年');
-  s = s.replace(KANJI_NUMERAL_RUN, (run) => {
+  s = s.replace(KANJI_NUMERAL_AT_NUMBER_POSITION, (run) => {
     const n = kanjiToNumber(run);
     return n === null ? run : String(n);
   });
-  s = s.replace(/\d+/g, (digits) => String(Number.parseInt(digits, 10)));
-  s = s.replace(/[―‐‑–—−]/g, '-');
+  // 先頭の 0 を文字列の操作で取る（数値を経由しないので桁数によらず丸めない）
+  s = s.replace(/\d+/g, (digits) => digits.replace(/^0+(?=\d)/, ''));
   return s;
 }

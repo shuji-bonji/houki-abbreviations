@@ -14,6 +14,7 @@
  */
 
 import type { AbbreviationEntry, Category, SourceMcpHint } from './types.js';
+import { normalizeJpChars } from './normalize.js';
 
 /* -------------------------------------------------------------------------- */
 /* isValidLawId                                                               */
@@ -362,15 +363,32 @@ export interface ExtractOptions {
   dedupe?: boolean;
 
   /**
-   * 部分包含時に長い方を優先するか。
+   * 範囲が重なるときに長い方を優先するか。
    *
+   * `true` なら、ほかの、より長い一致と 1 文字でも範囲が重なる短い一致を返さない。
    * 例: テキスト「民法等の一部を改正する法律」内に `民法` と
-   * `民法等の一部を改正する法律` の両方がマッチする場合、`true` なら
-   * 長い方（後者）だけを返す。
+   * `民法等の一部を改正する法律` の両方がマッチする場合、長い方（後者）だけを返す。
+   * 「消費税法法人税法」の `法法` のように、2 つの長い一致の端にまたがる短い一致も
+   * 返さない（v0.7.0 から。v0.6.1 までは、すっぽり含まれる一致だけを除いていた）。
+   * 長さが同じ一致どうしは、重なっていても両方返す。
    *
    * @default true
    */
   preferLonger?: boolean;
+
+  /**
+   * 全角／半角の表記ゆらぎを吸収して探すか。
+   *
+   * `true` なら、`text` と辞書のキーの両方を `normalizeJpText` と同じ規則で半角にしてから
+   * 探す（全角英数字・ダッシュ類・全角チルダ・全角スペース）。`matchedKey` は辞書の表記の
+   * まま、`position` と `length` は元の `text` の位置と長さで返す。
+   * `resolveAbbreviation` の `options.normalize` と同じ意味で、既定も同じ `false`。
+   * MCP サーバーは入口で `true` を渡す。
+   *
+   * @since 0.7.0
+   * @default false
+   */
+  normalize?: boolean;
 }
 
 /**
@@ -387,6 +405,9 @@ export interface ExtractOptions {
  * **既知の限界**: 文脈解析はしない。「民法 の解釈は…」と「民法人 の認可は…」
  * のような文脈区別は呼び出し側で行う（v0.5.0 では `民法人` 内の `民法` も
  * ヒットする可能性があるため、`preferLonger` で多少緩和される程度）。
+ *
+ * `options.normalize` が `true` のときは、全角英数字などを半角にしてから探す
+ * （v0.7.0 から）。`position` / `length` は元の `text` の位置で返す。
  *
  * @param entries 検索対象のエントリ配列
  * @param text 抽出対象のテキスト
@@ -415,6 +436,11 @@ export function extractLawNames(
   const minLength = Math.max(options.minLength ?? 2, 1);
   const dedupe = options.dedupe ?? false;
   const preferLonger = options.preferLonger ?? true;
+  const normalize = options.normalize ?? false;
+
+  // normalize のときは、位置を保つために前後の空白を取り除かずに半角化する
+  // （どの変換も 1 文字を 1 文字に置き換えるので、位置と長さは元の text と同じ）
+  const haystack = normalize ? normalizeJpChars(text) : text;
 
   const matches: LawNameMatch[] = [];
 
@@ -422,9 +448,10 @@ export function extractLawNames(
     const keys = [entry.abbr, entry.formal, ...(entry.aliases ?? [])];
     for (const key of keys) {
       if (!key || key.length < minLength) continue;
+      const needle = normalize ? normalizeJpChars(key) : key;
       let from = 0;
-      while (from <= text.length) {
-        const pos = text.indexOf(key, from);
+      while (from <= haystack.length) {
+        const pos = haystack.indexOf(needle, from);
         if (pos < 0) break;
         matches.push({
           entry,
@@ -442,7 +469,7 @@ export function extractLawNames(
 
   let result = matches;
   if (preferLonger) {
-    result = removeContained(result);
+    result = removeOverlappedByLonger(result);
   }
   if (dedupe) {
     const seen = new Set<string>();
@@ -456,21 +483,21 @@ export function extractLawNames(
 }
 
 /**
- * 「他のマッチに完全に包含されるマッチ」を除去。
- * 例: `民法` が `民法等の一部を改正する法律` に位置・範囲ともに包含されるなら、
- * 短い方を捨てる。
+ * 「ほかの、より長いマッチと範囲が 1 文字でも重なるマッチ」を除去。
+ * 例: `民法` が `民法等の一部を改正する法律` に含まれるなら短い方を捨てる。
+ * `消費税法法人税法` の `法法`（位置 3）は `消費税法`（0〜4）と `法人税法`（4〜8）の
+ * 端にまたがるので捨てる。長さが同じマッチどうしは重なっていても両方残す。
  */
-function removeContained(matches: LawNameMatch[]): LawNameMatch[] {
+function removeOverlappedByLonger(matches: LawNameMatch[]): LawNameMatch[] {
   const result: LawNameMatch[] = [];
   for (const m of matches) {
     const mEnd = m.position + m.length;
-    const isContained = matches.some((other) => {
-      if (other === m) return false;
+    const overlapped = matches.some((other) => {
+      if (other === m || other.length <= m.length) return false;
       const oEnd = other.position + other.length;
-      // m が other に厳密に含まれる（other の方が長い）
-      return other.position <= m.position && oEnd >= mEnd && other.length > m.length;
+      return other.position < mEnd && m.position < oEnd;
     });
-    if (!isContained) result.push(m);
+    if (!overlapped) result.push(m);
   }
   return result;
 }

@@ -23,8 +23,8 @@
  * @see docs/v0.5-v0.6-design.md
  */
 
-import { normalizeLawNum } from './normalize.js';
-import type { AbbreviationEntry } from './types.js';
+import { normalizeJpText, normalizeLawNum } from './normalize.js';
+import type { AbbreviationEntry, GetAllNamesOptions, LookupByLawIdOptions } from './types.js';
 
 /**
  * e-Gov `law_id` から辞書エントリを引く。完全一致のみ（大小区別あり）。
@@ -32,8 +32,12 @@ import type { AbbreviationEntry } from './types.js';
  * `entry.law_id !== null` のエントリのみが対象。`null` のエントリは
  * 検索対象外（仕様上 `law_id` が確定していないため）。
  *
+ * `options.normalize` が `true` のときは、`law_id` の全角英数字を半角にしてから
+ * 比べる（v0.7.0 から）。小文字は大文字にしない。
+ *
  * @param entries 検索対象のエントリ配列
  * @param law_id e-Gov の law_id（例: '363AC0000000108'）
+ * @param options 照合オプション（省略可）
  * @returns 該当エントリ、見つからなければ `null`
  *
  * @example
@@ -43,14 +47,16 @@ import type { AbbreviationEntry } from './types.js';
  * lookupByLawId(abbreviationEntries, '363AC0000000108')?.formal;  // '消費税法'
  * lookupByLawId(abbreviationEntries, '321CONSTITUTION')?.formal;  // '日本国憲法'
  * lookupByLawId(abbreviationEntries, '999XX0000000000');          // null
+ * lookupByLawId(abbreviationEntries, '３６３AC0000000108', { normalize: true })?.formal; // '消費税法'
  * ```
  */
 export function lookupByLawId(
   entries: readonly AbbreviationEntry[],
-  law_id: string
+  law_id: string,
+  options?: LookupByLawIdOptions
 ): AbbreviationEntry | null {
   if (!law_id) return null;
-  const trimmed = law_id.trim();
+  const trimmed = options?.normalize ? normalizeJpText(law_id) : law_id.trim();
   if (!trimmed) return null;
   for (const entry of entries) {
     if (entry.law_id === trimmed) return entry;
@@ -101,12 +107,16 @@ export function lookupByLawNum(
  * 重複は除去し、順序は `[abbr, formal, ...aliases]` を維持。エントリが
  * 見つからなければ空配列（`null` ではなく `[]`、配列演算をそのまま続けられる）。
  *
+ * `options.normalize` が `true` のときは、`name` と辞書の名前の両方を `normalizeJpText`
+ * に通してから比べる（v0.7.0 から）。返す名前は辞書の表記のまま。
+ *
  * **用途**: LLM プロンプトで「この法令の全表記」を列挙するシナリオ。
  * 例: 「消費税法は『消法』『インボイス制度』『軽減税率』などの呼称でも
  * 参照される」と LLM に伝える前段。
  *
  * @param entries 検索対象のエントリ配列
  * @param name 略称・正式名・別名のいずれか
+ * @param options 照合オプション（省略可）
  * @returns そのエントリの全別表記。見つからなければ `[]`
  *
  * @example
@@ -121,16 +131,22 @@ export function lookupByLawNum(
  * // → []
  * ```
  */
-export function getAllNames(entries: readonly AbbreviationEntry[], name: string): string[] {
+export function getAllNames(
+  entries: readonly AbbreviationEntry[],
+  name: string,
+  options?: GetAllNamesOptions
+): string[] {
   if (!name) return [];
-  const trimmed = name.trim();
-  if (!trimmed) return [];
+  const normalize = options?.normalize ?? false;
+  const wanted = normalize ? normalizeJpText(name) : name.trim();
+  if (!wanted) return [];
+  const same = (key: string): boolean => (normalize ? normalizeJpText(key) : key) === wanted;
 
   for (const entry of entries) {
-    if (entry.abbr === trimmed || entry.formal === trimmed) {
+    if (same(entry.abbr) || same(entry.formal)) {
       return collectNames(entry);
     }
-    if (entry.aliases?.includes(trimmed)) {
+    if (entry.aliases?.some(same)) {
       return collectNames(entry);
     }
   }

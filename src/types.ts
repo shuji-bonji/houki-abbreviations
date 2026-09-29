@@ -121,6 +121,41 @@ export const SOURCE_MCP_HINTS = [
 export type SourceMcpHint = (typeof SOURCE_MCP_HINTS)[number];
 
 /**
+ * `getAllNames` に渡せるオプション。
+ *
+ * @since 0.7.0
+ * @group 逆引き
+ */
+export interface GetAllNamesOptions {
+  /**
+   * `true` なら、`name` と辞書の名前の両方を `normalizeJpText` に通してから比べる
+   * （全角英数字・ダッシュ類・全角チルダ・全角スペースを半角にする）。返す名前は
+   * 辞書に書かれた表記のまま。`resolveAbbreviation` の `options.normalize` と同じ意味で、
+   * 既定も同じ `false`。MCP サーバーは入口で `true` を渡す。
+   *
+   * @default false
+   */
+  normalize?: boolean;
+}
+
+/**
+ * `lookupByLawId` に渡せるオプション。
+ *
+ * @since 0.7.0
+ * @group 逆引き
+ */
+export interface LookupByLawIdOptions {
+  /**
+   * `true` なら、`law_id` を `normalizeJpText` に通してから比べる（全角英数字を半角にする）。
+   * 英字の小文字は大文字にしない（`isValidLawId` と同じく、小文字の `law_id` は一致しない）。
+   * 辞書の `law_id` は半角の大文字なので、辞書の側は変換しない。既定 `false`。
+   *
+   * @default false
+   */
+  normalize?: boolean;
+}
+
+/**
  * 略称辞書エントリ
  *
  * 1 件 = 1 つの法令／通達／判例 等のメタ情報。
