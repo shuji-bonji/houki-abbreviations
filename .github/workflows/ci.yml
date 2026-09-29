@@ -89,3 +89,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Validate the dictionary
+        run: npm run validate
