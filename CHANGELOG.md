@@ -9,6 +9,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 (none)
 
+## [0.7.0] - 2026-10-01
+
+✨ **minor リリース** — 段階 3（houki-hub `docs/notes/2026-09-29-plan-spec-issues.md`）。仕様 PR [#30](https://github.com/shuji-bonji/houki-abbreviations/pull/30)（正規化）/ [#31](https://github.com/shuji-bonji/houki-abbreviations/pull/31)（引数の検査）/ [#32](https://github.com/shuji-bonji/houki-abbreviations/pull/32)（辞書の約束）/ [#33](https://github.com/shuji-bonji/houki-abbreviations/pull/33)（凍結）で承認した差分を実装し、`specs/current/` に取り込んだ。対象 Issue: #13 #14 #15 #16 #17 #18 #19 #20 #21 #22 #23 #24 #25。
+
+### 互換性
+
+0.x の minor だが、振る舞いが変わる点がある。houki-egov-mcp / houki-nta-mcp の依存を `^0.7.0` に上げるときは次を確かめること。
+
+- **例外を投げるようになった引数**（v0.6.1 までは丸めるか特別な値を返していた）。呼び出し側の inputSchema で止めた後に届く値は正しいので通常は起きないが、DB の値を渡す `computeDaysSince` は捕まえて `code` に変える必要がある。
+  - `searchByName` / `findSimilar` の `options.limit`、`suggestCorrection` の `limit`: 1 以上 500 以下の整数だけ。1 未満・小数・500 超・`NaN`・`±Infinity` は `RangeError`、数でない値は `TypeError`。`undefined` は既定値（50 / 5 / 5）。v0.6.1 では 1 未満は 1、小数は切り上げか切り捨て、`NaN` は打ち切らないか 0 件、上限は `searchByName` だけ 500 だった
+  - `computeDaysSince(fetchedAt, nowMs)`: `fetchedAt` は ISO 8601 の 3 つの形（`YYYY-MM-DD`（UTC の 0 時）/ `YYYY-MM-DDTHH:mm:ss(.sss)Z` / `YYYY-MM-DDTHH:mm:ss(.sss)±hh:mm`）だけ。それ以外の書き方（`2026/05/07`、`May 7, 2026`）、時差の無い時刻、暦に無い日付（2 月 30 日）は `RangeError`、文字列でない値は `TypeError`。`nowMs` は `NaN` / `±Infinity` が `RangeError`、数でない値が `TypeError`。v0.6.1 では解釈できない文字列に `0` を返し、壊れた取得時刻が `fresh` になっていた。今より後の取得時刻は変わらず `0`
+  - `judgeStaleness(daysSince)`: 負の値・`NaN`・`±Infinity` は `RangeError`、数でない値は `TypeError`。v0.6.1 では負の値が `fresh`、`NaN` が `outdated` だった
+- **正規化の結果が変わる入力**。
+  - `normalizeJpText`: ダッシュ類 `‐`（U+2010）`‑`（U+2011）`–`（U+2013）`—`（U+2014）`―`（U+2015）`−`（U+2212）も `-` にする（v0.6.1 は全角ハイフン `－` だけ）。罫線 `─` と長音 `ー` は変えない。`normalizeJpText` を通した文字列を検索用の列に入れている houki-egov-mcp の ingester と houki-nta-mcp の DB 投入は、投入済みの列（`―` のまま）と検索語（`-` になる）が食い違うので、**DB の列の再正規化か作り直しが要る**（nta v0.14.2 → 0.15.0 の全角英字と同じ手順）。辞書の名前にダッシュ類は無いので、辞書を引く結果は変わらない
+  - `normalizeSearchQuery`: 小文字にするのは `A`〜`Z`（全角なら `Ａ`〜`Ｚ`）だけ。`Ⅰ` `Α` `À` は変えない（v0.6.1 は `toLowerCase` で `ⅰ` `α` `à` にしていた）。egov・nta の FTS5（`unicode61`）は大文字小文字を区別しないので検索結果は変わらない
+  - `normalizeLawNum`: 算用数字にする漢数字は年・番号の位置（`年` `号` の直前、`第` の直後、ダッシュの隣）だけ。`千葉県条例第一号` → `千葉県条例第1号`（v0.6.1 は `1000葉県条例第1号`）。桁数の大きい算用数字は丸めない（v0.6.1 は 17 桁以上を丸めていた）。egov・nta は `normalizeLawNum` を直接呼んでおらず、`lookupByLawNum` の結果は変わらない
+  - `kanjiToNumber`: 位ごとの並びが 16 文字以上なら `null`（v0.6.1 は丸めた値）
+  - `levenshtein`（と `findSimilar` / `suggestCorrection` の `distance`）: コードポイント単位で数える。`levenshtein('𠮷', '吉')` は 1（v0.6.1 は 2）
+- **`findSimilar` / `suggestCorrection` の候補が減る**。名前ごとに距離 × 3 ≤ 長い方の文字数のときだけ候補にする（距離 0 は常に候補）。`findSimilar('民法')` は `民`・`民訴`・`民執`・`民保` の 4 件（v0.6.1 は `所法` `法法` `消法` `措法` が距離 1 で続いた）、`findSimilar('法')` は `[]`。`suggestCorrection` は `query` と一致したエントリ（距離 0）を除いてから `limit` 件で打ち切る（`suggestCorrection('民法')` に `民法` は入らない）
+- **`extractLawNames` の結果が減る**。`preferLonger: true`（既定）で、より長い一致と 1 文字でも重なる短い一致を返さない（`消費税法法人税法` の `法法`。v0.6.1 はすっぽり含まれる一致だけを除いていた）。同じエントリの同じ位置・同じ長さの一致（`酒税法` の `abbr` と `formal`）は 1 件にする
+- **凍結により代入が `TypeError` になる**。`abbreviationEntries` の各エントリと `aliases` の配列、`DOMAINS` / `CATEGORIES` / `SOURCE_MCP_HINTS` / `LAW_TYPE_CODES` / `STALENESS_THRESHOLDS` を `Object.freeze` した。名前・ID・一覧・検索で返すエントリは辞書の要素そのものなので、`resolveAbbreviation('消法').formal = 'X'` や `DOMAINS.push('x')`、`STALENESS_THRESHOLDS.fresh_days = 100` は strict mode（ES モジュール、TypeScript の出力）で `TypeError` を投げる（非 strict では代入が無視される）。書き換えていたコードは `structuredClone(entry)` か `{ ...entry }` で自分のコピーを作る。houki-egov-mcp / houki-nta-mcp の `src/` に代入は無い（2026-10-01 確認）
+- **`isValidLawId` が狭くなる**。e-Gov 公式仕様の 6 つの形だけを `true` にする。元号の桁は `1`〜`5`、`M` の次の桁は `1`〜`6`、`R` の機関番号は 10 進 8 桁、憲法は `321CONSTITUTION` だけ。`000AC0000000000` `340M70000040011` `322R0000000A001` `363CONSTITUTION` は `false` になる（v0.6.1 は `true`）。`DH`（太政官布達）を足した。2026-10-01 の e-Gov 全 9,570 件は全件 `true`
+- **`validateAllEntries` のエラーが増え、警告 `alias_collides_with_abbr` が無くなる**。別のエントリと重なる名前（`duplicate_name`）、`aliases` に自分の `abbr` / `formal` と同じ値（`alias_equals_own_name`）、一覧に無い `domain` / `category` / `source_mcp_hint`（`invalid_domain` / `invalid_category` / `invalid_source_mcp_hint`）がエラーになる。v0.6.1 で警告だった「別名がほかのエントリの `abbr` と同じ」は `duplicate_name` のエラーになる（`warnings` の `code` を見ていたコードは `errors` を見る）
+- **辞書 33 件の `aliases` の修正**。`消基通` `所基通` `法基通` `相基通` `通基通` `徴基通` `措通` `印基通` `最賃法` `社労士法` `会社` `会社規` `商` `商登法` `金商法` `不競法` `消契法` `民` `民訴` `破` `不登` `住民台帳法` `人訴` `憲` `国賠法` `刑` `都計法` `司書法` `行書法` `大防法` `水濁法` `電通事業法` `デジ庁設置法` の `aliases` から、自分の `formal` と同じ値を外した（`憲` の `aliases` は `["憲法"]`、`消基通` は `aliases` を持たない）。名前で引ける範囲は変わらないが、`getAllNames` の結果と `entry.aliases` の中身が変わる
+- **型の変更**。`AbbreviationStats` の `byDomain` / `byCategory` / `bySourceMcpHint` が `Record<string, number>` から `Record<Domain, number>` / `Record<Category, number>` / `Record<SourceMcpHint, number>` になり、定数の全値をキーに持つ（無い値は `0`。v0.6.1 は `byCategory.hanrei` が `undefined`）。`Category` に `'kokuji'` が増え、`CATEGORIES` は 13 値（`kokuji` は `rule` の次なので、`CATEGORIES[6]` 以降の添字が 1 つずれる）。`GetAllNamesOptions` / `LookupByLawIdOptions` を追加。`DOMAINS` などの型は `Readonly<readonly [...]>` になるが、`(typeof DOMAINS)[number]` の使い方は変わらない
+
+### Added
+
+- **`options.normalize`**（既定 `false`）を `getAllNames` / `lookupByLawId` / `extractLawNames` に足した（#21、#19）。`true` なら `normalizeJpText` と同じ規則で全角英数字・ダッシュ類・全角チルダ・全角スペースを半角にしてから比べる（`lookupByLawId` は `law_id` の側だけ。小文字は大文字にしない）。返す名前と `matchedKey` は辞書の表記のまま、`extractLawNames` の `position` / `length` は元の `text` の位置で返す。型は `GetAllNamesOptions` / `LookupByLawIdOptions` / `ExtractOptions.normalize`。MCP サーバーは入口で `true` を渡す。
+- **`CATEGORIES` に `kokuji`（告示）**（#25）。`rule` の次。`law_type` は持たず、`law_id` は `null`。`source_mcp_hint` は `houki-nta` / `houki-mhlw`（`category_hint_mismatch` の許容表に追加）。辞書にエントリはまだ無い。
+- **`validateAllEntries` のエラー** `duplicate_name` / `alias_equals_own_name` / `invalid_domain` / `invalid_category` / `invalid_source_mcp_hint`（#14、#15）。
+- **`isValidLawId` が `DH`（太政官布達）を受け付ける**（#23）。
+- **`scripts/verify-law-ids.mjs` と月次 workflow `verify-law-ids.yml`**（#23）。e-Gov 法令 API v2 `GET /api/2/laws` の全件を取得し、辞書の 9 件の `law_id` を存在・`law_title`・`law_num` で突き合わせ、全件の `law_id` に `isValidLawId` を通して `false` が無いことを確かめる。雛形が呼んでいた `/lawdata/{id}` は v2 に無く 404 だったので置き換えた。CI の build ジョブで `npm run validate` も呼ぶ（#17）。
+
+### Changed
+
+- 「互換性」の節のとおり。仕様 ID では ADDED 49 件（normalize 16、input-guards 19、dictionary-rules 12、freeze 2）、MODIFIED 34 件、REMOVED 1 件（`SPEC-ABBR-VALIDATE-ALL-ENTRIES-008`）。
+
+### Removed
+
+- `validateAllEntries` の警告 `alias_collides_with_abbr`（`duplicate_name` のエラーに含まれる。`SPEC-ABBR-VALIDATE-ALL-ENTRIES-008` を外した）。
+
+### Documentation
+
+- README・CONTRIBUTING・JSDoc の記述を実際の結果に合わせた（#17）: `resolveAbbreviation('消　法', { normalize: true })` は `null`（途中の空白は取り除かない）、`findSimilar('労働基準法施行例')` は `労基則`（距離 2）、`suggestCorrection('労働基準法施行例')` は `['労働基準法施行規則']`、`listByDomain('tax')` は 35 件、実エントリがあるのは法令系と `kihon-tsutatsu` / `kobetsu-tsutatsu`、`houki-jaish` は安全衛生情報センター（JAISH）、`houki-egov` の説明から告示を外した。
+- README に `findSimilar` と `searchByName` の役割分け（編集距離で近い名前を返す関数で、一覧が欲しいときは `searchByName`）と、返り値が凍結されていることを書いた。
+
+### Notes
+
+- 段階 4（houki-egov-mcp / houki-nta-mcp の依存を `^0.7.0` に上げる実装 PR）で、`computeDaysSince` / `judgeStaleness` の例外をどの `code` で返すか、`normalizeJpText` のダッシュ類による DB の列の再正規化をどう行うかを MCP 側の仕様に書く。
+- 差分のフォルダーは `specs/releases/v0.7.0/` に移した（`20261001-normalize` / `20261001-input-guards` / `20261001-dictionary-rules` / `20261001-freeze`）。
+
 ## [0.6.1] - 2026-09-27
 
 📝 **patch リリース** — テストと JSDoc のみ。公開 API・実行されるコードは変更なし。
@@ -296,7 +348,9 @@ houki-nta-mcp v0.3.0-alpha.6 の `src/services/text-normalize.ts` の保守的�
 
 houki-hub-mcp v0.1.1 の `src/abbreviations/` をベースに、Architecture E（複数独立 MCP + meta-package + Skill）への転換に伴い独立パッケージ化。
 
-[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/shuji-bonji/houki-abbreviations/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.7.0
+[0.6.1]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.6.1
 [0.6.0]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.6.0
 [0.5.2]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.5.2
 [0.5.1]: https://github.com/shuji-bonji/houki-abbreviations/releases/tag/v0.5.1
