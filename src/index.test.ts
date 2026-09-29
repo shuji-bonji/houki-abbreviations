@@ -9,9 +9,14 @@ import {
   CATEGORIES,
   DOMAINS,
   SOURCE_MCP_HINTS,
+  STALENESS_THRESHOLDS,
   isValidLawId,
+  judgeStaleness,
   LAW_TYPE_CODES,
   searchByName,
+  findSimilar,
+  extractLawNames,
+  lookupByLawId,
   type AbbreviationEntry,
   type Category,
   type Domain,
@@ -293,6 +298,17 @@ describe('getAbbreviationStats()', () => {
 describe('frozen entries', () => {
   it('SPEC-ABBR-ABBREVIATION-ENTRIES-010 abbreviationEntries is read-only (frozen)', () => {
     expect(Object.isFrozen(abbreviationEntries)).toBe(true);
+    // 20261001-freeze: 要素の追加・差し替え・削除は strict mode で TypeError
+    const writable = abbreviationEntries as AbbreviationEntry[];
+    const count = abbreviationEntries.length;
+    expect(() => writable.push({} as AbbreviationEntry)).toThrow(TypeError);
+    expect(() => {
+      writable[0] = {} as AbbreviationEntry;
+    }).toThrow(TypeError);
+    expect(() => {
+      writable.length = 0;
+    }).toThrow(TypeError);
+    expect(abbreviationEntries).toHaveLength(count);
   });
 });
 
@@ -758,5 +774,124 @@ describe('getAbbreviationStats() — 20261001-dictionary-rules', () => {
     expect((s.byCategory as Record<string, number>).kokuji).toBe(0);
     expect(s.bySourceMcpHint['houki-mhlw']).toBe(0);
     expect(s.byCategory.law).toBeGreaterThanOrEqual(1);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20261001-freeze                                                            */
+/* -------------------------------------------------------------------------- */
+
+/** 凍結を確かめるために readonly を外す cast（strict mode の ES モジュールなので代入は TypeError になる） */
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+const mutableEntry = (e: AbbreviationEntry | null): Mutable<AbbreviationEntry> =>
+  e as Mutable<AbbreviationEntry>;
+
+describe('abbreviationEntries — 20261001-freeze', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-019 各エントリと aliases は Object.isFrozen が true', () => {
+    expect(Object.isFrozen(abbreviationEntries[0])).toBe(true);
+    for (const e of abbreviationEntries) {
+      expect(Object.isFrozen(e), e.abbr).toBe(true);
+      if (e.aliases) {
+        expect(Object.isFrozen(e.aliases), e.abbr).toBe(true);
+      }
+    }
+    expect(Object.isFrozen(resolveAbbreviation('消法'))).toBe(true);
+    expect(Object.isFrozen(resolveAbbreviation('消法')?.aliases)).toBe(true);
+  });
+
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-019 abbreviationEntries[0].formal への代入は TypeError で、resolveAbbreviation(所法).formal は 所得税法 のまま', () => {
+    expect(abbreviationEntries[0].abbr).toBe('所法');
+    expect(() => {
+      mutableEntry(abbreviationEntries[0]).formal = 'X';
+    }).toThrow(TypeError);
+    expect(resolveAbbreviation('所法')?.formal).toBe('所得税法');
+    expect(abbreviationEntries[0].formal).toBe('所得税法');
+  });
+
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-019 aliases への push とフィールドの追加・削除（delete note）も TypeError で値は変わらない', () => {
+    const e = resolveAbbreviation('消法');
+    expect(e).not.toBeNull();
+    const aliasCount = e?.aliases?.length ?? 0;
+    expect(aliasCount).toBeGreaterThan(0);
+    expect(() => (e?.aliases as string[]).push('x')).toThrow(TypeError);
+    expect(e?.aliases).toHaveLength(aliasCount);
+    expect(typeof e?.note).toBe('string');
+    expect(() => {
+      delete mutableEntry(e).note;
+    }).toThrow(TypeError);
+    expect(typeof e?.note).toBe('string');
+    expect(() => {
+      (e as unknown as Record<string, unknown>).extra = 1;
+    }).toThrow(TypeError);
+    expect(Object.hasOwn(e as object, 'extra')).toBe(false);
+  });
+
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-019 名前・ID・一覧・検索で返すエントリは辞書の要素そのもので凍結されている', () => {
+    const shoho = abbreviationEntries.find((e) => e.abbr === '消法');
+    expect(shoho).toBeDefined();
+    expect(resolveAbbreviation('消法')).toBe(shoho);
+    expect(lookupByLawId('363AC0000000108')).toBe(shoho);
+    expect(listByDomain('tax')).toContain(shoho);
+    expect(listByCategory('law')).toContain(shoho);
+    expect(listBySourceMcpHint('houki-egov')).toContain(shoho);
+    expect(searchByName('消費税')).toContain(shoho);
+    expect(findSimilar('消費税法')[0]?.entry).toBe(shoho);
+    expect(extractLawNames('消費税法の改正')[0]?.entry).toBe(shoho);
+    for (const e of [
+      lookupByLawId('363AC0000000108'),
+      ...listByDomain('tax'),
+      ...searchByName('消費税'),
+      ...findSimilar('消費税法').map((m) => m.entry),
+      ...extractLawNames('消費税法の改正').map((m) => m.entry),
+    ]) {
+      expect(Object.isFrozen(e)).toBe(true);
+    }
+  });
+
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-019 listByDomain が返す配列そのものは呼ぶたびに新しく、凍結されていない', () => {
+    const list = listByDomain('tax');
+    expect(Object.isFrozen(list)).toBe(false);
+    expect(listByDomain('tax')).not.toBe(list);
+  });
+});
+
+describe('公開定数 — 20261001-freeze', () => {
+  it('SPEC-ABBR-PUBLIC-CONSTANTS-009 DOMAINS・CATEGORIES・SOURCE_MCP_HINTS・LAW_TYPE_CODES・STALENESS_THRESHOLDS は Object.isFrozen が true', () => {
+    for (const [name, value] of [
+      ['DOMAINS', DOMAINS],
+      ['CATEGORIES', CATEGORIES],
+      ['SOURCE_MCP_HINTS', SOURCE_MCP_HINTS],
+      ['LAW_TYPE_CODES', LAW_TYPE_CODES],
+      ['STALENESS_THRESHOLDS', STALENESS_THRESHOLDS],
+    ] as const) {
+      expect(Object.isFrozen(value), name).toBe(true);
+    }
+  });
+
+  it('SPEC-ABBR-PUBLIC-CONSTANTS-009 DOMAINS.push は TypeError で length は 6 のまま、CATEGORIES[0] への代入と SOURCE_MCP_HINTS.pop も TypeError', () => {
+    expect(() => (DOMAINS as unknown as string[]).push('x')).toThrow(TypeError);
+    expect(DOMAINS).toHaveLength(6);
+    expect(() => {
+      (CATEGORIES as unknown as string[])[0] = 'x';
+    }).toThrow(TypeError);
+    expect(CATEGORIES[0]).toBe('constitution');
+    const hintCount = SOURCE_MCP_HINTS.length;
+    expect(() => (SOURCE_MCP_HINTS as unknown as string[]).pop()).toThrow(TypeError);
+    expect(SOURCE_MCP_HINTS).toHaveLength(hintCount);
+  });
+
+  it('SPEC-ABBR-PUBLIC-CONSTANTS-009 LAW_TYPE_CODES.Act への代入は TypeError で AC のまま', () => {
+    expect(() => {
+      (LAW_TYPE_CODES as unknown as Record<string, string>).Act = 'XX';
+    }).toThrow(TypeError);
+    expect(LAW_TYPE_CODES.Act).toBe('AC');
+  });
+
+  it('SPEC-ABBR-PUBLIC-CONSTANTS-009 STALENESS_THRESHOLDS.fresh_days への代入は TypeError で、judgeStaleness(50) は outdated のまま', () => {
+    expect(() => {
+      (STALENESS_THRESHOLDS as unknown as Record<string, number>).fresh_days = 100;
+    }).toThrow(TypeError);
+    expect(STALENESS_THRESHOLDS.fresh_days).toBe(7);
+    expect(judgeStaleness(50)).toBe('outdated');
   });
 });
