@@ -92,17 +92,19 @@ export type StalenessLevel = 'fresh' | 'stale' | 'outdated';
  *
  * 各 MCP は同じ感覚で staleness を判定するため本定数を参照する。
  * 個別の MCP で異なる閾値が必要な場合は `judgeStaleness` をラップして
- * MCP 固有の閾値を使う関数を作ってよい (本定数を上書きしない)。
+ * MCP 固有の閾値を使う関数を作ってよい。凍結されているので、キーへの代入は
+ * strict mode では `TypeError` になり、`judgeStaleness` の境界は実行時に変えられない
+ * （v0.7.0 から）。
  *
  * @since 0.4.1
  * @group 鮮度の判定
  */
-export const STALENESS_THRESHOLDS = {
+export const STALENESS_THRESHOLDS = Object.freeze({
   /** fresh と判定する境界 (この日数 **未満** なら fresh) */
   fresh_days: 7,
   /** stale と判定する境界 (この日数 **未満** なら stale、それ以上は outdated) */
   stale_days: 30,
-} as const;
+} as const);
 
 /**
  * 経過日数から staleness レベルを判定する純関数。

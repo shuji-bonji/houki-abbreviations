@@ -10,16 +10,18 @@
 /**
  * e-Gov law_id の種別プレフィックス
  *
+ * 凍結されている（v0.7.0 から）。キーへの代入は strict mode では `TypeError` になる。
+ *
  * @since 0.1.0
  * @group エントリの構造と取りうる値
  */
-export const LAW_TYPE_CODES = {
+export const LAW_TYPE_CODES = Object.freeze({
   Act: 'AC',
   CabinetOrder: 'CO',
   ImperialOrdinance: 'IO',
   MinisterialOrdinance: 'MO',
   Rule: 'RU',
-} as const;
+} as const);
 
 /**
  * `LAW_TYPE_CODES` のキー。法令種別の名前を表す。
@@ -32,17 +34,19 @@ export type LawTypeCode = keyof typeof LAW_TYPE_CODES;
 /**
  * ドメインタグ（実務分野での分類）
  *
+ * 凍結されている（v0.7.0 から）。`push` や要素への代入は strict mode では `TypeError` になる。
+ *
  * @since 0.1.0
  * @group エントリの構造と取りうる値
  */
-export const DOMAINS = [
+export const DOMAINS = Object.freeze([
   'tax',
   'labor',
   'accounting',
   'commercial',
   'civil',
   'administrative',
-] as const;
+] as const);
 
 /**
  * `DOMAINS` の要素型。
@@ -64,11 +68,12 @@ export type Domain = (typeof DOMAINS)[number];
  * - 'hanrei' / 'saiketsu' は判例・裁決系。
  *
  * 13 の値をこの順で持つ（`kokuji` は `rule` の次。v0.6.1 までは 12 の値）。
+ * 凍結されている（v0.7.0 から）。
  *
  * @since 0.1.0
  * @group エントリの構造と取りうる値
  */
-export const CATEGORIES = [
+export const CATEGORIES = Object.freeze([
   'constitution',
   'law',
   'cabinet-order',
@@ -82,7 +87,7 @@ export const CATEGORIES = [
   'tax-answer',
   'hanrei',
   'saiketsu',
-] as const;
+] as const);
 
 /**
  * `CATEGORIES` の要素型。
@@ -105,17 +110,19 @@ export type Category = (typeof CATEGORIES)[number];
  * - 'houki-court': 判例（裁判所サイト）
  * - 'houki-saiketsu': 国税不服審判所裁決
  *
+ * 凍結されている（v0.7.0 から）。
+ *
  * @since 0.1.0
  * @group エントリの構造と取りうる値
  */
-export const SOURCE_MCP_HINTS = [
+export const SOURCE_MCP_HINTS = Object.freeze([
   'houki-egov',
   'houki-nta',
   'houki-mhlw',
   'houki-jaish',
   'houki-court',
   'houki-saiketsu',
-] as const;
+] as const);
 
 /**
  * `SOURCE_MCP_HINTS` の要素型。
@@ -165,6 +172,13 @@ export interface LookupByLawIdOptions {
  *
  * 1 件 = 1 つの法令／通達／判例 等のメタ情報。
  * 複数の略称・通称・正式名称から逆引きするための共通テーブル。
+ *
+ * ## 凍結されている
+ *
+ * `abbreviationEntries` の各エントリと `aliases` の配列は凍結されている（v0.7.0 から）。
+ * 名前・ID・一覧・検索で返すエントリは辞書の要素そのもの（同じオブジェクト）なので、
+ * フィールドへの代入は strict mode では `TypeError` になる。書き換えたいときは
+ * `structuredClone(entry)` や `{ ...entry }` で自分のコピーを作る。
  *
  * ## freshness は持たない
  *

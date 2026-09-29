@@ -102,19 +102,36 @@ import {
 export { isValidLawId } from './validate.js';
 
 /**
+ * エントリを深く凍結する。エントリのオブジェクトと `aliases` の配列を `Object.freeze` し、
+ * フィールドへの代入・追加・削除と `aliases` への追加を strict mode で `TypeError` にする
+ * （v0.7.0、Issue #13）。`note` などの文字列は値なので対象外。
+ */
+function deepFreezeEntry(entry: AbbreviationEntry): AbbreviationEntry {
+  if (entry.aliases) Object.freeze(entry.aliases);
+  return Object.freeze(entry);
+}
+
+/**
  * 全分野を結合した辞書
+ *
+ * 配列・各エントリ・`aliases` は凍結されている（各エントリと `aliases` は v0.7.0 から）。
+ * `resolveAbbreviation` / `lookupByLawId` / `listByDomain` / `searchByName` などが返す
+ * エントリはこの配列の要素そのもの（同じオブジェクト）で、書き換えると `TypeError` になる。
+ * 書き換えたいときは `structuredClone(entry)` や `{ ...entry }` で自分のコピーを作る。
  *
  * @since 0.1.0
  * @group 辞書の解決
  */
-export const abbreviationEntries: readonly AbbreviationEntry[] = Object.freeze([
-  ...(tax as AbbreviationEntry[]),
-  ...(labor as AbbreviationEntry[]),
-  ...(accounting as AbbreviationEntry[]),
-  ...(commercial as AbbreviationEntry[]),
-  ...(civil as AbbreviationEntry[]),
-  ...(administrative as AbbreviationEntry[]),
-]);
+export const abbreviationEntries: readonly AbbreviationEntry[] = Object.freeze(
+  [
+    ...(tax as AbbreviationEntry[]),
+    ...(labor as AbbreviationEntry[]),
+    ...(accounting as AbbreviationEntry[]),
+    ...(commercial as AbbreviationEntry[]),
+    ...(civil as AbbreviationEntry[]),
+    ...(administrative as AbbreviationEntry[]),
+  ].map(deepFreezeEntry)
+);
 
 /** 略称→エントリのインデックス（abbr + formal + aliases でヒット） */
 const lookupIndex: Map<string, AbbreviationEntry> = (() => {
