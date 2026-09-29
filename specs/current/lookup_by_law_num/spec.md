@@ -20,7 +20,7 @@
 
 ## 戻り値
 
-`AbbreviationEntry | null`。
+`AbbreviationEntry | null`。見つかったときは辞書のエントリそのもので、凍結されている（SPEC-ABBR-ABBREVIATION-ENTRIES-019）。
 
 - 見つかったとき: 辞書のエントリ（`abbr` / `formal` / `law_id` / `law_num` / `law_type` / `domain` / `category` / `source_mcp_hint` / `aliases` / `note`。`law_num` 以降は辞書にあるときだけ付く）。`law_num` は辞書に登録された漢数字の形のまま
 - 見つからないとき、`law_num` が空文字のとき: `null`
@@ -118,4 +118,4 @@ flowchart TD
 2. **テスト「law_num 未設定エントリは引けない」の中身が名前と合っていない。** （テストを直した。v0.6.1）
 3. **空白だけの `law_num`。** → SPEC-ABBR-LOOKUP-BY-LAW-NUM-007
 4. **`元年` と数字の先頭の 0。** → SPEC-ABBR-LOOKUP-BY-LAW-NUM-008、SPEC-ABBR-LOOKUP-BY-LAW-NUM-009
-5. **返すエントリは辞書のオブジェクトそのもの。** → houki-abbreviations #13
+5. **返すエントリは辞書のオブジェクトそのもの。** → SPEC-ABBR-ABBREVIATION-ENTRIES-019

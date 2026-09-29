@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-normalize` は 2026-10-01（PR #30）
 - 起こした元: v0.6.0 の `src/search.ts`（`levenshtein`）、`src/index.ts`（`levenshtein` の再 export）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加）
 
@@ -46,11 +46,11 @@ flowchart TD
 
 例: `levenshtein('abc', 'abc')` と `levenshtein('労働基準法', '労働基準法')` はどちらも 0。
 
-### SPEC-ABBR-LEVENSHTEIN-002 片方が空文字ならもう一方の長さを返す
+### SPEC-ABBR-LEVENSHTEIN-002 片方が空文字ならもう一方の文字数を返す
 
-どちらかが空文字なら、もう一方の長さを返す。両方とも空文字なら 0。
+どちらかが空文字なら、もう一方の文字数（コードポイント数）を返す。両方とも空文字なら 0。
 
-例: `levenshtein('', 'abc')` と `levenshtein('abc', '')` はどちらも 3。`levenshtein('', '')` は 0。
+例: `levenshtein('', 'abc')` と `levenshtein('abc', '')` はどちらも 3。`levenshtein('', '')` は 0。`levenshtein('', '𠮷')` は 1（`'𠮷'.length` は 2 だが、1 文字と数える）。
 
 ### SPEC-ABBR-LEVENSHTEIN-003 挿入・削除・置換を 1 回 1 として最小回数を返す
 
@@ -63,6 +63,12 @@ flowchart TD
 `levenshtein(a, b)` と `levenshtein(b, a)` は同じ値を返す。
 
 例: `levenshtein('abc', 'xyz')` と `levenshtein('xyz', 'abc')` はどちらも 3。
+
+### SPEC-ABBR-LEVENSHTEIN-005 BMP の外の文字を 1 文字として数える
+
+文字はコードポイント単位で数える。サロゲートペアで表す文字（`𠮷` U+20BB7 など）は 1 文字で、その置換は 1 回と数える。
+
+例: `levenshtein('𠮷', '吉')` は 1（v0.6.1 では 2）。`levenshtein('𠮷野家', '吉野家')` は 1。`levenshtein('𠮷', '')` は 1。`findSimilar` と `suggestCorrection` の `distance` もこの数え方になる。
 
 ## できないこと
 
@@ -77,5 +83,5 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。テストの名前と中身が合っていない項目は、テストを直します（ID を振っていないものは、直してから振ります）。
 
-1. **サロゲートペアの文字は 2 文字として数える。** → houki-abbreviations #24
+1. **サロゲートペアの文字は 2 文字として数える。** → SPEC-ABBR-LEVENSHTEIN-005
 2. **テストの describe 名が「内部 helper」。** （テストを直した。v0.6.1）

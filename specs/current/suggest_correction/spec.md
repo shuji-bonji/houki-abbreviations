@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-input-guards` は 2026-10-01（PR #31）。差分 `20261001-dictionary-rules` は 2026-10-01（PR #32）
 - 起こした元: v0.6.0 の `src/search.ts`（`suggestCorrection`）、`src/index.ts`（`suggestCorrection`）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加）
 
@@ -14,16 +14,16 @@
 
 ## 入力
 
-| 引数    | 必須 | 内容                                               |
-| ------- | ---- | -------------------------------------------------- |
-| `query` | 必須 | 誤っているかもしれない名前。例: `労働基準法施行例` |
-| `limit` | 任意 | 返す件数の上限。既定 5                             |
+| 引数    | 必須 | 内容                                                                                                                                                                |
+| ------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `query` | 必須 | 誤っているかもしれない名前。例: `労働基準法施行例`                                                                                                                  |
+| `limit` | 任意 | 返す件数の上限。1 以上 500 以下の整数。省くと 5。それ以外の値（1 未満、小数、500 超、`NaN`、`Infinity`）は `RangeError`、数でない値は `TypeError` を投げる。丸めない |
 
 編集距離の上限・絞り込み・全角と半角の扱いは指定できない。`findSimilar` の既定値（`maxDistance: 2`、`sortByScore: true`、`normalize: true`、`filter` なし）で探す。
 
 ## 戻り値
 
-文字列の配列。各要素はエントリの `formal`（正式名称）。並びは `findSimilar` と同じ（編集距離の小さい順）。1 件も無ければ空配列。
+文字列の配列。各要素はエントリの `formal`（正式名称）。並びは `findSimilar` と同じ（編集距離の小さい順）。`query` と一致した名前を持つエントリ（`distance: 0`）は入れない。1 件も無ければ空配列。
 
 ## 処理の流れ
 
@@ -31,42 +31,67 @@
 
 ```mermaid
 flowchart TD
-  A["呼び出し（query・limit）"] --> B["findSimilar を maxDistance 2・limit で呼ぶ"]
-  B --> C["見つかったエントリの formal だけを取り出す（001）"]
-  C --> D["limit 件以内の文字列の配列を返す（002）"]
+  A["呼び出し（query・limit）"] --> B["findSimilar を maxDistance 2 で呼ぶ"]
+  B --> B2["距離 0 のエントリ（query と一致した名前を持つもの）を除く（009）"]
+  B2 --> C["見つかったエントリの formal だけを取り出す（001）"]
+  C --> D["limit 件で打ち切った文字列の配列を返す（002）"]
 ```
 
 ## できること
 
 ### SPEC-ABBR-SUGGEST-CORRECTION-001 近いエントリの正式名称を文字列の配列で返す
 
-`query` に編集距離が近いエントリ（`findSimilar` が返すもの）の `formal` を、同じ順に並べた文字列の配列で返す。エントリそのものや編集距離は返さない。
+`query` に編集距離が近いエントリ（`findSimilar` が返すもののうち `distance` が 1 以上のもの）の `formal` を、同じ順に並べた文字列の配列で返す。エントリそのものや編集距離は返さない。
 
-例: `suggestCorrection('労働基準法施行例')` は `['労働基準法施行規則']`。`suggestCorrection('法')` は `['所得税法', '法人税法', '法人税法施行令', '法人税法施行規則', '消費税法']`。
+例: `suggestCorrection('労働基準法施行例')` は `['労働基準法施行規則']`。`suggestCorrection('所得税法施行令')` は `['所得税法施行規則', '法人税法施行令', '消費税法施行令', '相続税法施行令', '印紙税法施行令']`（`所得税法施行令` 自身は入らない）。`suggestCorrection('法')` は `[]`（v0.6.1 では `['所得税法', '法人税法', '法人税法施行令', '法人税法施行規則', '消費税法']`）。
 
 ### SPEC-ABBR-SUGGEST-CORRECTION-002 limit の件数で打ち切る
 
-`limit` を渡すと、その件数までで打ち切って返す。
+`limit` を渡すと、その件数までで打ち切って返す。打ち切るのは距離 0 のエントリを除いた後。
 
-例: `suggestCorrection('法', 3)` は `['所得税法', '法人税法', '法人税法施行令']`。
+例: `suggestCorrection('所得税法施行令', 3)` は `['所得税法施行規則', '法人税法施行令', '消費税法施行令']`。
 
 ### SPEC-ABBR-SUGGEST-CORRECTION-003 limit を省くと 5 件で打ち切る
 
 `limit` を省くと、候補が 5 件を超えるときに 5 件で打ち切る。
 
-例: `suggestCorrection('法')` は `['所得税法', '法人税法', '法人税法施行令', '法人税法施行規則', '消費税法']` の 5 件（`suggestCorrection('法', 100)` は 100 件）。
+例: `suggestCorrection('所得税法施行令')` は `['所得税法施行規則', '法人税法施行令', '消費税法施行令', '相続税法施行令', '印紙税法施行令']` の 5 件（`suggestCorrection('所得税法施行令', 100)` は 6 件で、`地方税法施行令` が末尾に付く）。
 
-### SPEC-ABBR-SUGGEST-CORRECTION-004 1 未満の limit は 1 として扱う
+### SPEC-ABBR-SUGGEST-CORRECTION-004 1 未満の limit には RangeError を投げる
 
-`limit` が 1 未満のとき（0・負の値）は 1 として扱い、候補があれば 1 件を返す。
+`limit` が 1 未満のとき（0・負の値・0.5 など）は、1 として扱わずに `RangeError` を投げる。
 
-例: `suggestCorrection('法', 0)` と `suggestCorrection('法', -1)` はどちらも `['所得税法']`。
+例: `suggestCorrection('所得税法施行令', 0)`、`suggestCorrection('所得税法施行令', -1)`、`suggestCorrection('所得税法施行令', 0.5)` は、どれも `RangeError` を投げる（v0.6.1 では 1 件を返していた）。
 
 ### SPEC-ABBR-SUGGEST-CORRECTION-005 空の query には空配列を返す
 
 `query` が空文字か、前後の空白を除くと空になるときは、空配列を返す。エラーにはしない。
 
 例: `suggestCorrection('')` と `suggestCorrection('   ')` はどちらも `[]`。
+
+### SPEC-ABBR-SUGGEST-CORRECTION-006 小数の limit には RangeError を投げる
+
+`limit` が整数でないときは `RangeError` を投げる。
+
+例: `suggestCorrection('所得税法施行令', 2.5)` は `RangeError`。`suggestCorrection('所得税法施行令', 3)` は 3 件以内を返す。
+
+### SPEC-ABBR-SUGGEST-CORRECTION-007 NaN・Infinity・数でない limit には例外を投げる
+
+`limit` が `NaN` か `Infinity` か `-Infinity` のときは `RangeError`、数でない値（文字列・`null`・オブジェクトなど）のときは `TypeError` を投げる。`undefined` は省いたときと同じく 5 として扱う。
+
+例: `suggestCorrection('所得税法施行令', NaN)` と `suggestCorrection('所得税法施行令', Infinity)` は `RangeError`（v0.6.1 では `NaN` のとき `[]` を返していた）。`suggestCorrection('所得税法施行令', '3')` と `suggestCorrection('所得税法施行令', null)` は `TypeError`。`suggestCorrection('所得税法施行令', undefined)` は `suggestCorrection('所得税法施行令')` と同じ結果。
+
+### SPEC-ABBR-SUGGEST-CORRECTION-008 500 を超える limit には RangeError を投げる
+
+`limit` が 500 を超えるときは `RangeError` を投げる。500 は受け付ける。v0.6.1 には上限が無かった。
+
+例: `suggestCorrection('所得税法施行令', 501)` は `RangeError`。`suggestCorrection('所得税法施行令', 500)` は候補をすべて返す。
+
+### SPEC-ABBR-SUGGEST-CORRECTION-009 query と一致した名前を持つエントリは候補に入れない
+
+`query` が辞書の略称・正式名称・別名のどれかと一致するとき（`findSimilar` で `distance: 0`）、そのエントリの `formal` は返さない。「もしかして」に入力そのものを含めない。ほかのエントリは返す。
+
+例: `suggestCorrection('民法')` は `['民事訴訟法', '民事執行法', '民事保全法']` で、`民法` は入らない（v0.6.1 では先頭が `民法` だった）。`suggestCorrection('労働基準法')` は `[]`。`suggestCorrection('労基側')` は `['労働基準法', '労働基準法施行規則']`。
 
 ## できないこと
 
@@ -81,7 +106,7 @@ flowchart TD
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
 1. **ドキュメントの例と実際の結果が違う。** → houki-abbreviations #17
-2. **一致した名前も「もしかして」に入る。** → houki-abbreviations #20
+2. **一致した名前も「もしかして」に入る。** → SPEC-ABBR-SUGGEST-CORRECTION-009
 3. **`limit` の既定値と 1 未満の値。** → SPEC-ABBR-SUGGEST-CORRECTION-003、SPEC-ABBR-SUGGEST-CORRECTION-004
 4. **空の `query`。** → SPEC-ABBR-SUGGEST-CORRECTION-005
-5. **`limit` に `NaN` を渡したときの扱いと上限。** → houki-abbreviations #22
+5. **`limit` に `NaN` を渡したときの扱いと上限。** → SPEC-ABBR-SUGGEST-CORRECTION-004、SPEC-ABBR-SUGGEST-CORRECTION-006、SPEC-ABBR-SUGGEST-CORRECTION-007、SPEC-ABBR-SUGGEST-CORRECTION-008

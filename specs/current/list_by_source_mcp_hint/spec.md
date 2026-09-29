@@ -20,7 +20,7 @@
 
 ## 戻り値
 
-`AbbreviationEntry[]`。`source_mcp_hint` フィールドが `hint` と等しいエントリの配列。エントリのフィールドは `resolveAbbreviation` の戻り値と同じ。
+`AbbreviationEntry[]`。`source_mcp_hint` フィールドが `hint` と等しいエントリの配列。エントリのフィールドは `resolveAbbreviation` の戻り値と同じ。各要素は辞書のエントリそのもので、凍結されている（SPEC-ABBR-ABBREVIATION-ENTRIES-019）。
 
 v0.6.0 の辞書（174 件）での件数は次のとおり。
 
@@ -91,7 +91,7 @@ JavaScript から `SOURCE_MCP_HINTS` に無い値を渡したときは、例外�
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **返すエントリは凍結されておらず、書き換えると辞書に残る。** → houki-abbreviations #13
+1. **返すエントリは凍結されておらず、書き換えると辞書に残る。** → SPEC-ABBR-ABBREVIATION-ENTRIES-019
 2. **返す順序。** → SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-003
 3. **返す配列は呼ぶたびに新しい。** → SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-004
 4. **`SOURCE_MCP_HINTS` に無い値。** → SPEC-ABBR-LIST-BY-SOURCE-MCP-HINT-005

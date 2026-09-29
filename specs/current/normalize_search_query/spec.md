@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-normalize` は 2026-10-01（PR #30）
 - 起こした元: v0.6.0 の `src/normalize.ts`（`normalizeSearchQuery`）、`src/normalize.test.ts`
 - 関連する Issue: なし（v0.3.0 で houki-nta-mcp の正規化の一部を移したもの。CHANGELOG の 0.3.0）
 
@@ -37,8 +37,8 @@
 flowchart TD
   A["input"] --> B{"空文字か"}
   B -- はい --> R0["空文字を返す（006）"]
-  B -- いいえ --> C["normalizeJpText と同じ変換をし、前後の空白を取り除く（001, 005）"]
-  C --> D["英大文字を小文字にする。かな・漢字は変えない（002, 003）"]
+  B -- いいえ --> C["normalizeJpText と同じ変換（全角英数字・ダッシュ類・チルダ・全角スペース）をし、前後の空白を取り除く（001, 005）"]
+  C --> D["英大文字 A〜Z を小文字にする。かな・漢字・英字以外の大文字は変えない（002, 003, 008）"]
   D --> E["続いた空白を半角スペース 1 つにする（004）"]
   E --> R["返す"]
 ```
@@ -47,13 +47,13 @@ flowchart TD
 
 ### SPEC-ABBR-NORMALIZE-SEARCH-QUERY-001 normalizeJpText と同じ全角→半角の変換をする
 
-全角数字・全角英字・全角ハイフン・全角チルダ・波ダッシュ・全角スペースを、`normalizeJpText` と同じ規則で半角にする。
+全角数字・全角英字・ダッシュ類（`－` `‐` `‑` `–` `—` `―` `−`）・全角チルダ・波ダッシュ・全角スペースを、`normalizeJpText` と同じ規則で半角にする。
 
-例: `normalizeSearchQuery('１８３－２')` は `'183-2'`、`normalizeSearchQuery('１８３〜１９３')` は `'183~193'`。
+例: `normalizeSearchQuery('１８３－２')` は `'183-2'`、`normalizeSearchQuery('１８３―２')` も `'183-2'`、`normalizeSearchQuery('１８３〜１９３')` は `'183~193'`。
 
 ### SPEC-ABBR-NORMALIZE-SEARCH-QUERY-002 英大文字を小文字にする
 
-半角の英大文字を小文字にする。全角の英大文字は半角にしたうえで小文字にする。
+半角の英大文字 `A`〜`Z` を `a`〜`z` にする。全角の英大文字は半角にしたうえで小文字にする。小文字にするのはこの 52 字の範囲だけ。
 
 例: `normalizeSearchQuery('PL法')` も `normalizeSearchQuery('ＰＬ法')` も `'pl法'`。
 
@@ -85,6 +85,12 @@ flowchart TD
 
 例: `normalizeSearchQuery(null)` も `normalizeSearchQuery(undefined)` も `''`。
 
+### SPEC-ABBR-NORMALIZE-SEARCH-QUERY-008 英字以外の大文字は変えない
+
+`A`〜`Z`（全角なら `Ａ`〜`Ｚ`）以外の文字は小文字にしない。ローマ数字 `Ⅰ`（U+2160）、ギリシャ文字 `Α`（U+0391）、ラテン文字の拡張 `À`（U+00C0）はそのまま残す。
+
+例: `normalizeSearchQuery('Ⅰ Α À PL')` は `'Ⅰ Α À pl'`（v0.6.1 では `'ⅰ α à pl'`）。
+
 ## できないこと
 
 - 大文字小文字を区別したまま揃えること（`normalizeJpText`）
@@ -98,5 +104,5 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **英字以外の大文字も小文字になる。** → houki-abbreviations #21
+1. **英字以外の大文字も小文字になる。** → SPEC-ABBR-NORMALIZE-SEARCH-QUERY-008
 2. **`null` / `undefined` を渡したとき。** → SPEC-ABBR-NORMALIZE-SEARCH-QUERY-007

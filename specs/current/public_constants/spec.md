@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-dictionary-rules` は 2026-10-01（PR #32）。差分 `20261001-freeze` は 2026-10-01（PR #33）
 - 起こした元: v0.6.0 の `src/types.ts`（`CATEGORIES`、`DOMAINS`、`LAW_TYPE_CODES`、`SOURCE_MCP_HINTS`）、`src/freshness.ts`（`STALENESS_THRESHOLDS`）、`src/freshness.test.ts`、`src/index.test.ts`
 - 関連する Issue: houki-abbreviations #3（`STALENESS_THRESHOLDS` の JSDoc の強化）。`STALENESS_THRESHOLDS` の共通化の発端は houki-nta-mcp #15
 
@@ -32,37 +32,40 @@
 
 ### `CATEGORIES`
 
-辞書エントリの `category`（法律・通達・判例など、どの種類の文書か）がとりうる値の一覧。`listByCategory` の引数や `getAbbreviationStats` の `byCategory` のキーに使う。12 の値を持つ。
+辞書エントリの `category`（法律・通達・判例など、どの種類の文書か）がとりうる値の一覧。`listByCategory` の引数や `getAbbreviationStats` の `byCategory` のキーに使う。13 の値を持つ。
 
-| 値                      | 文書の種類       | 本文を持つ MCP サーバー | 件数 |
-| ----------------------- | ---------------- | ----------------------- | ---- |
-| `constitution`          | 憲法             | houki-egov-mcp          | 1    |
-| `law`                   | 法律             | houki-egov-mcp          | 138  |
-| `cabinet-order`         | 政令             | houki-egov-mcp          | 8    |
-| `imperial-ordinance`    | 勅令             | houki-egov-mcp          | 0    |
-| `ministerial-ordinance` | 省令             | houki-egov-mcp          | 16   |
-| `rule`                  | 規則             | houki-egov-mcp          | 2    |
-| `kihon-tsutatsu`        | 基本通達         | houki-nta-mcp など      | 8    |
-| `kobetsu-tsutatsu`      | 個別通達         | houki-nta-mcp など      | 1    |
-| `qa-jirei`              | 質疑応答事例     | houki-nta-mcp など      | 0    |
-| `tax-answer`            | タックスアンサー | houki-nta-mcp など      | 0    |
-| `hanrei`                | 判例             | （未定）                | 0    |
-| `saiketsu`              | 裁決             | （未定）                | 0    |
+| 値                      | 文書の種類       | 本文を持つ MCP サーバー      | 件数 |
+| ----------------------- | ---------------- | ---------------------------- | ---- |
+| `constitution`          | 憲法             | houki-egov-mcp               | 1    |
+| `law`                   | 法律             | houki-egov-mcp               | 138  |
+| `cabinet-order`         | 政令             | houki-egov-mcp               | 8    |
+| `imperial-ordinance`    | 勅令             | houki-egov-mcp               | 0    |
+| `ministerial-ordinance` | 省令             | houki-egov-mcp               | 16   |
+| `rule`                  | 規則             | houki-egov-mcp               | 2    |
+| `kokuji`                | 告示             | houki-nta-mcp・houki-mhlw-mcp など。e-Gov 法令 API は告示を持たない | 0    |
+| `kihon-tsutatsu`        | 基本通達         | houki-nta-mcp など           | 8    |
+| `kobetsu-tsutatsu`      | 個別通達         | houki-nta-mcp など           | 1    |
+| `qa-jirei`              | 質疑応答事例     | houki-nta-mcp など           | 0    |
+| `tax-answer`            | タックスアンサー | houki-nta-mcp など           | 0    |
+| `hanrei`                | 判例             | （未定）                     | 0    |
+| `saiketsu`              | 裁決             | （未定）                     | 0    |
 
-件数 0 の値は、辞書にまだエントリが無い種類として先に定義している。
+件数 0 の値は、辞書にまだエントリが無い種類として先に定義している。`kokuji` は v0.7.0 で足す。告示は `law_type` を持たず（`LAW_TYPE_CODES` に対応するキーは無い）、`law_id` は `null`（`isValidLawId` が受け付ける形に告示は無い）。
 
 ### `SOURCE_MCP_HINTS`
 
 辞書エントリの `source_mcp_hint`（そのエントリの本文をどの MCP サーバーで取得するか）がとりうる値の一覧。各 MCP サーバーは、エントリの `source_mcp_hint` が自分の名前でないときに管轄外と判定し、この値の MCP サーバーを案内する。`listBySourceMcpHint` の引数や `getAbbreviationStats` の `bySourceMcpHint` のキーに使う。6 つの値を持つ。
 
-| 値               | 本文の取得元                                   | 件数 |
-| ---------------- | ---------------------------------------------- | ---- |
-| `houki-egov`     | e-Gov 法令 API（法律・政令・省令・規則・告示） | 165  |
-| `houki-nta`      | 国税庁の通達・質疑応答事例・タックスアンサー   | 9    |
-| `houki-mhlw`     | 厚生労働省の通達・通知                         | 0    |
-| `houki-jaish`    | 労働安全衛生の通達（未決 3）                   | 0    |
-| `houki-court`    | 裁判所サイトの判例                             | 0    |
-| `houki-saiketsu` | 国税不服審判所の裁決                           | 0    |
+| 値               | 本文の取得元                                         | 件数 |
+| ---------------- | ---------------------------------------------------- | ---- |
+| `houki-egov`     | e-Gov 法令 API（憲法・法律・政令・勅令・府省令・規則） | 165  |
+| `houki-nta`      | 国税庁の通達・告示・質疑応答事例・タックスアンサー   | 9    |
+| `houki-mhlw`     | 厚生労働省の通達・告示・通知                         | 0    |
+| `houki-jaish`    | 労働安全衛生の通達（未決 3）                         | 0    |
+| `houki-court`    | 裁判所サイトの判例                                   | 0    |
+| `houki-saiketsu` | 国税不服審判所の裁決                                 | 0    |
+
+`houki-egov` の取得元から「告示」を外す。e-Gov 法令 API（`GET /api/2/laws`）は憲法・法律・政令・勅令・府省令・規則だけを持ち、告示を持たない。
 
 ### `LAW_TYPE_CODES`
 
@@ -143,17 +146,25 @@ flowchart TD
 
 `DOMAINS` は `["tax", "labor", "accounting", "commercial", "civil", "administrative"]` で、値と順序がこのとおりになっている。
 
-### SPEC-ABBR-PUBLIC-CONSTANTS-007 CATEGORIES は 12 の値をこの順で持つ
+### SPEC-ABBR-PUBLIC-CONSTANTS-007 CATEGORIES は 13 の値をこの順で持つ
 
-`CATEGORIES` は `["constitution", "law", "cabinet-order", "imperial-ordinance", "ministerial-ordinance", "rule", "kihon-tsutatsu", "kobetsu-tsutatsu", "qa-jirei", "tax-answer", "hanrei", "saiketsu"]` で、値と順序がこのとおりになっている。
+`CATEGORIES` は `["constitution", "law", "cabinet-order", "imperial-ordinance", "ministerial-ordinance", "rule", "kokuji", "kihon-tsutatsu", "kobetsu-tsutatsu", "qa-jirei", "tax-answer", "hanrei", "saiketsu"]` で、値と順序がこのとおりになっている。`kokuji` は `rule` の次（法令系の値の末尾）に置く。
+
+例: `CATEGORIES.length` は 13、`CATEGORIES[6]` は `"kokuji"`、`CATEGORIES.indexOf('kihon-tsutatsu')` は 7（v0.6.1 では 6）。
 
 ### SPEC-ABBR-PUBLIC-CONSTANTS-008 SOURCE_MCP_HINTS は 6 つの値をこの順で持つ
 
 `SOURCE_MCP_HINTS` は `["houki-egov", "houki-nta", "houki-mhlw", "houki-jaish", "houki-court", "houki-saiketsu"]` で、値と順序がこのとおりになっている。
 
+### SPEC-ABBR-PUBLIC-CONSTANTS-009 公開定数は凍結されていて、代入は TypeError になる
+
+`DOMAINS`、`CATEGORIES`、`SOURCE_MCP_HINTS`、`LAW_TYPE_CODES`、`STALENESS_THRESHOLDS` は、どれも `Object.isFrozen` が `true` を返す。要素の追加・差し替え・削除とキーへの代入は、strict mode（ES モジュール、TypeScript の出力）では `TypeError` を投げ、値は変わらない。`judgeStaleness` の境界は実行時に変えられない。
+
+例: `DOMAINS.push('x')` は `TypeError` を投げ、`DOMAINS.length` は 6 のまま（v0.6.1 では 7 になっていた）。`CATEGORIES[0] = 'x'` と `SOURCE_MCP_HINTS.pop()` も `TypeError`。`LAW_TYPE_CODES.Act = 'XX'` は `TypeError` で、`LAW_TYPE_CODES.Act` は `'AC'` のまま。`STALENESS_THRESHOLDS.fresh_days = 100` は `TypeError` で、その後の `judgeStaleness(50)` は `'outdated'` のまま（v0.6.1 では `'fresh'` になっていた）。
+
 ## できないこと
 
-- 値を追加・変更する手段を持つこと（値を変えるにはこのパッケージの新しい版が要る）
+- 値を追加・変更する手段を持つこと（凍結されている。009。値を変えるにはこのパッケージの新しい版が要る）
 - 鮮度を判定すること（`judgeStaleness`）。この文書は境界の値だけを書く
 - エントリの `law_id` の形を検査すること（`isValidLawId`）
 - エントリの一覧を分野・種類・MCP サーバー別に返すこと（`listByDomain`・`listByCategory`・`listBySourceMcpHint`）
@@ -164,8 +175,8 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **定数は実行時に書き換えられる。** → houki-abbreviations #13
+1. **定数は実行時に書き換えられる。** → SPEC-ABBR-PUBLIC-CONSTANTS-009
 2. **`LAW_TYPE_CODES` の値を確かめるテストが無い。** → SPEC-ABBR-PUBLIC-CONSTANTS-004、SPEC-ABBR-PUBLIC-CONSTANTS-005
 3. **`houki-jaish` の説明。** → houki-abbreviations #17
 4. **値の一覧そのものを固定するテストが無い。** → SPEC-ABBR-PUBLIC-CONSTANTS-006、SPEC-ABBR-PUBLIC-CONSTANTS-007、SPEC-ABBR-PUBLIC-CONSTANTS-008
-5. **`CATEGORIES` の説明と e-Gov の範囲。** → houki-abbreviations #25
+5. **`CATEGORIES` の説明と e-Gov の範囲。** → SPEC-ABBR-PUBLIC-CONSTANTS-007

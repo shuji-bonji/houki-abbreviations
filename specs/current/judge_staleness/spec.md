@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-input-guards` は 2026-10-01（PR #31）
 - 起こした元: v0.6.0 の `src/freshness.ts`（`judgeStaleness`、`StalenessLevel`）、`src/freshness.test.ts`
 - 関連する Issue: houki-abbreviations #3（JSDoc の強化）。共通化の発端は houki-nta-mcp #15
 
@@ -14,9 +14,9 @@
 
 ## 入力
 
-| 引数        | 必須 | 内容                                                                       |
-| ----------- | ---- | -------------------------------------------------------------------------- |
-| `daysSince` | 必須 | 経過日数。0 以上の整数を想定する。通常は `computeDaysSince` の戻り値を渡す |
+| 引数        | 必須 | 内容                                                                                                                                                                              |
+| ----------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `daysSince` | 必須 | 経過日数。0 以上の有限の数。通常は `computeDaysSince` の戻り値を渡す。小数でもよい。負の値、`NaN`、`Infinity`、`-Infinity` は `RangeError`、数でない値は `TypeError` を投げる |
 
 ## 戻り値
 
@@ -69,12 +69,23 @@ flowchart TD
 
 例: `6.99` → `"fresh"`、`29.5` → `"stale"`、`29.999` → `"stale"`、`30.0` → `"outdated"`。
 
+### SPEC-ABBR-JUDGE-STALENESS-005 負の値には RangeError を投げる
+
+`daysSince` が負の値のときは、`"fresh"` を返さずに `RangeError` を投げる。0 に丸めるのは呼び出し側の責任にしない。
+
+例: `judgeStaleness(-5)` と `judgeStaleness(-0.5)` は `RangeError`（v0.6.1 では `"fresh"`）。`judgeStaleness(0)` は `"fresh"`。
+
+### SPEC-ABBR-JUDGE-STALENESS-006 NaN・Infinity・数でない値には例外を投げる
+
+`daysSince` が `NaN` か `Infinity` か `-Infinity` のときは `RangeError`、数でない値（文字列・`null`・`undefined` など）のときは `TypeError` を投げる。3 つの段階のどれにも当てはめない。
+
+例: `judgeStaleness(NaN)` は `RangeError`（v0.6.1 では `"outdated"`）。`judgeStaleness(Infinity)` と `judgeStaleness(-Infinity)` も `RangeError`（v0.6.1 では `"outdated"` と `"fresh"`）。`judgeStaleness('7')`、`judgeStaleness(null)`、`judgeStaleness(undefined)` は `TypeError`。
+
 ## できないこと
 
 - 取得時刻から経過日数を数えること（`computeDaysSince`）
 - MCP サーバーごとに違う境界で判定すること（境界は `STALENESS_THRESHOLDS` の値に固定。違う境界が要る MCP サーバーは、この関数を使わずに自分の判定関数を書く）
 - 警告の文言や再取得の手順を返すこと（各 MCP サーバーが持つ）
-- 負の値や数でない値を検査して、エラーにすること（未決 1・2）
 
 ## 未決
 
@@ -82,7 +93,7 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **負の値は `fresh` になる。** → houki-abbreviations #18
-2. **`NaN` は `outdated` になる。** → houki-abbreviations #18
+1. **負の値は `fresh` になる。** → SPEC-ABBR-JUDGE-STALENESS-005
+2. **`NaN` は `outdated` になる。** → SPEC-ABBR-JUDGE-STALENESS-006
 3. **小数の日数。** → SPEC-ABBR-JUDGE-STALENESS-004
-4. **`STALENESS_THRESHOLDS` を実行時に書き換えると判定が変わる。** → houki-abbreviations #13
+4. **`STALENESS_THRESHOLDS` を実行時に書き換えると判定が変わる。** → SPEC-ABBR-PUBLIC-CONSTANTS-009

@@ -3,7 +3,7 @@
 - 対象: `specs/current/` の `search_by_name` / `find_similar` / `suggest_correction` / `compute_days_since` / `judge_staleness` / `is_valid_law_id`
 - 実装の変更: 要
 - 承認日: 2026-10-01（PR #31）
-- 状態: 草案
+- 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-10-01（JST、実装 PR の最終コミット）
 - 起こした日: 2026-10-01（JST）
 - 起こした役: Spec Steward
 - 対象 Issue: houki-abbreviations #22（`limit` の `NaN` と上限）、#18（壊れた取得時刻と鮮度判定）、#23（`isValidLawId` の厳しさ）

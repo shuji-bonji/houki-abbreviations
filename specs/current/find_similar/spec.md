@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-input-guards` は 2026-10-01（PR #31）。差分 `20261001-dictionary-rules` は 2026-10-01（PR #32）
 - 起こした元: v0.6.0 の `src/search.ts`（`findSimilar`・`FuzzyOptions`・`FuzzyMatch`）、`src/index.ts`（`findSimilar`）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加）
 
@@ -11,19 +11,29 @@
 ## アクター
 
 - houki-abbreviations を import する利用者（houki-nta-mcp・houki-egov-mcp などの MCP サーバー、または独自のコード）。`労働基準法施行例` のように 1〜2 文字誤った名前を渡して、近い名前を持つ辞書のエントリと、その近さ（編集距離）を受け取る
+- この関数は編集距離で近い名前を返す関数で、名前の一部から一覧を得る関数ではない。`民法` のような短い名前を渡しても、`民` で始まる法令の一覧にはならない。一覧が欲しいときは `searchByName` を使う（README と JSDoc にも同じ文を書く）
 
 ## 入力
 
-| 引数                  | 必須 | 内容                                                                                                                                      |
-| --------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `query`               | 必須 | 探す名前。例: `労働基準法` / `消費税法施行令例`。前後の空白は無視する                                                                     |
-| `options.maxDistance` | 任意 | 返すエントリの編集距離の上限。既定 2                                                                                                      |
-| `options.limit`       | 任意 | 返す件数の上限。既定 5。1 未満は 1 として扱う                                                                                             |
-| `options.sortByScore` | 任意 | 編集距離の小さい順に並べるか。既定 `true`                                                                                                 |
-| `options.filter`      | 任意 | 絞り込み。型は `SearchFilter`（`searchByName` と同じ）。キーは `domain` / `category` / `source_mcp_hint` で、それぞれ単一の値か配列を取る |
-| `options.normalize`   | 任意 | 全角英数字・全角ハイフン・全角チルダ・全角スペースを半角にしてから比べるか。既定 `true`                                                   |
+| 引数                  | 必須 | 内容                                                                                                                                                                           |
+| --------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `query`               | 必須 | 探す名前。例: `労働基準法` / `消費税法施行令例`。前後の空白は無視する                                                                                                          |
+| `options.maxDistance` | 任意 | 返すエントリの編集距離の上限。既定 2。編集距離がこの値以下でも、距離の比（下記）がしきい値を超える名前は返さない                                                               |
+| `options.limit`       | 任意 | 返す件数の上限。1 以上 500 以下の整数。省くと 5                                                                                                                                |
+| `options.sortByScore` | 任意 | 編集距離の小さい順に並べるか。既定 `true`                                                                                                                                      |
+| `options.filter`      | 任意 | 絞り込み。型は `SearchFilter`（`searchByName` と同じ）。キーは `domain` / `category` / `source_mcp_hint` で、それぞれ単一の値か配列を取る                                      |
+| `options.normalize`   | 任意 | 全角英数字・ダッシュ類・全角チルダ・全角スペースを半角にしてから比べるか。既定 `true`                                                                                          |
 
-型は `FuzzyOptions`。辞書は関数が持っている（v0.6.0 で 174 件）。エントリの配列を渡す引数は無い。
+型は `FuzzyOptions`。辞書は関数が持っている（v0.6.1 で 174 件）。エントリの配列を渡す引数は無い。
+
+距離の比: `query` と名前の編集距離を、2 つのうち長い方の文字数（コードポイント数）で割った値。比が 1/3 を超える名前は、`maxDistance` 以下でも返さない（`距離 × 3 ≤ 長い方の文字数` のときだけ返す）。距離 0（一致）は文字数によらず返す。この比は指定できない。
+
+| 長い方の文字数 | 返す編集距離 |
+| -------------- | ------------ |
+| 1〜2           | 0            |
+| 3〜5           | 0〜1         |
+| 6〜8           | 0〜2         |
+| 9 以上         | 0〜3（既定の `maxDistance: 2` では 0〜2） |
 
 ## 戻り値
 
@@ -44,7 +54,7 @@ flowchart TD
   A["呼び出し（query・options）"] --> B{"前後の空白を除いた query が空か"}
   B -- はい --> E1["空配列を返す（006）"]
   B -- いいえ --> C["filter で辞書のエントリを絞る（005）"]
-  C --> D["エントリごとに、略称・正式名称・別名のうち query に最も近い名前と編集距離を求める"]
+  C --> D["エントリごとに、略称・正式名称・別名のうち、距離 × 3 ≤ 長い方の文字数の名前（距離 0 は常に）だけを候補に、query に最も近い名前と編集距離を求める（021・022）"]
   D --> F{"編集距離が maxDistance 以下か"}
   F -- いいえ --> G["そのエントリは返さない（002）"]
   F -- はい --> H["候補に入れる。一致なら distance 0（001）"]
@@ -58,7 +68,7 @@ flowchart TD
 
 `query` がエントリの略称・正式名称・別名のどれかと一致するとき、そのエントリを `distance: 0` で返す。既定の並び順では先頭に来る。
 
-例: `findSimilar('労働基準法')` の先頭は `entry.abbr: "労基法"`、`entry.formal: "労働基準法"`、`matchedKey: "労働基準法"`、`distance: 0`。続いて `労契法`（`労働契約法`、2）・`労組法`（`労働組合法`、2）・`建基法`（`建築基準法`、2）。
+例: `findSimilar('所得税法施行令')` の先頭は `entry.abbr: "所令"`、`entry.formal: "所得税法施行令"`、`matchedKey: "所得税法施行令"`、`distance: 0`。続いて `所規`（`所得税法施行規則`、2）・`法令`（`法人税法施行令`、2）・`消令`（`消費税法施行令`、2）・`相令`（`相続税法施行令`、2）。`findSimilar('労働基準法')` は `労基法`（`労働基準法`、0）の 1 件（v0.6.1 では `労契法`・`労組法`・`建基法` も距離 2 で続いていたが、5 文字に対する距離 2 は比が 1/3 を超えるので返さない）。
 
 ### SPEC-ABBR-FIND-SIMILAR-002 編集距離が maxDistance 以下のエントリだけを返す
 
@@ -70,19 +80,19 @@ flowchart TD
 
 `sortByScore` を省くか `true` にすると、`distance` の小さい順に並べてから返す。
 
-例: `findSimilar('労働基準法施行例', { maxDistance: 5 })` は `労基則`（2）・`労基法`（3）・`所令`（5）・`法令`（5）・`消令`（5）の順。
+例: `findSimilar('法人税法施行令')` は `法令`（0）・`所令`（2）・`法規`（2）・`消令`（2）・`相令`（2）の順。辞書では `所令` が `法令` より前にあるが、距離の順で `法令` が先頭になる。
 
 ### SPEC-ABBR-FIND-SIMILAR-004 limit の件数で打ち切る
 
 候補が `limit` を超えるときは、並べた後で `limit` 件に打ち切って返す。
 
-例: `findSimilar('法', { maxDistance: 5, limit: 3 })` は 3 件を返す（`limit` を付けなければ 5 件、`limit: 1000` なら 165 件）。
+例: `findSimilar('所得税法施行令', { limit: 3 })` は 3 件を返す（`limit` を付けなければ 5 件、`limit: 500` なら 7 件）。
 
 ### SPEC-ABBR-FIND-SIMILAR-005 filter で候補のエントリを絞る
 
 `filter` を渡すと、その条件に当たるエントリだけを候補にする。キーの意味は `searchByName` と同じ（SPEC-ABBR-SEARCH-BY-NAME-005）。
 
-例: `findSimilar('法', { maxDistance: 5, filter: { domain: 'tax' }, limit: 100 })` は 35 件を返し、すべて `entry.domain: "tax"`。
+例: `findSimilar('所得税法施行令', { filter: { domain: 'tax' }, limit: 100 })` は 7 件を返し、すべて `entry.domain: "tax"`。`findSimilar('所得税法施行令', { filter: { domain: 'labor' }, limit: 100 })` は `[]`。
 
 ### SPEC-ABBR-FIND-SIMILAR-006 空の query には空配列を返す
 
@@ -100,7 +110,7 @@ flowchart TD
 
 `normalize: false` のときは、全角英数字を半角にせずに編集距離を求める。
 
-例: `findSimilar('ＰＬ法', { normalize: false })` は `所法`・`法法`・`消法`・`措法`・`相法`（どれも `distance: 2`）で、`製造物責任法` のエントリは入らない。
+例: `findSimilar('ＰＬ法', { normalize: false })` は `[]`（`PL法` との距離 2 は 3 文字に対して比が 1/3 を超える）。`findSimilar('ＰＬ法')` は `製造物責任法` のエントリ（`matchedKey: "PL法"`、`distance: 0`）を返す。
 
 ### SPEC-ABBR-FIND-SIMILAR-009 全角で引いても matchedKey は辞書の表記のまま返す
 
@@ -112,31 +122,31 @@ flowchart TD
 
 `sortByScore: false` のときは、`distance` で並べ替えず、`abbreviationEntries` の並びのまま候補を `limit` 件で打ち切って返す。辞書の後ろにある距離の小さいエントリが打ち切りで入らないことがある。
 
-例: `findSimilar('労働基準法施行例', { maxDistance: 5, sortByScore: false })` は `所令`・`法令`・`消令`・`相令`・`通令`（どれも `distance: 5`）の 5 件で、`distance: 2` の `労基則` は入らない。
+例: `findSimilar('法人税法施行令', { sortByScore: false })` は `所令`（2）・`法令`（0）・`法規`（2）・`消令`（2）・`相令`（2）の 5 件で、距離 0 の `法令` が 2 番目に来る。`findSimilar('法人税法施行令', { sortByScore: false, limit: 1 })` は `所令`（2）の 1 件で、`法令` は入らない。
 
 ### SPEC-ABBR-FIND-SIMILAR-011 distance が同じエントリは辞書の並びのまま並べる
 
 `distance` の小さい順に並べるとき、`distance` が同じエントリどうしは `abbreviationEntries` での並びを保つ。
 
-例: `findSimilar('労働基準法施行例', { maxDistance: 5, limit: 100 })` の `distance: 5` の 10 件は `所令`・`法令`・`消令`・`相令`・`通令`・`印令`・`地税令`・`労契法`・`労組法`・`建基法` の順で、v0.6.0 の `abbreviationEntries` での順と同じ。
+例: `findSimilar('所得税法施行令', { limit: 100 })` の `distance: 2` の 6 件は `所規`・`法令`・`消令`・`相令`・`印令`・`地税令` の順で、v0.6.1 の `abbreviationEntries` での順と同じ。
 
 ### SPEC-ABBR-FIND-SIMILAR-012 limit を省くと 5 件で打ち切る
 
 `limit` を省くと、候補が 5 件を超えるときに 5 件で打ち切る。
 
-例: `findSimilar('法', { maxDistance: 5 })` は 5 件を返す（`limit: 1000` なら 165 件）。
+例: `findSimilar('所得税法施行令')` は 5 件を返す（`limit: 500` なら 7 件）。
 
-### SPEC-ABBR-FIND-SIMILAR-013 1 未満の limit は 1 として扱う
+### SPEC-ABBR-FIND-SIMILAR-013 1 未満の limit には RangeError を投げる
 
-`limit` が 1 未満のとき（0・負の値・0.5 など）は 1 として扱い、候補があれば 1 件を返す。
+`limit` が 1 未満のとき（0・負の値・0.5 など）は、1 として扱わずに `RangeError` を投げる。辞書は調べない。
 
-例: `findSimilar('法', { maxDistance: 5, limit: 0 })`・`{ …, limit: -1 }`・`{ …, limit: 0.5 }` は、どれも `所法`（`distance: 1`）の 1 件。
+例: `findSimilar('所得税法施行令', { limit: 0 })`、`{ limit: -1 }`、`{ limit: 0.5 }` は、どれも `RangeError` を投げる（v0.6.1 では 1 件を返していた）。
 
 ### SPEC-ABBR-FIND-SIMILAR-014 maxDistance を省くと 2 として扱う
 
 `maxDistance` を省くと、編集距離が 2 以下のエントリだけを返す。
 
-例: `findSimilar('労働基準法施行例', { limit: 100 })` は `労基則`（`distance: 2`）の 1 件で、`distance: 3` の `労基法` は入らない（`maxDistance: 3` なら `労基法` も入る）。
+例: `findSimilar('租税特別措置法施行令', { limit: 100 })` は `措令`（`租税特別措置法施行令`、0）と `措規`（`租税特別措置法施行規則`、2）の 2 件で、`distance: 3` の `措法`（`租税特別措置法`）は入らない（`maxDistance: 3` なら `措法` も入る。10 文字に対する距離 3 は比が 1/3 以下）。
 
 ### SPEC-ABBR-FIND-SIMILAR-015 maxDistance が 0 のときは名前が一致するエントリだけを返す
 
@@ -154,7 +164,37 @@ flowchart TD
 
 エントリの名前のうち `query` との編集距離が最も小さいものが 2 つ以上あるときは、`abbr`・`formal`・`aliases`（辞書の順）の順で先に来る名前を `matchedKey` にする。
 
-例: `findSimilar('消費', { maxDistance: 1 })` の `消法` は、略称 `消法` と別名 `消費税` がどちらも距離 1 で、`matchedKey: "消法"`。`findSimilar('消費税X', { maxDistance: 1 })` の `消法` は、正式名称 `消費税法` と別名 `消費税` がどちらも距離 1 で、`matchedKey: "消費税法"`。
+例: `findSimilar('消費法', { maxDistance: 1 })` の `消法` は、略称 `消法` と正式名称 `消費税法` と別名 `消費税` がどれも距離 1 で、`matchedKey: "消法"`。`findSimilar('消費税X', { maxDistance: 1 })` の `消法` は、正式名称 `消費税法` と別名 `消費税` がどちらも距離 1 で、`matchedKey: "消費税法"`。
+
+### SPEC-ABBR-FIND-SIMILAR-018 小数の limit には RangeError を投げる
+
+`limit` が整数でないときは、切り捨てずに `RangeError` を投げる。
+
+例: `findSimilar('所得税法施行令', { limit: 2.5 })` は `RangeError`（v0.6.1 では 2 件を返していた。`searchByName` は切り上げで 3 件だったので、関数ごとに違っていた）。`{ limit: 3 }` は 3 件を返す。
+
+### SPEC-ABBR-FIND-SIMILAR-019 NaN・Infinity・数でない limit には例外を投げる
+
+`limit` が `NaN` か `Infinity` か `-Infinity` のときは `RangeError`、数でない値（文字列・`null`・オブジェクトなど）のときは `TypeError` を投げる。`undefined` は省いたときと同じく 5 として扱う。
+
+例: `findSimilar('所得税法施行令', { limit: NaN })` と `{ limit: Infinity }` は `RangeError`（v0.6.1 では `NaN` のとき `[]` を返していた）。`{ limit: '3' }` と `{ limit: null }` は `TypeError`。`{ limit: undefined }` は `findSimilar('所得税法施行令')` と同じ結果。
+
+### SPEC-ABBR-FIND-SIMILAR-020 500 を超える limit には RangeError を投げる
+
+`limit` が 500 を超えるときは `RangeError` を投げる。500 は受け付ける。v0.6.1 には上限が無かった。
+
+例: `findSimilar('所得税法施行令', { limit: 501 })` は `RangeError`。`findSimilar('所得税法施行令', { limit: 500 })` は候補をすべて返す（候補が 500 件を超えることは v0.6.1 の辞書では無い）。
+
+### SPEC-ABBR-FIND-SIMILAR-021 編集距離の比が 1/3 を超える名前は返さない
+
+`query` と名前の編集距離を、2 つのうち長い方の文字数（コードポイント数）で割った比が 1/3 を超える名前は、`maxDistance` 以下でも候補にしない。`距離 × 3 ≤ 長い方の文字数` のときだけ候補にする。2〜3 文字の `query` が、意味の違う短い略称に当たることを防ぐ。
+
+例: `findSimilar('民法')` は `民`（`民法`、0）に続いて `民訴`（`民訴法`、1）・`民執`（`民執法`、1）・`民保`（`民保法`、1）の 4 件（v0.6.1 では `所法`・`法法`・`消法`・`措法` が距離 1 で続いていた。2 文字に対する距離 1 は比 1/2）。`findSimilar('法', { maxDistance: 5, limit: 100 })` は `[]`（v0.6.1 では 165 件）。`findSimilar('労基側')` は `労基法`（1）と `労基則`（1）の 2 件（3 文字に対する距離 1 は比 1/3）。
+
+### SPEC-ABBR-FIND-SIMILAR-022 距離 0 の一致は文字数によらず返す
+
+`query` が名前と一致するときは、名前が 1 文字でも `distance: 0` で返す。`query` の最短文字数は設けない。
+
+例: `findSimilar('民')` は `民`（`matchedKey: "民"`、`distance: 0`）の 1 件。`findSimilar('会社')` は `会社`（`matchedKey: "会社"`、0）と `会社規`（`会社規`、1）の 2 件。
 
 ## できないこと
 
@@ -170,10 +210,10 @@ flowchart TD
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
 1. **ドキュメントの例と実際の結果が違う。** → houki-abbreviations #17
-2. **短い query は意味の違う短い略称に当たる。** → houki-abbreviations #20
+2. **短い query は意味の違う短い略称に当たる。** → SPEC-ABBR-FIND-SIMILAR-021、SPEC-ABBR-FIND-SIMILAR-022
 3. **全角・半角の吸収（`normalize`）。** → SPEC-ABBR-FIND-SIMILAR-007、SPEC-ABBR-FIND-SIMILAR-008、SPEC-ABBR-FIND-SIMILAR-009
 4. **`sortByScore: false` と、距離が同じときの順。** → SPEC-ABBR-FIND-SIMILAR-010、SPEC-ABBR-FIND-SIMILAR-011
 5. **`limit` の既定値と 1 未満の値。** → SPEC-ABBR-FIND-SIMILAR-012、SPEC-ABBR-FIND-SIMILAR-013
 6. **`maxDistance` の既定値と 0 以下の値。** → SPEC-ABBR-FIND-SIMILAR-014、SPEC-ABBR-FIND-SIMILAR-015、SPEC-ABBR-FIND-SIMILAR-016
 7. **`matchedKey` の選び方。** → SPEC-ABBR-FIND-SIMILAR-017
-8. **`limit` に `NaN` を渡したときの扱いと上限。** → houki-abbreviations #22
+8. **`limit` に `NaN` を渡したときの扱いと上限。** → SPEC-ABBR-FIND-SIMILAR-013、SPEC-ABBR-FIND-SIMILAR-018、SPEC-ABBR-FIND-SIMILAR-019、SPEC-ABBR-FIND-SIMILAR-020

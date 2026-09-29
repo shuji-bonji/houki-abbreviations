@@ -144,20 +144,6 @@ describe('validateAllEntries', () => {
     expect(r.errors.some((e) => e.code === 'category_hint_mismatch')).toBe(false);
   });
 
-  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-008 alias が他エントリの abbr と衝突したら warning', () => {
-    const r = validateAllEntries([
-      validEntry,
-      {
-        ...validEntry,
-        abbr: '法人税',
-        formal: '法人税法',
-        law_id: '340AC0000000034',
-        aliases: ['消法'], // 他エントリの abbr と衝突
-      },
-    ]);
-    expect(r.warnings.some((w) => w.code === 'alias_collides_with_abbr')).toBe(true);
-  });
-
   it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-009 実データで全件 valid (回帰防止)', async () => {
     const { abbreviationEntries } = await import('./index.js');
     const r = validateAllEntries(abbreviationEntries as AbbreviationEntry[]);

@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-normalize` は 2026-10-01（PR #30）
 - 起こした元: v0.6.0 の `src/lookup.ts`（`lookupByLawId`）、`src/index.ts`（`lookupByLawId`）、`src/lookup.test.ts`
 - 関連する Issue: なし
 
@@ -14,13 +14,16 @@
 
 ## 入力
 
-| 引数     | 必須 | 内容                                                                                                      |
-| -------- | ---- | --------------------------------------------------------------------------------------------------------- |
-| `law_id` | 必須 | e-Gov の法令 ID。例: `363AC0000000108`（消費税法）/ `321CONSTITUTION`（日本国憲法）。前後の空白は無視する |
+| 引数                | 必須 | 内容                                                                                                                                                |
+| ------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `law_id`            | 必須 | e-Gov の法令 ID。例: `363AC0000000108`（消費税法）/ `321CONSTITUTION`（日本国憲法）。前後の空白は無視する                                           |
+| `options.normalize` | 任意 | `true` なら、`law_id` を `normalizeJpText` に通してから比べる（全角英数字を半角にする）。既定 `false`                                                |
+
+型は `LookupByLawIdOptions`（`{ normalize?: boolean }`）。`resolveAbbreviation` の `options.normalize` と同じ意味で、既定も同じ `false`。houki-egov-mcp・houki-nta-mcp は入口で `normalize: true` を渡す。辞書の `law_id` は半角の大文字なので、辞書の側は変換しない。
 
 ## 戻り値
 
-`AbbreviationEntry | null`。
+`AbbreviationEntry | null`。見つかったときは辞書のエントリそのもので、凍結されている（SPEC-ABBR-ABBREVIATION-ENTRIES-019）。
 
 - 見つかったとき: 辞書のエントリ（`abbr` / `formal` / `law_id` / `law_num` / `law_type` / `domain` / `category` / `source_mcp_hint` / `aliases` / `note`。`law_num` 以降は辞書にあるときだけ付く）
 - 見つからないとき、`law_id` が空文字・空白だけのとき: `null`
@@ -67,10 +70,27 @@ flowchart TD
 
 例: `lookupByLawId('')` と `lookupByLawId('   ')` はどちらも `null`。
 
+### SPEC-ABBR-LOOKUP-BY-LAW-ID-005 normalize: true では全角英数字を半角にしてから引く
+
+`options.normalize` が `true` のとき、`law_id` の全角英数字を半角にしてから辞書の `law_id` と比べる。
+
+例: `lookupByLawId('３６３AC0000000108', { normalize: true })?.formal` は `'消費税法'`。`lookupByLawId('３６３ＡＣ００００００１０８', { normalize: true })?.formal` も `'消費税法'`。
+
+### SPEC-ABBR-LOOKUP-BY-LAW-ID-006 normalize: true でも英字の小文字は大文字にしない
+
+`options.normalize` が `true` でも、英字の小文字を大文字にはしない。`isValidLawId`（SPEC-ABBR-IS-VALID-LAW-ID-010）と同じく、小文字の `law_id` は辞書の `law_id` と一致しない。
+
+例: `lookupByLawId('363ac0000000108', { normalize: true })` は `null`。`lookupByLawId('３６３ac0000000108', { normalize: true })` も `null`。
+
+### SPEC-ABBR-LOOKUP-BY-LAW-ID-007 normalize を省くか false にすると全角と半角を別の文字として引く
+
+`options` を渡さないとき、`{}`、`{ normalize: false }` のどれでも、全角と半角の違いは吸収しない。v0.6.1 までの `lookupByLawId(law_id)` と同じ結果を返す。
+
+例: `lookupByLawId('３６３AC0000000108')`、`lookupByLawId('３６３AC0000000108', {})`、`lookupByLawId('３６３AC0000000108', { normalize: false })` はどれも `null`。
+
 ## できないこと
 
-- 大文字・小文字の違いを吸収すること（`363ac0000000108` は `null`。未決 1）
-- 全角・半角の違いを吸収すること（`３６３AC0000000108` は `null`。未決 1）
+- 大文字・小文字の違いを吸収すること（`363ac0000000108` は `normalize: true` でも `null`）
 - 通達など `law_id` が `null` のエントリ（v0.6.0 の辞書で 174 件中 165 件）を引くこと
 - 法令番号から引くこと（`lookupByLawNum`）
 - 略称・正式名称・別名から引くこと（`resolveAbbreviation`）
@@ -83,6 +103,6 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。テストの名前と中身が合っていない項目は、テストを直します（ID を振っていないものは、直してから振ります）。
 
-1. **大文字・小文字と全角・半角を区別する。** → houki-abbreviations #21
+1. **大文字・小文字と全角・半角を区別する。** → SPEC-ABBR-LOOKUP-BY-LAW-ID-005、SPEC-ABBR-LOOKUP-BY-LAW-ID-006、SPEC-ABBR-LOOKUP-BY-LAW-ID-007
 2. **テスト「law_id=null のエントリはヒットしない」の中身が名前と合っていない。** （テストを直した。v0.6.1）
-3. **返すエントリは辞書のオブジェクトそのもの。** → houki-abbreviations #13
+3. **返すエントリは辞書のオブジェクトそのもの。** → SPEC-ABBR-ABBREVIATION-ENTRIES-019

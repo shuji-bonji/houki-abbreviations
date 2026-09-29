@@ -20,7 +20,7 @@
 
 ## 戻り値
 
-`AbbreviationEntry[]`。`domain` フィールドが `domain` と等しいエントリの配列。エントリのフィールドは `resolveAbbreviation` の戻り値と同じ。
+`AbbreviationEntry[]`。`domain` フィールドが `domain` と等しいエントリの配列。エントリのフィールドは `resolveAbbreviation` の戻り値と同じ。各要素は辞書のエントリそのもので、凍結されている（SPEC-ABBR-ABBREVIATION-ENTRIES-019）。
 
 v0.6.0 の辞書（174 件）での件数は次のとおり。
 
@@ -87,7 +87,7 @@ JavaScript から `DOMAINS` に無い値を渡したときは、例外を投げ�
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
 1. **README の件数が実際と違う。** → houki-abbreviations #17
-2. **返すエントリは凍結されておらず、書き換えると辞書に残る。** → houki-abbreviations #13
+2. **返すエントリは凍結されておらず、書き換えると辞書に残る。** → SPEC-ABBR-ABBREVIATION-ENTRIES-019
 3. **返す順序。** → SPEC-ABBR-LIST-BY-DOMAIN-003
 4. **返す配列は呼ぶたびに新しい。** → SPEC-ABBR-LIST-BY-DOMAIN-004
 5. **`DOMAINS` に無い値。** → SPEC-ABBR-LIST-BY-DOMAIN-005

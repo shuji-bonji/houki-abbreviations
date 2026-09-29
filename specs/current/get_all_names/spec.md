@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-normalize` は 2026-10-01（PR #30）。差分 `20261001-dictionary-rules` は 2026-10-01（PR #32）
 - 起こした元: v0.6.0 の `src/lookup.ts`（`getAllNames`）、`src/index.ts`（`getAllNames`）、`src/lookup.test.ts`
 - 関連する Issue: なし
 
@@ -14,9 +14,12 @@
 
 ## 入力
 
-| 引数   | 必須 | 内容                                                                                                                          |
-| ------ | ---- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `name` | 必須 | 辞書の略称（`abbr`）・正式名称（`formal`）・別名（`aliases`）のどれか。例: `消法` / `消費税法` / `インボイス`。完全一致で引く |
+| 引数                | 必須 | 内容                                                                                                                                        |
+| ------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`              | 必須 | 辞書の略称（`abbr`）・正式名称（`formal`）・別名（`aliases`）のどれか。例: `消法` / `消費税法` / `インボイス`。完全一致で引く               |
+| `options.normalize` | 任意 | `true` なら、`name` と辞書の名前の両方を `normalizeJpText` に通してから比べる（全角英数字・ダッシュ類・全角チルダ・全角スペースを半角にする）。既定 `false` |
+
+型は `GetAllNamesOptions`（`{ normalize?: boolean }`）。`resolveAbbreviation` の `options.normalize` と同じ意味で、既定も同じ `false`。houki-egov-mcp・houki-nta-mcp は入口で `normalize: true` を渡す。
 
 ## 戻り値
 
@@ -78,7 +81,7 @@ flowchart TD
 
 エントリの `abbr`・`formal`・`aliases` に同じ文字列が 2 回以上あるときは、`abbr`・`formal`・`aliases` の順で最初に出たものだけを残し、後のものは返さない。残した名前の順は SPEC-ABBR-GET-ALL-NAMES-001 と同じ。
 
-例: `abbr` と `formal` がどちらも `酒税法` のエントリでは、`getAllNames('酒税法')` は `['酒税法']`。`formal` と別名がどちらも `消費税法基本通達` のエントリでは、`getAllNames('消基通')` は `['消基通', '消費税法基本通達']`。
+例: `abbr` と `formal` がどちらも `酒税法` のエントリでは、`getAllNames('酒税法')` は `['酒税法']`。`abbr` と `formal` がどちらも `製造物責任法` で別名 `PL法` を持つエントリでは、`getAllNames('PL法')` は `['製造物責任法', 'PL法']`。0.7.0 の辞書では `aliases` に自分の `abbr` / `formal` と同じ値を入れない（SPEC-ABBR-ABBREVIATION-ENTRIES-018）ので、重なるのは `abbr` と `formal` が同じ場合だけ。
 
 ### SPEC-ABBR-GET-ALL-NAMES-007 name の前後の空白を除いてから引く
 
@@ -92,10 +95,21 @@ flowchart TD
 
 例: `getAllNames('消法')` の戻り値に `push('x')` し、先頭を `'y'` に書き換えても、次の `getAllNames('消法')` は先頭が `消法` の 12 件。2 回の呼び出しの戻り値は同じ配列（`===`）ではない。
 
+### SPEC-ABBR-GET-ALL-NAMES-009 normalize: true では全角英数字・ダッシュ類を半角にしてから引く
+
+`options.normalize` が `true` のとき、`name` と辞書の名前の両方を `normalizeJpText` に通して比べる。返す名前は辞書に書かれた表記のままで、半角にした文字列は返さない。前後の空白も除く。
+
+例: `getAllNames('ＰＬ法', { normalize: true })` は `['製造物責任法', 'PL法']`（`getAllNames('PL法')` と同じ配列）。`getAllNames('　消法　', { normalize: true })` は `getAllNames('消法')` と同じ配列。
+
+### SPEC-ABBR-GET-ALL-NAMES-010 normalize を省くか false にすると全角と半角を別の文字として引く
+
+`options` を渡さないとき、`{}`、`{ normalize: false }` のどれでも、全角と半角の違いは吸収しない。v0.6.1 までの `getAllNames(name)` と同じ結果を返す。
+
+例: `getAllNames('ＰＬ法')`、`getAllNames('ＰＬ法', {})`、`getAllNames('ＰＬ法', { normalize: false })` はどれも `[]`。`getAllNames('PL法', { normalize: false })` は `['製造物責任法', 'PL法']`。
+
 ## できないこと
 
 - 部分一致やあいまい一致で探すこと（完全一致だけ。部分一致は `searchByName`、似た名前の候補は `findSimilar` / `suggestCorrection`）
-- 全角・半角の表記ゆれを吸収すること（`getAllNames('ＰＬ法')` は `[]`。未決 3）
 - エントリそのもの（`law_id`・`domain` など）を返すこと（`resolveAbbreviation`）
 - e-Gov の法令 ID や法令番号から名前を引くこと（`lookupByLawId` / `lookupByLawNum` でエントリを引いてから、その `abbr` を渡す）
 - 1 回の呼び出しで複数の名前を引くこと
@@ -108,6 +122,6 @@ flowchart TD
 
 1. **同じ名前の重複を除く。** → SPEC-ABBR-GET-ALL-NAMES-006
 2. **前後の空白を無視する。** → SPEC-ABBR-GET-ALL-NAMES-007
-3. **全角・半角の表記ゆれを吸収しない。** → houki-abbreviations #21
-4. **複数のエントリが同じ名前を持つときにどれを返すか。** → houki-abbreviations #14
+3. **全角・半角の表記ゆれを吸収しない。** → SPEC-ABBR-GET-ALL-NAMES-009、SPEC-ABBR-GET-ALL-NAMES-010
+4. **複数のエントリが同じ名前を持つときにどれを返すか。** → SPEC-ABBR-ABBREVIATION-ENTRIES-017（名前は重ならない）
 5. **呼ぶたびに新しい配列を返す。** → SPEC-ABBR-GET-ALL-NAMES-008

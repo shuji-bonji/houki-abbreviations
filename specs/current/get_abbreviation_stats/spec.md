@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-dictionary-rules` は 2026-10-01（PR #32）
 - 起こした元: v0.6.0 の `src/index.ts`（`getAbbreviationStats`、`AbbreviationStats`）、`src/index.test.ts`
 - 関連する Issue: なし
 
@@ -20,14 +20,16 @@
 
 `AbbreviationStats`。次の 4 つのフィールドを持つオブジェクト。
 
-| フィールド        | 型                       | 内容                                                                                 |
-| ----------------- | ------------------------ | ------------------------------------------------------------------------------------ |
-| `total`           | `number`                 | 辞書のエントリの件数                                                                 |
-| `byDomain`        | `Record<string, number>` | キーは分野（`domain` の値）、値はその分野のエントリの件数                            |
-| `byCategory`      | `Record<string, number>` | キーは種別（`category` の値）、値はその種別のエントリの件数                          |
-| `bySourceMcpHint` | `Record<string, number>` | キーは本文を持つ MCP の名前（`source_mcp_hint` の値）、値はその MCP のエントリの件数 |
+| フィールド        | 型                              | 内容                                                                                                                 |
+| ----------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `total`           | `number`                        | 辞書のエントリの件数                                                                                                 |
+| `byDomain`        | `Record<Domain, number>`        | キーは `DOMAINS` の全値（定数の順）、値はその分野のエントリの件数。辞書に無い分野は `0`                              |
+| `byCategory`      | `Record<Category, number>`      | キーは `CATEGORIES` の全値（定数の順）、値はその種別のエントリの件数。辞書に無い種別は `0`                           |
+| `bySourceMcpHint` | `Record<SourceMcpHint, number>` | キーは `SOURCE_MCP_HINTS` の全値（定数の順）、値はその MCP のエントリの件数。辞書に無い MCP は `0`                   |
 
-例: v0.6.0 では次の値を返す。
+件数の実数（総数 174 など）は仕様に固定しない。エントリを足すたびに変わる。
+
+例: v0.6.1 の辞書では次の値を返す（`byCategory` の `kokuji` は `spec/20261001-dictionary-rules` で足す種別）。
 
 ```json
 {
@@ -41,15 +43,28 @@
     "administrative": 48
   },
   "byCategory": {
+    "constitution": 1,
     "law": 138,
     "cabinet-order": 8,
+    "imperial-ordinance": 0,
     "ministerial-ordinance": 16,
+    "rule": 2,
+    "kokuji": 0,
     "kihon-tsutatsu": 8,
     "kobetsu-tsutatsu": 1,
-    "rule": 2,
-    "constitution": 1
+    "qa-jirei": 0,
+    "tax-answer": 0,
+    "hanrei": 0,
+    "saiketsu": 0
   },
-  "bySourceMcpHint": { "houki-egov": 165, "houki-nta": 9 }
+  "bySourceMcpHint": {
+    "houki-egov": 165,
+    "houki-nta": 9,
+    "houki-mhlw": 0,
+    "houki-jaish": 0,
+    "houki-court": 0,
+    "houki-saiketsu": 0
+  }
 }
 ```
 
@@ -86,6 +101,18 @@ flowchart TD
 
 例: `const s = getAbbreviationStats(); s.total = 0; s.byDomain.tax = 0; s.byCategory.law = 0` の後も、`getAbbreviationStats()` は `total: 174`、`byDomain.tax: 35`、`byCategory.law: 138` を返す。2 回呼んだ結果は別のオブジェクト（`!==`）で、`byDomain` なども別のオブジェクト。
 
+### SPEC-ABBR-GET-ABBREVIATION-STATS-005 byDomain・byCategory・bySourceMcpHint は定数の全値をキーに、定数の順で持つ
+
+`byDomain` のキーは `DOMAINS` の全値、`byCategory` のキーは `CATEGORIES` の全値、`bySourceMcpHint` のキーは `SOURCE_MCP_HINTS` の全値で、それ以外のキーは無い。`Object.keys` の順は定数の順と同じ。
+
+例: `Object.keys(getAbbreviationStats().byCategory)` は `[...CATEGORIES]` と同じ配列。`Object.keys(getAbbreviationStats().bySourceMcpHint)` は `[...SOURCE_MCP_HINTS]` と同じ配列（v0.6.1 では `['houki-egov', 'houki-nta']` の 2 つだけだった）。
+
+### SPEC-ABBR-GET-ABBREVIATION-STATS-006 辞書にエントリの無い値は 0 を返す
+
+辞書に 1 件も無い分野・種別・MCP のキーの値は `0`。`undefined` にはしない。
+
+例: `getAbbreviationStats().byCategory.hanrei` は `0`（v0.6.1 では `undefined`）。`getAbbreviationStats().bySourceMcpHint['houki-mhlw']` は `0`。`getAbbreviationStats().byCategory.law` は 1 以上。
+
 ## できないこと
 
 - 分野などで絞り込んだ件数を返すこと（引数は無い。絞り込んだ一覧は `listByDomain` / `listByCategory` / `listBySourceMcpHint`）
@@ -99,7 +126,7 @@ flowchart TD
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **件数が 0 の種別と MCP はキーが無い。** → houki-abbreviations #16
-2. **`AbbreviationStats` のキーの型が `string`。** → houki-abbreviations #16
+1. **件数が 0 の種別と MCP はキーが無い。** → SPEC-ABBR-GET-ABBREVIATION-STATS-005、SPEC-ABBR-GET-ABBREVIATION-STATS-006
+2. **`AbbreviationStats` のキーの型が `string`。** → 「戻り値」の型（`Record<Domain, number>` / `Record<Category, number>` / `Record<SourceMcpHint, number>`）
 3. **返すオブジェクトは呼ぶたびに新しい。** → SPEC-ABBR-GET-ABBREVIATION-STATS-004
-4. **キーの並び。** → houki-abbreviations #16
+4. **キーの並び。** → SPEC-ABBR-GET-ABBREVIATION-STATS-005

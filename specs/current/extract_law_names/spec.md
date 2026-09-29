@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-normalize` は 2026-10-01（PR #30）。差分 `20261001-dictionary-rules` は 2026-10-01（PR #32）
 - 起こした元: v0.6.0 の `src/validate.ts`（`extractLawNames`、型 `ExtractOptions` / `LawNameMatch`）、`src/index.ts`（`extractLawNames`）、`src/validate.test.ts`
 - 関連する Issue: なし
 
@@ -21,13 +21,14 @@
 
 `ExtractOptions` のフィールド（どれも任意）。
 
-| フィールド     | 型        | 既定値  | 内容                                                                                                   |
-| -------------- | --------- | ------- | ------------------------------------------------------------------------------------------------------ |
-| `minLength`    | `number`  | `2`     | これより短いキー（略称・正式名称・別名）は探さない。既定では `民` `商` のような 1 文字の略称を探さない |
-| `preferLonger` | `boolean` | `true`  | `true` なら、ほかの一致の範囲の中にすっぽり入る、より短い一致を除く                                    |
-| `dedupe`       | `boolean` | `false` | `true` なら、同じエントリ（同じ `abbr`）への一致を位置が最も前の 1 件だけにする                        |
+| フィールド     | 型        | 既定値  | 内容                                                                                                                                                       |
+| -------------- | --------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `minLength`    | `number`  | `2`     | これより短いキー（略称・正式名称・別名）は探さない。既定では `民` `商` のような 1 文字の略称を探さない                                                     |
+| `preferLonger` | `boolean` | `true`  | `true` なら、ほかの、より長い一致と範囲が重なる短い一致を除く                                                                                              |
+| `dedupe`       | `boolean` | `false` | `true` なら、同じエントリ（同じ `abbr`）への一致を位置が最も前の 1 件だけにする                                                                            |
+| `normalize`    | `boolean` | `false` | `true` なら、`text` と辞書のキーの両方を `normalizeJpText` に通してから探す（全角英数字・ダッシュ類・全角チルダ・全角スペースを半角にする）。`position` と `length` は元の `text` の位置と長さで返す |
 
-探すキーは、同梱の辞書（v0.6.0 では 174 件）の各エントリの `abbr`・`formal`・`aliases` の全部です。v0.6.0 の辞書で 1 文字のキーは `商` `民` `破` `憲` `刑`（`abbr`）と `裁`（`裁判所法` の別名）の 6 つです。
+探すキーは、同梱の辞書の各エントリの `abbr`・`formal`・`aliases` の全部です。v0.6.1 の辞書で 1 文字のキーは `商` `民` `破` `憲` `刑`（`abbr`）と `裁`（`裁判所法` の別名）の 6 つです。`normalize` は `resolveAbbreviation` の `options.normalize` と同じ意味で、既定も同じ `false`。houki-egov-mcp・houki-nta-mcp は入口で `normalize: true` を渡す。
 
 ## 戻り値
 
@@ -87,11 +88,11 @@ flowchart TD
 
 例: `民の規定について`、`{ minLength: 1 }` → `matchedKey: "民"` の一致がある。
 
-### SPEC-ABBR-EXTRACT-LAW-NAMES-005 preferLonger: true なら長い一致に入る短い一致を除く
+### SPEC-ABBR-EXTRACT-LAW-NAMES-005 preferLonger: true なら長い一致と重なる短い一致を除く
 
-`preferLonger` が `true` のとき、ある一致の範囲（`position` から `position + length` まで）が、ほかの、より長い一致の範囲にすっぽり入るなら、その短い一致を返さない。
+`preferLonger` が `true` のとき、ある一致の範囲（`position` から `position + length` まで）が、ほかの、より長い一致の範囲と 1 文字でも重なるなら、その短い一致を返さない。長い一致の中にすっぽり入る場合も、長い一致の端にまたがる場合も同じ。長さが同じ一致どうしは、重なっていてもどちらも返す。
 
-例: `民法の解釈`、`{ minLength: 1, preferLonger: true }` → `民`（位置 0、長さ 1）は `民法`（位置 0、長さ 2）の範囲に入るので返さず、`民法` の一致は返す。
+例: `民法の解釈`、`{ minLength: 1, preferLonger: true }` → `民`（位置 0、長さ 1）は `民法`（位置 0、長さ 2）の範囲に入るので返さず、`民法` の一致は返す。`消費税法法人税法`（`preferLonger` は既定の `true`）→ `消費税法`（位置 0、長さ 4）と `法人税法`（位置 4、長さ 4）の 2 件。`法法`（位置 3、長さ 2）は両方の長い一致と重なるので返さない（v0.6.1 では `法法` も返していた）。
 
 ### SPEC-ABBR-EXTRACT-LAW-NAMES-006 preferLonger: false なら重なる一致も全部返す
 
@@ -117,9 +118,9 @@ flowchart TD
 
 ### SPEC-ABBR-EXTRACT-LAW-NAMES-010 preferLonger を指定しなければ true として扱う
 
-`options` に `preferLonger` を入れなければ、`preferLonger: true` と同じく、ほかの、より長い一致の範囲にすっぽり入る短い一致を返さない。
+`options` に `preferLonger` を入れなければ、`preferLonger: true` と同じく、ほかの、より長い一致と範囲が重なる短い一致を返さない。
 
-例: `民法の解釈`、`{ minLength: 1 }`（`preferLonger` なし）→ `民`（位置 0、長さ 1）の一致は無く、`民法`（位置 0、長さ 2）の一致はある。同じ入力に `preferLonger: false` を足すと `民` の一致も返る。
+例: `民法の解釈`、`{ minLength: 1 }`（`preferLonger` なし）→ `民`（位置 0、長さ 1）の一致は無く、`民法`（位置 0、長さ 2）の一致はある。同じ入力に `preferLonger: false` を足すと `民` の一致も返る。`消費税法法人税法`（`options` なし）→ `消費税法` と `法人税法` の 2 件で、`法法` は返さない。
 
 ### SPEC-ABBR-EXTRACT-LAW-NAMES-011 minLength が 1 未満なら 1 として扱う
 
@@ -147,11 +148,40 @@ v0.6.0 の同梱辞書には、別のエントリどうしで同じキーが無�
 
 例: `extractLawNames(null)` と `extractLawNames(undefined)` は、どちらも `[]`。
 
+### SPEC-ABBR-EXTRACT-LAW-NAMES-015 preferLonger: true でも長さが同じ一致は重なっていても両方返す
+
+重なる 2 つの一致の長さが同じときは、どちらが正しいか決められないので、`preferLonger: true` でも両方を返す。
+
+例: `所得税法人税法` → `所得税法`（位置 0、長さ 4。エントリは `所法`）と `法人税法`（位置 3、長さ 4。エントリは `法法`）の 2 件。位置 3 の `法` を両方の一致が共有するが、長さが同じなのでどちらも残す。
+
+### SPEC-ABBR-EXTRACT-LAW-NAMES-016 normalize: true では全角英数字・ダッシュ類を半角にしてから探す
+
+`options.normalize` が `true` のとき、`text` と辞書のキーの両方を `normalizeJpText` と同じ規則で半角にしてから探す。`matchedKey` は辞書に書かれた表記のまま返す。
+
+例: `ＰＬ法の規定`、`{ normalize: true }` → 1 件。`matchedKey: "PL法"`、`entry.formal: "製造物責任法"`、`position: 0`、`length: 3`。
+
+### SPEC-ABBR-EXTRACT-LAW-NAMES-017 normalize: true でも position と length は元の text の位置と長さで返す
+
+`normalize: true` で半角にして探したときも、`position` は元の `text` での一致の開始位置、`length` は元の `text` での一致の文字数（UTF-16 の文字単位）で返す。`normalizeJpText` の変換はどれも 1 文字を 1 文字に置き換えるので、`length` は `matchedKey` の長さと同じになる。`text` の先頭の空白は位置に数える（探すときに取り除かない）。
+
+例: `　ＰＬ法の規定`（先頭が全角スペース）、`{ normalize: true }` → `position: 1`、`length: 3`。`text.slice(1, 4)` は `'ＰＬ法'`。`消費税法の改正と法人税法`、`{ normalize: true }` → `消費税法`（位置 0）と `法人税法`（位置 8）で、`normalize` を省いたときと同じ位置。
+
+### SPEC-ABBR-EXTRACT-LAW-NAMES-018 normalize を省くか false にすると全角と半角を別の文字として探す
+
+`options` を渡さないとき、`{}`、`{ normalize: false }` のどれでも、全角と半角の違いは吸収しない。v0.6.1 までの `extractLawNames(text, options)` と同じ結果を返す。
+
+例: `ＰＬ法の規定`（`options` なし）、`{ normalize: false }` はどちらも `[]`。`PL法の規定` は `options` の有無によらず `matchedKey: "PL法"` の 1 件。
+
+### SPEC-ABBR-EXTRACT-LAW-NAMES-019 同じエントリの同じ位置・同じ長さの一致は 1 件にする
+
+1 つのエントリの 2 つ以上のキー（`abbr` と `formal` が同じ値、など）が `text` の同じ位置に同じ長さで一致したときは、1 件だけを返す。`matchedKey` は `abbr`・`formal`・`aliases` の順で先のキー。`dedupe` の指定によらない。別のエントリどうしの同じ位置・同じ長さの一致は、SPEC-ABBR-EXTRACT-LAW-NAMES-012 のとおり両方返す。
+
+例: `酒税法`（`abbr` と `formal` がどちらも `酒税法`）→ 1 件。`matchedKey: "酒税法"`、`position: 0`、`length: 3`（v0.6.1 では同じ一致を 2 件返していた）。`公認会計士法の規定` → `公認会計士法` の 1 件。`民法の解釈` → `民法` の 1 件。
+
 ## できないこと
 
 - 文脈を見て法令名かどうかを判断すること（`民法人の認可` の中の `民法` も一致として返す）
 - 語の区切りを見ること（キーが別の語の一部でも一致にする）
-- 全角・半角の表記ゆれを吸収すること（未決 3）
 - 辞書に無い法令名を見つけること（`○○法` の形から推し量ることはしない）
 - 条番号（`第30条` など）を抜き出すこと
 - 利用者が用意したエントリの配列で探すこと（公開する `extractLawNames` は同梱の辞書だけを使う）
@@ -163,9 +193,9 @@ v0.6.0 の同梱辞書には、別のエントリどうしで同じキーが無�
 
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
-1. **同じ一致を 2 件返す。** → houki-abbreviations #15
-2. **2 つの法令名にまたがる短い一致を返す。** → houki-abbreviations #19
-3. **全角・半角の表記ゆれを吸収しない。** → houki-abbreviations #19
+1. **同じ一致を 2 件返す。** → SPEC-ABBR-EXTRACT-LAW-NAMES-019
+2. **2 つの法令名にまたがる短い一致を返す。** → SPEC-ABBR-EXTRACT-LAW-NAMES-005、SPEC-ABBR-EXTRACT-LAW-NAMES-015
+3. **全角・半角の表記ゆれを吸収しない。** → SPEC-ABBR-EXTRACT-LAW-NAMES-016、SPEC-ABBR-EXTRACT-LAW-NAMES-017、SPEC-ABBR-EXTRACT-LAW-NAMES-018
 4. **`preferLonger` の既定値が `true` であること。** → SPEC-ABBR-EXTRACT-LAW-NAMES-010
 5. **`minLength` に 1 未満を渡したとき。** → SPEC-ABBR-EXTRACT-LAW-NAMES-011
 6. **同じ位置・同じ長さで別のエントリに一致したとき。** → SPEC-ABBR-EXTRACT-LAW-NAMES-012

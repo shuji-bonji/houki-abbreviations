@@ -3,7 +3,7 @@
 - 対象: `specs/current/` の `abbreviation_entries` / `validate_all_entries` / `public_constants` / `get_abbreviation_stats` / `find_similar` / `suggest_correction` / `extract_law_names` / `get_all_names`
 - 実装の変更: 要（辞書 `src/data/*.json` の 33 件の修正を含む）
 - 承認日: 2026-10-01（PR #32）
-- 状態: 草案
+- 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-10-01（JST、実装 PR の最終コミット）
 - 起こした日: 2026-10-01（JST）
 - 起こした役: Spec Steward
 - 対象 Issue: houki-abbreviations #14（名前の重なりと `validateAllEntries` が見逃す値）、#15（`aliases` に自分の `abbr` / `formal`）、#25（告示の `category`）、#16（件数と 0 件のキー）、#20（短い `query` と一致した名前）

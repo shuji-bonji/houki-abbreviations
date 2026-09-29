@@ -3,7 +3,7 @@
 - 対象: `specs/current/` の `normalize_jp_text` / `normalize_law_num` / `normalize_search_query` / `get_all_names` / `lookup_by_law_id` / `extract_law_names` / `kanji_to_number` / `levenshtein`
 - 実装の変更: 要
 - 承認日: 2026-10-01（PR #30）
-- 状態: 草案
+- 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-10-01（JST、実装 PR の最終コミット）
 - 起こした日: 2026-10-01（JST）
 - 起こした役: Spec Steward
 - 対象 Issue: houki-abbreviations #21（関数ごとの全角・ダッシュ類・大文字の扱い）、#19（`extractLawNames` のまたがる一致と全角）、#24（漢数字・大きな数・BMP 外の文字）

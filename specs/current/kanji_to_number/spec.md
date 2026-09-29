@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-normalize` は 2026-10-01（PR #30）
 - 起こした元: v0.6.0 の `src/normalize.ts`（`kanjiToNumber`）、`src/normalize.test.ts`
 - 関連する Issue: houki-abbreviations #6（法令番号の漢数字と算用数字の正規化）
 
@@ -101,6 +101,12 @@ flowchart TD
 
 例: `kanjiToNumber('一十')` → 10、`kanjiToNumber('一百')` → 100、`kanjiToNumber('一千一百一十一')` → 1111、`kanjiToNumber('千百十')` → 1110。
 
+### SPEC-ABBR-KANJI-TO-NUMBER-009 位ごとの並びが 16 文字以上なら null を返す
+
+位ごとの書き方（`十` `百` `千` を含まない並び）で 16 文字以上の入力は、値が正確に表せないので `null` を返す。丸めた値は返さない。15 文字までは読む。位取りの書き方は千の位までしか無いので、この上限は関係しない。
+
+例: `kanjiToNumber('一'.repeat(15))` は `111111111111111`（15 桁）。`kanjiToNumber('一'.repeat(16))` は `null`（v0.6.1 では `1111111111111111`）。`kanjiToNumber('一'.repeat(20))` は `null`（v0.6.1 では `11111111111111110000`）。`kanjiToNumber('〇'.repeat(20))` も `null`。
+
 ## できないこと
 
 - 万以上の単位（`万` `億`）を読むこと
@@ -116,7 +122,7 @@ flowchart TD
 意図か不具合かの判断が要る項目は houki-abbreviations の Issue に移し、ここには題と Issue の番号だけを残します。今の振る舞いのままでよくテストが無いだけの項目は、受入テストを書いてから「できること」に ID を振ります。
 
 1. **位ごとの並びの先頭の `〇`。** → SPEC-ABBR-KANJI-TO-NUMBER-005
-2. **位ごとの長い並びで値が正確でなくなる。** → houki-abbreviations #24
+2. **位ごとの長い並びで値が正確でなくなる。** → SPEC-ABBR-KANJI-TO-NUMBER-009
 3. **文字列以外の値を渡したとき。** → SPEC-ABBR-KANJI-TO-NUMBER-006
 4. **前後や途中に空白があるとき。** → SPEC-ABBR-KANJI-TO-NUMBER-007
 5. **単位の前の `一` と、`一十`。** → SPEC-ABBR-KANJI-TO-NUMBER-008
