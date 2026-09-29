@@ -29,6 +29,10 @@ describe('isValidLawId', () => {
     expect(isValidLawId('108DT0000000152')).toBe(true);
   });
 
+  it('SPEC-ABBR-IS-VALID-LAW-ID-001 太政官布達 (DH) — v0.7.0 から', () => {
+    expect(isValidLawId('106DH0000000016')).toBe(true);
+  });
+
   it('SPEC-ABBR-IS-VALID-LAW-ID-002 省令 (M + 府省コード) — v0.6.0 から', () => {
     expect(isValidLawId('340M50000040011')).toBe(true); // 所得税法施行規則
     expect(isValidLawId('415M60000F4A003')).toBe(true); // 共同省令（16 進の府省コード）
@@ -47,6 +51,9 @@ describe('isValidLawId', () => {
 
   it('SPEC-ABBR-IS-VALID-LAW-ID-004 憲法専用フォーマット', () => {
     expect(isValidLawId('321CONSTITUTION')).toBe(true);
+    // 20261001-input-guards: 321 以外の CONSTITUTION は受け付けない
+    expect(isValidLawId('363CONSTITUTION')).toBe(false);
+    expect(isValidLawId('521CONSTITUTION')).toBe(false);
   });
 
   it('SPEC-ABBR-IS-VALID-LAW-ID-005 e-Gov に無い MO / RU は v0.6.0 から false', () => {
@@ -282,6 +289,39 @@ describe('isValidLawId（文字列でない値・全角）', () => {
   it('SPEC-ABBR-IS-VALID-LAW-ID-012 全角の英字・数字を含むと false', () => {
     expect(isValidLawId('363ＡC0000000108')).toBe(false);
     expect(isValidLawId('363AC000000010８')).toBe(false);
+  });
+});
+
+describe('isValidLawId — 20261001-input-guards', () => {
+  it('SPEC-ABBR-IS-VALID-LAW-ID-013 元号の桁が 0・6・9 なら残りが正しい形でも false', () => {
+    for (const id of [
+      '000AC0000000000',
+      '699AC0000000001',
+      '999AC9999999999',
+      '040M50000040011',
+      '924RJNJ01001000',
+    ]) {
+      expect(isValidLawId(id), id).toBe(false);
+    }
+  });
+
+  it('SPEC-ABBR-IS-VALID-LAW-ID-013 元号の桁が 1（明治）と 5（令和）は true', () => {
+    expect(isValidLawId('105DF0000000337')).toBe(true);
+    expect(isValidLawId('501M60000F00006')).toBe(true);
+  });
+
+  it('SPEC-ABBR-IS-VALID-LAW-ID-014 M の次の 1 桁が 0・7・F なら false、1 と 6 は true', () => {
+    for (const id of ['340M00000040011', '340M70000040011', '340MF0000040011']) {
+      expect(isValidLawId(id), id).toBe(false);
+    }
+    expect(isValidLawId('340M10000040011')).toBe(true);
+    expect(isValidLawId('340M60000040011')).toBe(true);
+  });
+
+  it('SPEC-ABBR-IS-VALID-LAW-ID-015 R の機関番号に 16 進の英字 A があれば false、10 進 8 桁なら true', () => {
+    expect(isValidLawId('322R0000000A001')).toBe(false);
+    expect(isValidLawId('322RA000000A001')).toBe(false);
+    expect(isValidLawId('322R00000001001')).toBe(true);
   });
 });
 

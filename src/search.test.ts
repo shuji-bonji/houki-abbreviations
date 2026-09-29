@@ -311,19 +311,23 @@ describe('searchByName — 並び・正規化・filter・limit', () => {
   });
 
   it('SPEC-ABBR-SEARCH-BY-NAME-017 1 未満の limit は 1 として扱う', () => {
+    // 20261001-input-guards: 1 として扱わず RangeError を投げる
     const one = searchByName('法', { limit: 1 });
     expect(one).toHaveLength(1);
     expect(one[0].abbr).toBe('所法');
     for (const limit of [0, -3, 0.5]) {
-      expect(searchByName('法', { limit })).toEqual(one);
+      expect(() => searchByName('法', { limit }), String(limit)).toThrow(RangeError);
     }
   });
 
   it('SPEC-ABBR-SEARCH-BY-NAME-018 小数の limit は切り上げた件数で打ち切る', () => {
+    // 20261001-input-guards: 切り上げず RangeError を投げる
+    for (const limit of [1.2, 2.5, 2.9]) {
+      expect(() => searchByName('法', { limit }), String(limit)).toThrow(RangeError);
+    }
     const all = searchByName('法', { limit: 500 });
-    expect(searchByName('法', { limit: 1.2 })).toEqual(all.slice(0, 2));
-    expect(searchByName('法', { limit: 2.5 })).toEqual(all.slice(0, 3));
-    expect(searchByName('法', { limit: 2.9 })).toEqual(all.slice(0, 3));
+    expect(searchByName('法', { limit: 3 })).toEqual(all.slice(0, 3));
+    expect(searchByName('法', { limit: 3.0 })).toEqual(all.slice(0, 3));
   });
 });
 
@@ -399,13 +403,11 @@ describe('findSimilar — 正規化・並び・limit・maxDistance・matchedKey'
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-013 1 未満の limit は 1 として扱う', () => {
-    const one = findSimilar('法', { maxDistance: 5, limit: 1 });
-    expect(one).toHaveLength(1);
-    expect(one[0].entry.abbr).toBe('所法');
-    expect(one[0].distance).toBe(1);
+    // 20261001-input-guards: 1 として扱わず RangeError を投げる
     for (const limit of [0, -1, 0.5]) {
-      expect(findSimilar('法', { maxDistance: 5, limit })).toEqual(one);
+      expect(() => findSimilar('所得税法施行令', { limit }), String(limit)).toThrow(RangeError);
     }
+    expect(findSimilar('所得税法施行令', { limit: 1 })).toHaveLength(1);
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-014 maxDistance を省くと 2 として扱う', () => {
@@ -462,9 +464,11 @@ describe('suggestCorrection — limit・空の query', () => {
   });
 
   it('SPEC-ABBR-SUGGEST-CORRECTION-004 1 未満の limit は 1 として扱う', () => {
-    expect(suggestCorrection('法', 0)).toEqual(['所得税法']);
-    expect(suggestCorrection('法', -1)).toEqual(['所得税法']);
-    expect(suggestCorrection('法', 0)).toEqual(suggestCorrection('法', 1));
+    // 20261001-input-guards: 1 として扱わず RangeError を投げる
+    for (const limit of [0, -1, 0.5]) {
+      expect(() => suggestCorrection('所得税法施行令', limit), String(limit)).toThrow(RangeError);
+    }
+    expect(suggestCorrection('所得税法施行令', 1)).toHaveLength(1);
   });
 
   it('SPEC-ABBR-SUGGEST-CORRECTION-005 空の query には空配列を返す', () => {
@@ -483,5 +487,112 @@ describe('levenshtein — 20261001-normalize', () => {
     expect(levenshtein('𠮷', '吉')).toBe(1);
     expect(levenshtein('𠮷野家', '吉野家')).toBe(1);
     expect(levenshtein('𠮷', '')).toBe(1);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20261001-input-guards                                                      */
+/* -------------------------------------------------------------------------- */
+
+/** 数でない limit を渡すための cast（型では number だけを受け付ける） */
+const asNumber = (v: unknown): number => v as number;
+
+describe('searchByName — 20261001-input-guards', () => {
+  it('SPEC-ABBR-SEARCH-BY-NAME-019 NaN・Infinity・-Infinity の limit には RangeError を投げる', () => {
+    for (const limit of [NaN, Infinity, -Infinity]) {
+      expect(() => searchByName('法', { limit }), String(limit)).toThrow(RangeError);
+    }
+  });
+
+  it("SPEC-ABBR-SEARCH-BY-NAME-019 文字列 '3'・null・オブジェクトの limit には TypeError を投げる", () => {
+    for (const limit of ['3', null, {}]) {
+      expect(() => searchByName('法', { limit: asNumber(limit) }), JSON.stringify(limit)).toThrow(
+        TypeError
+      );
+    }
+  });
+
+  it('SPEC-ABBR-SEARCH-BY-NAME-019 undefined の limit は省いたときと同じ 50 件', () => {
+    const r = searchByName('法', { limit: undefined });
+    expect(r).toHaveLength(50);
+    expect(r).toEqual(searchByName('法'));
+  });
+
+  it('SPEC-ABBR-SEARCH-BY-NAME-020 501 と 10000 の limit には RangeError を投げ、500 は受け付ける', () => {
+    expect(() => searchByName('法', { limit: 501 })).toThrow(RangeError);
+    expect(() => searchByName('法', { limit: 10000 })).toThrow(RangeError);
+    const r = searchByName('法', { limit: 500 });
+    expect(r.length).toBeGreaterThan(50);
+    expect(r.length).toBeLessThanOrEqual(500);
+  });
+});
+
+describe('findSimilar — 20261001-input-guards', () => {
+  it('SPEC-ABBR-FIND-SIMILAR-018 小数の limit 2.5 には RangeError を投げ、3 なら 3 件を返す', () => {
+    expect(() => findSimilar('所得税法施行令', { limit: 2.5 })).toThrow(RangeError);
+    expect(findSimilar('所得税法施行令', { limit: 3 })).toHaveLength(3);
+  });
+
+  it('SPEC-ABBR-FIND-SIMILAR-019 NaN・Infinity・-Infinity の limit には RangeError を投げる', () => {
+    for (const limit of [NaN, Infinity, -Infinity]) {
+      expect(() => findSimilar('所得税法施行令', { limit }), String(limit)).toThrow(RangeError);
+    }
+  });
+
+  it("SPEC-ABBR-FIND-SIMILAR-019 文字列 '3'・null の limit には TypeError を投げる", () => {
+    for (const limit of ['3', null]) {
+      expect(
+        () => findSimilar('所得税法施行令', { limit: asNumber(limit) }),
+        JSON.stringify(limit)
+      ).toThrow(TypeError);
+    }
+  });
+
+  it('SPEC-ABBR-FIND-SIMILAR-019 undefined の limit は省いたときと同じ結果', () => {
+    expect(findSimilar('所得税法施行令', { limit: undefined })).toEqual(
+      findSimilar('所得税法施行令')
+    );
+  });
+
+  it('SPEC-ABBR-FIND-SIMILAR-020 501 の limit には RangeError を投げ、500 は候補をすべて返す', () => {
+    expect(() => findSimilar('所得税法施行令', { limit: 501 })).toThrow(RangeError);
+    const r = findSimilar('所得税法施行令', { limit: 500 });
+    expect(r.length).toBeGreaterThan(0);
+    expect(r).toEqual(findSimilar('所得税法施行令', { limit: 499 }));
+  });
+});
+
+describe('suggestCorrection — 20261001-input-guards', () => {
+  it('SPEC-ABBR-SUGGEST-CORRECTION-006 小数の limit 2.5 には RangeError を投げ、3 なら 3 件以内を返す', () => {
+    expect(() => suggestCorrection('所得税法施行令', 2.5)).toThrow(RangeError);
+    expect(suggestCorrection('所得税法施行令', 3).length).toBeLessThanOrEqual(3);
+  });
+
+  it('SPEC-ABBR-SUGGEST-CORRECTION-007 NaN・Infinity・-Infinity の limit には RangeError を投げる', () => {
+    for (const limit of [NaN, Infinity, -Infinity]) {
+      expect(() => suggestCorrection('所得税法施行令', limit), String(limit)).toThrow(RangeError);
+    }
+  });
+
+  it("SPEC-ABBR-SUGGEST-CORRECTION-007 文字列 '3'・null の limit には TypeError を投げる", () => {
+    for (const limit of ['3', null]) {
+      expect(
+        () => suggestCorrection('所得税法施行令', asNumber(limit)),
+        JSON.stringify(limit)
+      ).toThrow(TypeError);
+    }
+  });
+
+  it('SPEC-ABBR-SUGGEST-CORRECTION-007 undefined の limit は省いたときと同じ結果', () => {
+    expect(suggestCorrection('所得税法施行令', undefined)).toEqual(
+      suggestCorrection('所得税法施行令')
+    );
+  });
+
+  it('SPEC-ABBR-SUGGEST-CORRECTION-008 501 の limit には RangeError を投げ、500 は候補をすべて返す', () => {
+    expect(() => suggestCorrection('所得税法施行令', 501)).toThrow(RangeError);
+    const r = suggestCorrection('所得税法施行令', 500);
+    expect(r.length).toBeGreaterThan(0);
+    expect(r).toEqual(suggestCorrection('所得税法施行令', 499));
   });
 });
