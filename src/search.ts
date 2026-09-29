@@ -41,7 +41,12 @@ export interface SearchOptions {
   mode?: SearchMode;
   /** 全角/半角の表記ゆらぎを吸収 (デフォルト true) */
   normalize?: boolean;
-  /** 結果の最大件数 (デフォルト 50、上限 500) */
+  /**
+   * 結果の最大件数。1 以上 500 以下の整数。省くと 50。
+   *
+   * それ以外の値（1 未満、小数、500 超、`NaN`、`Infinity`）は `RangeError`、
+   * 数でない値は `TypeError` を投げ、丸めない（v0.7.0 から）。
+   */
   limit?: number;
   /** 結果を絞り込むフィルター (各キーは単一値 or 配列) */
   filter?: SearchFilter;
@@ -90,7 +95,7 @@ export function searchByName(
 ): AbbreviationEntry[] {
   const mode: SearchMode = options.mode ?? 'contains';
   const normalize = options.normalize ?? true;
-  const limit = Math.min(Math.max(options.limit ?? 50, 1), 500);
+  const limit = checkLimit(options.limit, 50);
 
   const trimmed = query?.trim() ?? '';
   if (!trimmed) return [];
@@ -142,7 +147,12 @@ function matchByMode(haystack: string, needle: string, mode: SearchMode): boolea
 export interface FuzzyOptions {
   /** 最大編集距離 (デフォルト 2) */
   maxDistance?: number;
-  /** 結果の最大件数 (デフォルト 5) */
+  /**
+   * 結果の最大件数。1 以上 500 以下の整数。省くと 5。
+   *
+   * 規則は `searchByName` の `limit` と同じ。それ以外の値は `RangeError`、
+   * 数でない値は `TypeError` を投げ、丸めない（v0.7.0 から）。
+   */
   limit?: number;
   /** スコア順 (距離昇順) にソート。default true */
   sortByScore?: boolean;
@@ -186,7 +196,7 @@ export function findSimilar(
   options: FuzzyOptions = {}
 ): FuzzyMatch[] {
   const maxDistance = options.maxDistance ?? 2;
-  const limit = Math.max(options.limit ?? 5, 1);
+  const limit = checkLimit(options.limit, 5);
   const sortByScore = options.sortByScore ?? true;
   const normalize = options.normalize ?? true;
 
@@ -240,13 +250,34 @@ export function suggestCorrection(
   query: string,
   limit = 5
 ): string[] {
-  const matches = findSimilar(entries, query, { limit });
+  const matches = findSimilar(entries, query, { limit: checkLimit(limit, 5) });
   return matches.map((m) => m.entry.formal);
 }
 
 /* -------------------------------------------------------------------------- */
 /* Internal helpers                                                           */
 /* -------------------------------------------------------------------------- */
+
+/** `limit` の上限。`searchByName` / `findSimilar` / `suggestCorrection` で共通 */
+const LIMIT_MAX = 500;
+
+/**
+ * `limit` を検査して返す。`undefined` は `fallback`。
+ * 1 以上 500 以下の整数だけを受け付け、丸めない（v0.7.0 から）。
+ *
+ * @throws {TypeError} 数でない値
+ * @throws {RangeError} `NaN` / `±Infinity` / 小数 / 1 未満 / 500 超
+ */
+function checkLimit(limit: number | undefined, fallback: number): number {
+  if (limit === undefined) return fallback;
+  if (typeof limit !== 'number') {
+    throw new TypeError(`limit は数で指定してください: ${JSON.stringify(limit)}`);
+  }
+  if (!Number.isInteger(limit) || limit < 1 || limit > LIMIT_MAX) {
+    throw new RangeError(`limit は 1 以上 ${LIMIT_MAX} 以下の整数で指定してください: ${limit}`);
+  }
+  return limit;
+}
 
 /** filter を適用したエントリ配列を返す。filter なしならそのまま */
 function filterEntries(

@@ -21,34 +21,53 @@ import { normalizeJpChars } from './normalize.js';
 /* -------------------------------------------------------------------------- */
 
 /**
- * 法律・政令・勅令・太政官布告・太政官達（15 文字: 元号 1 + 年 2 + 種別 2 + 番号 10）。
+ * 元号 1 桁 + 年 2 桁。元号は `1`（明治）`2`（大正）`3`（昭和）`4`（平成）`5`（令和）。
+ * 年の 2 桁は 0 埋めで、値の範囲は確かめない。
+ */
+const ERA_YEAR = '[1-5]\\d{2}';
+
+/**
+ * 法律・政令・勅令・太政官布告・太政官達・太政官布達（15 文字: 元号 1 + 年 2 + 種別 2 + 番号 10）。
  *
  * - `AC` = Act（法律）
  * - `CO` = CabinetOrder（政令）
  * - `IO` = ImperialOrdinance（勅令）
  * - `DF` = 太政官布告（明治 5〜17 年）
  * - `DT` = 太政官達（明治 8〜16 年）
+ * - `DH` = 太政官布達（公式仕様にあり、2026-10-01 の e-Gov には 0 件。v0.7.0 から）
+ *
+ * 番号 10 桁のうち 6〜12 桁目（閣法・議員立法・効力の区別）の値は確かめない。
  */
-const LAW_ID_STANDARD = /^\d{3}(AC|CO|IO|DF|DT)\d{10}$/;
+const LAW_ID_STANDARD = new RegExp(`^${ERA_YEAR}(AC|CO|IO|DF|DT|DH)\\d{10}$`);
 
 /**
- * 省令・府令・庁令・委員会規則（15 文字: 元号 1 + 年 2 + `M` か `R` + 府省コード 8 + 番号 3）。
+ * 府省令（15 文字: 元号 1 + 年 2 + `M` + 世代 1 + 府省令ビットフラグ 7 + 番号 3）。
  *
- * `M` の次の 1 文字は 1〜6、続く 7 文字は 16 進（`0-9A-F`）で、共同省令では
- * `F` `A` `C` などが並ぶ（例 `415M60000F4A003` = 平成十五年内閣府・総務省・財務省・
- * 厚生労働省・農林水産省・経済産業省・国土交通省令第三号）。`R` は会計検査院規則・
- * 海上保安庁令など（例 `322R00000001001`）。
+ * `M` の次の 1 文字は `1`〜`6`（府省令ビットフラグの世代）、続く 7 文字は 16 進
+ * （`0-9A-F`）で、共同省令では `F` `A` `C` などが並ぶ（例 `415M60000F4A003` =
+ * 平成十五年内閣府・総務省・財務省・厚生労働省・農林水産省・経済産業省・国土交通省令第三号）。
  */
-const LAW_ID_MINISTERIAL = /^\d{3}[MR][0-9A-F]{8}\d{3}$/;
+const LAW_ID_MINISTERIAL = new RegExp(`^${ERA_YEAR}M[1-6][0-9A-F]{7}\\d{3}$`);
+
+/**
+ * 会計検査院規則・行政機関の規則・その他機関の規則（15 文字: 元号 1 + 年 2 + `R` +
+ * 機関番号 8 + 番号 3）。機関番号は 10 進の 8 桁（公式仕様の `00000001`〜`00000019`。
+ * 値の範囲は確かめない）。例 `322R00000001001`（会計検査院規則）、`326R00000002002`（海上保安庁令）。
+ * v0.6.1 までは `M` と同じ 16 進 8 文字を通していたが、v0.7.0 から 10 進だけにする。
+ */
+const LAW_ID_RULE = new RegExp(`^${ERA_YEAR}R\\d{8}\\d{3}$`);
 
 /** 人事院規則（`RJNJ` + 8 桁。例 `324RJNJ01001000` = 昭和二十四年人事院規則一―一） */
-const LAW_ID_JINJIIN = /^\d{3}RJNJ\d{8}$/;
+const LAW_ID_JINJIIN = new RegExp(`^${ERA_YEAR}RJNJ\\d{8}$`);
 
 /** 内閣総理大臣決定（`RPMD` + 月日 4 桁 + 連番 4 桁。例 `351RPMD12230000`） */
-const LAW_ID_PM_DECISION = /^\d{3}RPMD\d{8}$/;
+const LAW_ID_PM_DECISION = new RegExp(`^${ERA_YEAR}RPMD\\d{8}$`);
 
-/** 憲法専用パターン（`321CONSTITUTION`） */
-const LAW_ID_CONSTITUTION = /^\d{3}CONSTITUTION$/;
+/**
+ * 憲法専用パターン。e-Gov にある憲法は昭和二十一年憲法（日本国憲法）の 1 件だけなので
+ * `321CONSTITUTION` だけを受け付ける（v0.7.0 から。v0.6.1 までは先頭 3 桁を確かめなかった）。
+ */
+const LAW_ID_CONSTITUTION = /^321CONSTITUTION$/;
 
 /**
  * e-Gov の `law_id` 形式が妥当かを判定する純粋関数。
@@ -58,19 +77,24 @@ const LAW_ID_CONSTITUTION = /^\d{3}CONSTITUTION$/;
  *
  * ## 認識する種別
  *
- * 2026-09-20 に e-Gov 法令 API v2 `GET /api/2/laws` で取得した全 9,569 件の
- * `law_id` を調べ、実在するすべての形を受け付ける（v0.6.0、Issue #6）。
- * 長さは全件 15 文字。
+ * e-Gov の公式仕様（法令データ ドキュメンテーション「法令種別と法令ID」
+ * https://laws.e-gov.go.jp/docs/law-data-basic/607318a-lawtypes-and-lawid/ ）に合わせた
+ * 次の 6 つの形だけを受け付ける（v0.7.0、Issue #23）。長さはどれも 15 文字、英字は大文字だけ。
+ * 元号の 1 桁は `1`〜`5`。件数は 2026-10-01 に e-Gov 法令 API v2 `GET /api/2/laws` で
+ * 取得した全 9,570 件の内訳で、6 つの形で全件が `true` になる。
  *
  * | 形 | 件数 | 例 |
  * |---|---|---|
- * | `AC` / `CO` / `IO` / `DF` / `DT` + 10 桁 | 4,677 | `363AC0000000108`（消費税法） |
- * | `M` / `R` + 16 進 8 文字 + 3 桁 | 4,735 | `340M50000040011`（所得税法施行規則） |
- * | `RJNJ` + 8 桁 | 142 | `324RJNJ01001000`（人事院規則一―一） |
- * | `RPMD` + 8 桁 | 14 | `351RPMD12230000`（内閣総理大臣決定） |
- * | `CONSTITUTION` | 1 | `321CONSTITUTION` |
+ * | 元号 + 年 + `AC` / `CO` / `IO` / `DF` / `DT` / `DH` + 10 桁 | 4,677 | `363AC0000000108`（消費税法） |
+ * | 元号 + 年 + `M` + `1`〜`6` + 16 進 7 文字 + 3 桁 | 4,687 | `340M50000040011`（所得税法施行規則） |
+ * | 元号 + 年 + `R` + 10 進 8 桁 + 3 桁 | 49 | `322R00000001001`（会計検査院規則） |
+ * | 元号 + 年 + `RJNJ` + 8 桁 | 142 | `324RJNJ01001000`（人事院規則一―一） |
+ * | 元号 + 年 + `RPMD` + 8 桁 | 14 | `351RPMD12230000`（内閣総理大臣決定） |
+ * | `321CONSTITUTION` | 1 | 日本国憲法 |
  *
- * v0.5.x が受け付けていた `MO` / `RU` は e-Gov の実データに 1 件も無かったため
+ * v0.6.1 までは元号の桁・`M` の次の桁・`R` の機関番号・`CONSTITUTION` の先頭を確かめて
+ * いなかった（`000AC0000000000` `340M70000040011` `322R0000000A001` `363CONSTITUTION` も
+ * `true`）。v0.5.x が受け付けていた `MO` / `RU` は e-Gov の実データに 1 件も無かったため
  * v0.6.0 で外した（省令は `M`、規則は `M` か `R` で始まる）。
  *
  * @since 0.5.0
@@ -84,6 +108,9 @@ const LAW_ID_CONSTITUTION = /^\d{3}CONSTITUTION$/;
  * isValidLawId('340M50000040011');  // true（所得税法施行規則。v0.6.0 から）
  * isValidLawId('105DF0000000337');  // true（太政官布告。v0.6.0 から）
  * isValidLawId('321CONSTITUTION');  // true（日本国憲法）
+ * isValidLawId('106DH0000000016');  // true（太政官布達。v0.7.0 から）
+ * isValidLawId('363CONSTITUTION');  // false（v0.7.0 から。v0.6.1 では true だった）
+ * isValidLawId('699AC0000000001');  // false（元号の桁は 1〜5。v0.7.0 から）
  * isValidLawId('505MO0000000020');  // false（e-Gov に無い形。v0.5.x では true だった）
  * isValidLawId('AAA');              // false
  * isValidLawId('');                 // false
@@ -95,6 +122,7 @@ export function isValidLawId(law_id: string): boolean {
   return (
     LAW_ID_STANDARD.test(law_id) ||
     LAW_ID_MINISTERIAL.test(law_id) ||
+    LAW_ID_RULE.test(law_id) ||
     LAW_ID_JINJIIN.test(law_id) ||
     LAW_ID_PM_DECISION.test(law_id) ||
     LAW_ID_CONSTITUTION.test(law_id)

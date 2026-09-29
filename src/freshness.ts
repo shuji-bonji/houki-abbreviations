@@ -111,10 +111,16 @@ export const STALENESS_THRESHOLDS = {
  * （`fresh_days` / `stale_days`）に従って `'fresh' | 'stale' | 'outdated'`
  * を返す。
  *
+ * `daysSince` は 0 以上の有限の数（小数でもよい）。負の値・`NaN`・`±Infinity` は
+ * `RangeError`、数でない値は `TypeError` を投げる（v0.7.0 から。v0.6.1 までは
+ * 負の値を `'fresh'`、`NaN` を `'outdated'` にしていた）。
+ *
  * @since 0.4.1
  * @group 鮮度の判定
- * @param daysSince 経過日数 (整数想定、負値は 0 に丸める呼び出し側責務)
+ * @param daysSince 経過日数（0 以上の有限の数）
  * @returns `'fresh'` | `'stale'` | `'outdated'`
+ * @throws {TypeError} `daysSince` が数でない
+ * @throws {RangeError} `daysSince` が負の値・`NaN`・`±Infinity`
  *
  * @example
  * ```ts
@@ -125,26 +131,84 @@ export const STALENESS_THRESHOLDS = {
  * ```
  */
 export function judgeStaleness(daysSince: number): StalenessLevel {
+  if (typeof daysSince !== 'number') {
+    throw new TypeError(`daysSince は数で指定してください: ${JSON.stringify(daysSince)}`);
+  }
+  if (!Number.isFinite(daysSince) || daysSince < 0) {
+    throw new RangeError(`daysSince は 0 以上の有限の数で指定してください: ${daysSince}`);
+  }
   if (daysSince < STALENESS_THRESHOLDS.fresh_days) return 'fresh';
   if (daysSince < STALENESS_THRESHOLDS.stale_days) return 'stale';
   return 'outdated';
 }
 
 /**
+ * `fetchedAt` が受け付ける ISO 8601 の 3 つの形。
+ * (a) 日付だけ `YYYY-MM-DD`、(b) UTC `YYYY-MM-DDTHH:mm:ss(.sss)Z`、
+ * (c) 時差付き `YYYY-MM-DDTHH:mm:ss(.sss)±hh:mm`。
+ */
+const FETCHED_AT_RE =
+  /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2}))?$/;
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+/**
+ * `fetchedAt` を検査してミリ秒にする。3 つの形に当たらない書き方、時差の無い時刻、
+ * 暦に無い日付（2 月 30 日など）は `RangeError`。
+ */
+function parseFetchedAt(fetchedAt: string): number {
+  const m = FETCHED_AT_RE.exec(fetchedAt);
+  if (!m) {
+    throw new RangeError(
+      `fetchedAt は ISO 8601（YYYY-MM-DD / YYYY-MM-DDTHH:mm:ssZ / YYYY-MM-DDTHH:mm:ss±hh:mm）で指定してください: ${JSON.stringify(fetchedAt)}`
+    );
+  }
+  const [, y, mo, d, h = '0', mi = '0', s = '0'] = m;
+  const year = Number(y);
+  const month = Number(mo);
+  const day = Number(d);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const calendarOk =
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+  const timeOk = Number(h) < 24 && Number(mi) < 60 && Number(s) < 60;
+  const ms = Date.parse(fetchedAt);
+  if (!calendarOk || !timeOk || !Number.isFinite(ms)) {
+    throw new RangeError(`fetchedAt が暦に無い日付か時刻です: ${JSON.stringify(fetchedAt)}`);
+  }
+  return ms;
+}
+
+/**
  * `fetched_at` (ISO 8601) と現在時刻から経過日数を計算する純関数。
  *
  * - 小数なし、日数の `floor`
- * - 未来時刻 (now < fetched) は 0 に丸める
- * - パース不能な ISO 文字列は 0 を返す (呼び出し側で扱いを決める)
+ * - 未来時刻 (now < fetched) は 0 に丸める（時計のずれで起きるので、壊れた値とは扱わない）
+ * - `fetchedAt` は ISO 8601 の 3 つの形だけを受け付ける: 日付だけ `YYYY-MM-DD`（UTC の
+ *   0 時として扱う）、UTC `YYYY-MM-DDTHH:mm:ss(.sss)Z`、時差付き
+ *   `YYYY-MM-DDTHH:mm:ss(.sss)±hh:mm`。それ以外の書き方（`2026/05/07`、`May 7, 2026`）、
+ *   時差の無い時刻、暦に無い日付は `RangeError`、文字列でない値は `TypeError` を投げる
+ *   （v0.7.0 から。v0.6.1 までは `Date.parse` が読めないものに `0` を返し、壊れた
+ *   取得時刻が `fresh` になっていた）
+ * - `nowMs` は有限の数。`NaN` / `±Infinity` は `RangeError`、数でない値は `TypeError`
  *
  * @since 0.4.1
  * @group 鮮度の判定
  * @param fetchedAt ISO 8601 形式の取得時刻 (例: "2026-04-01T00:00:00Z")
  * @param nowMs Date.now() 相当 (テスト時に固定値を渡せる)
+ * @throws {TypeError} `fetchedAt` が文字列でない、または `nowMs` が数でない
+ * @throws {RangeError} `fetchedAt` が受け付けない書き方・暦に無い日付、または `nowMs` が有限でない
  */
 export function computeDaysSince(fetchedAt: string, nowMs: number = Date.now()): number {
-  const fetchedMs = Date.parse(fetchedAt);
-  if (!Number.isFinite(fetchedMs)) return 0;
+  if (typeof fetchedAt !== 'string') {
+    throw new TypeError(`fetchedAt は文字列で指定してください: ${String(fetchedAt)}`);
+  }
+  if (typeof nowMs !== 'number') {
+    throw new TypeError(`nowMs は数で指定してください: ${JSON.stringify(nowMs)}`);
+  }
+  if (!Number.isFinite(nowMs)) {
+    throw new RangeError(`nowMs は有限の数で指定してください: ${nowMs}`);
+  }
+  const fetchedMs = parseFetchedAt(fetchedAt);
   const diffMs = nowMs - fetchedMs;
-  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+  return Math.max(0, Math.floor(diffMs / MS_PER_DAY));
 }
