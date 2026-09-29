@@ -151,6 +151,9 @@ describe('getAllNames（同じ名前・空白・戻り値）', () => {
   });
 
   it('SPEC-ABBR-GET-ALL-NAMES-006 formal と別名が同じ文字列なら formal の位置の 1 つだけ返す', () => {
+    // 20261001-dictionary-rules: 0.7.0 の辞書では aliases に自分の formal を入れないので、
+    // 重なるのは abbr と formal が同じ場合だけ（製造物責任法 / PL法）
+    expect(getAllNamesPublic('PL法')).toEqual(['製造物責任法', 'PL法']);
     expect(getAllNamesPublic('消基通')).toEqual(['消基通', '消費税法基本通達']);
   });
 

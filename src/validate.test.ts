@@ -402,12 +402,13 @@ describe('validateAllEntries（警告・エラーの中身）', () => {
     expect(issue?.message).toContain('A1');
   });
 
-  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-014 alias_collides_with_abbr の警告の message に abbr が入る', () => {
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-014 duplicate_name のエラーの message に abbr が入る', () => {
+    // 20261001-dictionary-rules: 警告 alias_collides_with_abbr はエラー duplicate_name になる
     const r = validateAllEntries([
       { ...baseEntry },
       { ...baseEntry, abbr: 'B1', formal: 'F2', aliases: ['A1'] },
     ]);
-    const issue = r.warnings.find((w) => w.code === 'alias_collides_with_abbr');
+    const issue = r.errors.find((e) => e.code === 'duplicate_name');
     expect(issue).toBeDefined();
     expect(issue?.message).toContain('B1');
   });
@@ -505,6 +506,160 @@ describe('extractLawNames（既定値・重なり・null）', () => {
   it('SPEC-ABBR-EXTRACT-LAW-NAMES-014 text が null か undefined なら空の配列', () => {
     expect(extractFromBundled(null as unknown as string)).toEqual([]);
     expect(extractFromBundled(undefined as unknown as string)).toEqual([]);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20261001-dictionary-rules                                                  */
+/* -------------------------------------------------------------------------- */
+
+describe('validateAllEntries — 20261001-dictionary-rules', () => {
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-015 formal が同じ F の A1 と A2 は duplicate_name の 1 件で、entry は後の A2', () => {
+    const a1: AbbreviationEntry = { ...baseEntry, formal: 'F' };
+    const a2: AbbreviationEntry = { ...baseEntry, abbr: 'A2', formal: 'F' };
+    const r = validateAllEntries([a1, a2]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.map((e) => e.code)).toEqual(['duplicate_name']);
+    expect(r.errors[0].entry).toBe(a2);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-015 別名 A1 がほかのエントリの abbr と同じなら duplicate_name の 1 件（警告ではない）', () => {
+    const r = validateAllEntries([
+      { ...baseEntry },
+      { ...baseEntry, abbr: 'B1', formal: 'F2', aliases: ['A1'] },
+    ]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.map((e) => e.code)).toEqual(['duplicate_name']);
+    expect(r.errors[0].entry?.abbr).toBe('B1');
+    expect(r.warnings).toEqual([]);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-015 別名 PL法 と ＰＬ法 は normalizeJpText 後に同じなので duplicate_name', () => {
+    const r = validateAllEntries([
+      { ...baseEntry, aliases: ['PL法'] },
+      { ...baseEntry, abbr: 'A2', formal: 'F2', aliases: ['ＰＬ法'] },
+    ]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.map((e) => e.code)).toEqual(['duplicate_name']);
+    expect(r.errors[0].entry?.abbr).toBe('A2');
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-015 abbr どうしが同じ A1 の 2 件は duplicate_abbr の 1 件だけで duplicate_name は返さない', () => {
+    const r = validateAllEntries([{ ...baseEntry }, { ...baseEntry, formal: 'F2' }]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.map((e) => e.code)).toEqual(['duplicate_abbr']);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-016 aliases に自分の formal 消費税法基本通達 を持つ 消基通 は alias_equals_own_name のエラー', () => {
+    const r = validateAllEntries([
+      {
+        abbr: '消基通',
+        formal: '消費税法基本通達',
+        law_id: null,
+        domain: 'tax',
+        category: 'kihon-tsutatsu',
+        source_mcp_hint: 'houki-nta',
+        aliases: ['消費税法基本通達'],
+      },
+    ]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.map((e) => e.code)).toEqual(['alias_equals_own_name']);
+    expect(r.errors[0].entry?.abbr).toBe('消基通');
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-016 aliases に自分の abbr 民 を持つ 民 も alias_equals_own_name のエラー', () => {
+    const r = validateAllEntries([
+      {
+        abbr: '民',
+        formal: '民法',
+        law_id: null,
+        domain: 'civil',
+        category: 'law',
+        source_mcp_hint: 'houki-egov',
+        aliases: ['民'],
+      },
+    ]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.map((e) => e.code)).toEqual(['alias_equals_own_name']);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-016 abbr と formal が同じ 酒税法（aliases なし）はエラーにしない', () => {
+    const r = validateAllEntries([
+      {
+        abbr: '酒税法',
+        formal: '酒税法',
+        law_id: null,
+        domain: 'tax',
+        category: 'law',
+        source_mcp_hint: 'houki-egov',
+      },
+    ]);
+    expect(r.valid).toBe(true);
+    expect(r.errors).toEqual([]);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-017 一覧に無い domain x・category foo・source_mcp_hint houki-zzz は 3 つのエラー', () => {
+    const r = validateAllEntries([
+      {
+        ...baseEntry,
+        domain: 'x' as AbbreviationEntry['domain'],
+        category: 'foo' as AbbreviationEntry['category'],
+        source_mcp_hint: 'houki-zzz' as AbbreviationEntry['source_mcp_hint'],
+      },
+    ]);
+    expect(r.valid).toBe(false);
+    expect([...r.errors.map((e) => e.code)].sort()).toEqual([
+      'invalid_category',
+      'invalid_domain',
+      'invalid_source_mcp_hint',
+    ]);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-017 空文字の category は missing_required_field の 1 件で invalid_category は返さない', () => {
+    const r = validateAllEntries([{ ...baseEntry, category: '' as AbbreviationEntry['category'] }]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.map((e) => e.code)).toEqual(['missing_required_field']);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-018 kokuji で source_mcp_hint が houki-egov なら category_hint_mismatch の警告（エラーではない）', () => {
+    const kokuji = 'kokuji' as AbbreviationEntry['category'];
+    const r = validateAllEntries([
+      { ...baseEntry, category: kokuji, source_mcp_hint: 'houki-egov' },
+    ]);
+    expect(r.warnings.map((w) => w.code)).toEqual(['category_hint_mismatch']);
+    expect(r.errors).toEqual([]);
+    expect(r.valid).toBe(true);
+  });
+
+  it('SPEC-ABBR-VALIDATE-ALL-ENTRIES-018 kokuji で source_mcp_hint が houki-nta か houki-mhlw なら警告もエラーも無い', () => {
+    const kokuji = 'kokuji' as AbbreviationEntry['category'];
+    for (const hint of ['houki-nta', 'houki-mhlw'] as const) {
+      const r = validateAllEntries([{ ...baseEntry, category: kokuji, source_mcp_hint: hint }]);
+      expect(r.warnings, hint).toEqual([]);
+      expect(r.errors, hint).toEqual([]);
+    }
+  });
+});
+
+describe('extractLawNames() — 20261001-dictionary-rules', () => {
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-019 abbr と formal が同じ 酒税法 は同じ位置・同じ長さの一致を 1 件にし、dedupe の指定によらない', () => {
+    for (const options of [undefined, { dedupe: false }, { dedupe: true }]) {
+      const matches = extractFromBundled('酒税法', options);
+      expect(matches, JSON.stringify(options)).toHaveLength(1);
+      expect(matches[0].matchedKey).toBe('酒税法');
+      expect(matches[0].position).toBe(0);
+      expect(matches[0].length).toBe(3);
+    }
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-019 公認会計士法の規定 と 民法の解釈 もそれぞれ 1 件', () => {
+    const cpa = extractFromBundled('公認会計士法の規定');
+    expect(cpa).toHaveLength(1);
+    expect(cpa[0].matchedKey).toBe('公認会計士法');
+    const civil = extractFromBundled('民法の解釈');
+    expect(civil).toHaveLength(1);
+    expect(civil[0].matchedKey).toBe('民法');
+    expect(civil[0].entry.abbr).toBe('民');
   });
 });
 

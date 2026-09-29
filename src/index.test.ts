@@ -18,6 +18,8 @@ import {
   type ResolveAbbreviationOptions,
   type SourceMcpHint,
 } from './index.js';
+import { normalizeJpText } from './normalize.js';
+import { validateAllEntries as validateEntries } from './validate.js';
 import taxJson from './data/tax.json' with { type: 'json' };
 import laborJson from './data/labor.json' with { type: 'json' };
 import accountingJson from './data/accounting.json' with { type: 'json' };
@@ -106,6 +108,9 @@ describe('abbreviation dictionary integrity', () => {
     expect(constitution).toBeDefined();
     expect(constitution?.formal).toBe('日本国憲法');
     expect(constitution?.law_id).toBe('321CONSTITUTION');
+    // 20261001-dictionary-rules: aliases に自分の formal を入れない（SPEC-ABBR-ABBREVIATION-ENTRIES-018）
+    expect(constitution?.abbr).toBe('憲');
+    expect(constitution?.aliases).toEqual(['憲法']);
   });
 
   it('SPEC-ABBR-ABBREVIATION-ENTRIES-008 houki-egov entries are the majority (法令系)', () => {
@@ -119,12 +124,14 @@ describe('abbreviation dictionary integrity', () => {
   it('SPEC-ABBR-ABBREVIATION-ENTRIES-009 houki-nta entries exist (v0.2.0 で追加)', () => {
     const nta = abbreviationEntries.filter((e) => e.source_mcp_hint === 'houki-nta');
     expect(nta.length).toBeGreaterThan(0);
-    // 全て通達系カテゴリ
+    // 全て通達・告示系カテゴリ（20261001-dictionary-rules で kokuji を足す）
     for (const e of nta) {
-      expect(['kihon-tsutatsu', 'kobetsu-tsutatsu', 'qa-jirei', 'tax-answer']).toContain(
+      expect(['kihon-tsutatsu', 'kobetsu-tsutatsu', 'kokuji', 'qa-jirei', 'tax-answer']).toContain(
         e.category
       );
     }
+    expect(resolveAbbreviation('消基通')?.category).toBe('kihon-tsutatsu');
+    expect(resolveAbbreviation('電帳法取通')?.category).toBe('kobetsu-tsutatsu');
   });
 });
 
@@ -606,6 +613,7 @@ describe('公開定数 追加の振る舞い', () => {
   });
 
   it('SPEC-ABBR-PUBLIC-CONSTANTS-007 CATEGORIES は 12 の値をこの順で持つ', () => {
+    // 20261001-dictionary-rules: kokuji を rule の次に足して 13 の値
     expect([...CATEGORIES]).toEqual([
       'constitution',
       'law',
@@ -613,6 +621,7 @@ describe('公開定数 追加の振る舞い', () => {
       'imperial-ordinance',
       'ministerial-ordinance',
       'rule',
+      'kokuji',
       'kihon-tsutatsu',
       'kobetsu-tsutatsu',
       'qa-jirei',
@@ -620,6 +629,9 @@ describe('公開定数 追加の振る舞い', () => {
       'hanrei',
       'saiketsu',
     ]);
+    expect(CATEGORIES).toHaveLength(13);
+    expect(CATEGORIES[6]).toBe('kokuji');
+    expect(CATEGORIES.indexOf('kihon-tsutatsu')).toBe(7);
   });
 
   it('SPEC-ABBR-PUBLIC-CONSTANTS-008 SOURCE_MCP_HINTS は 6 つの値をこの順で持つ', () => {
@@ -631,5 +643,120 @@ describe('公開定数 追加の振る舞い', () => {
       'houki-court',
       'houki-saiketsu',
     ]);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20261001-dictionary-rules                                                  */
+/* -------------------------------------------------------------------------- */
+
+/** v0.6.1 で aliases に自分の formal を持っていた 33 件（0.7.0 の辞書で直す） */
+const SELF_ALIAS_ABBRS_V061 = [
+  '消基通',
+  '所基通',
+  '法基通',
+  '相基通',
+  '通基通',
+  '徴基通',
+  '措通',
+  '印基通',
+  '最賃法',
+  '社労士法',
+  '会社',
+  '会社規',
+  '商',
+  '商登法',
+  '金商法',
+  '不競法',
+  '消契法',
+  '民',
+  '民訴',
+  '破',
+  '不登',
+  '住民台帳法',
+  '人訴',
+  '憲',
+  '国賠法',
+  '刑',
+  '都計法',
+  '司書法',
+  '行書法',
+  '大防法',
+  '水濁法',
+  '電通事業法',
+  'デジ庁設置法',
+];
+
+describe('abbreviationEntries — 20261001-dictionary-rules', () => {
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-017 同梱辞書の名前（abbr・formal・aliases）は normalizeJpText 後もエントリをまたいで重ならない', () => {
+    const owner = new Map<string, string>();
+    const collisions: string[] = [];
+    for (const e of abbreviationEntries) {
+      const names = new Set([e.abbr, e.formal, ...(e.aliases ?? [])].map(normalizeJpText));
+      for (const name of names) {
+        const prev = owner.get(name);
+        if (prev !== undefined) {
+          collisions.push(`${name}: ${prev} と ${e.abbr}`);
+        } else {
+          owner.set(name, e.abbr);
+        }
+      }
+    }
+    expect(collisions, collisions.join('\n')).toHaveLength(0);
+  });
+
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-017 aliases に 消費税法（消法 の formal）を持つエントリを足すと validateAllEntries が duplicate_name のエラーにする', () => {
+    const extra: AbbreviationEntry = {
+      abbr: 'テスト',
+      formal: 'テスト法',
+      law_id: null,
+      domain: 'tax',
+      category: 'law',
+      source_mcp_hint: 'houki-egov',
+      aliases: ['消費税法'],
+    };
+    const r = validateEntries([...abbreviationEntries, extra]);
+    expect(r.valid).toBe(false);
+    expect(r.errors.map((e) => e.code)).toEqual(['duplicate_name']);
+    expect(r.errors[0].entry).toBe(extra);
+  });
+
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-018 同梱辞書のどのエントリも aliases に自分の abbr・formal と同じ値を持たない（v0.6.1 の 33 件を含む）', () => {
+    const offenders = abbreviationEntries
+      .filter((e) => (e.aliases ?? []).some((a) => a === e.abbr || a === e.formal))
+      .map((e) => e.abbr);
+    expect(offenders, offenders.join(', ')).toHaveLength(0);
+    for (const abbr of SELF_ALIAS_ABBRS_V061) {
+      const e = resolveAbbreviation(abbr);
+      expect(e, abbr).not.toBeNull();
+      expect(e?.aliases ?? [], abbr).not.toContain(e?.formal);
+      expect(e?.aliases ?? [], abbr).not.toContain(abbr);
+    }
+  });
+
+  it('SPEC-ABBR-ABBREVIATION-ENTRIES-018 消基通 は aliases を持たず、憲 の aliases は 憲法 だけ。abbr と formal が同じ 酒税法 は許す', () => {
+    expect(resolveAbbreviation('消基通')?.formal).toBe('消費税法基本通達');
+    expect(resolveAbbreviation('消基通')?.aliases ?? []).toEqual([]);
+    expect(resolveAbbreviation('憲')?.aliases).toEqual(['憲法']);
+    const sake = resolveAbbreviation('酒税法');
+    expect(sake?.abbr).toBe('酒税法');
+    expect(sake?.formal).toBe('酒税法');
+  });
+});
+
+describe('getAbbreviationStats() — 20261001-dictionary-rules', () => {
+  it('SPEC-ABBR-GET-ABBREVIATION-STATS-005 byDomain・byCategory・bySourceMcpHint のキーは定数の全値で、順も定数の順', () => {
+    const s = getAbbreviationStats();
+    expect(Object.keys(s.byDomain)).toEqual([...DOMAINS]);
+    expect(Object.keys(s.byCategory)).toEqual([...CATEGORIES]);
+    expect(Object.keys(s.bySourceMcpHint)).toEqual([...SOURCE_MCP_HINTS]);
+  });
+
+  it('SPEC-ABBR-GET-ABBREVIATION-STATS-006 辞書にエントリの無い hanrei・kokuji・houki-mhlw は undefined ではなく 0、law は 1 以上', () => {
+    const s = getAbbreviationStats();
+    expect(s.byCategory.hanrei).toBe(0);
+    expect((s.byCategory as Record<string, number>).kokuji).toBe(0);
+    expect(s.bySourceMcpHint['houki-mhlw']).toBe(0);
+    expect(s.byCategory.law).toBeGreaterThanOrEqual(1);
   });
 });

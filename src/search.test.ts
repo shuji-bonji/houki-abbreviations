@@ -98,6 +98,20 @@ describe('findSimilar (Levenshtein あいまい一致)', () => {
     expect(r.length).toBeGreaterThan(0);
     expect(r[0].distance).toBe(0);
     expect(r[0].entry.formal).toBe('労働基準法');
+    // 20261001-dictionary-rules: 5 文字に対する距離 2 は比が 1/3 を超えるので 労基法 の 1 件だけ
+    expect(r).toHaveLength(1);
+    expect(r[0].entry.abbr).toBe('労基法');
+    const s = findSimilar('所得税法施行令');
+    expect(s[0].entry.abbr).toBe('所令');
+    expect(s[0].entry.formal).toBe('所得税法施行令');
+    expect(s[0].matchedKey).toBe('所得税法施行令');
+    expect(s[0].distance).toBe(0);
+    expect(s.slice(1).map((m) => [m.entry.abbr, m.entry.formal, m.distance])).toEqual([
+      ['所規', '所得税法施行規則', 2],
+      ['法令', '法人税法施行令', 2],
+      ['消令', '消費税法施行令', 2],
+      ['相令', '相続税法施行令', 2],
+    ]);
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-002 1 文字 typo (例: 法 → 例) で distance=1 のヒットが返る', () => {
@@ -118,20 +132,25 @@ describe('findSimilar (Levenshtein あいまい一致)', () => {
     for (let i = 1; i < r.length; i++) {
       expect(r[i].distance).toBeGreaterThanOrEqual(r[i - 1].distance);
     }
+    // 20261001-dictionary-rules: 法人税法施行令 は 法令（0）が辞書で前にある 所令（2）より先頭に来る
+    const s = findSimilar('法人税法施行令');
+    expect(s.map((m) => m.entry.abbr)).toEqual(['法令', '所令', '法規', '消令', '相令']);
+    expect(s.map((m) => m.distance)).toEqual([0, 2, 2, 2, 2]);
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-004 limit が効く', () => {
-    const r = findSimilar('法', { maxDistance: 5, limit: 3 });
-    expect(r.length).toBeLessThanOrEqual(3);
+    // 20261001-dictionary-rules: 所得税法施行令 は limit 3 で 3 件、省くと 5 件、500 なら 7 件
+    expect(findSimilar('所得税法施行令', { limit: 3 })).toHaveLength(3);
+    expect(findSimilar('所得税法施行令')).toHaveLength(5);
+    expect(findSimilar('所得税法施行令', { limit: 500 })).toHaveLength(7);
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-005 filter が効く', () => {
-    const r = findSimilar('法', {
-      maxDistance: 5,
-      filter: { domain: 'tax' },
-      limit: 100,
-    });
+    // 20261001-dictionary-rules: 所得税法施行令 は domain: tax で 7 件、labor で 0 件
+    const r = findSimilar('所得税法施行令', { filter: { domain: 'tax' }, limit: 100 });
+    expect(r).toHaveLength(7);
     expect(r.every((m) => m.entry.domain === 'tax')).toBe(true);
+    expect(findSimilar('所得税法施行令', { filter: { domain: 'labor' }, limit: 100 })).toEqual([]);
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-006 空クエリは空配列', () => {
@@ -147,11 +166,25 @@ describe('suggestCorrection', () => {
     if (r.length > 0) {
       expect(typeof r[0]).toBe('string');
     }
+    // 20261001-dictionary-rules: 距離 0 のエントリは入れず、比の上限で 法 は []
+    expect(r).toEqual(['労働基準法施行規則']);
+    expect(suggestCorrection('所得税法施行令')).toEqual([
+      '所得税法施行規則',
+      '法人税法施行令',
+      '消費税法施行令',
+      '相続税法施行令',
+      '印紙税法施行令',
+    ]);
+    expect(suggestCorrection('法')).toEqual([]);
   });
 
   it('SPEC-ABBR-SUGGEST-CORRECTION-002 limit が効く', () => {
-    const r = suggestCorrection('法', 3);
-    expect(r.length).toBeLessThanOrEqual(3);
+    // 20261001-dictionary-rules: 距離 0 の 所得税法施行令 を除いた後で 3 件に打ち切る
+    expect(suggestCorrection('所得税法施行令', 3)).toEqual([
+      '所得税法施行規則',
+      '法人税法施行令',
+      '消費税法施行令',
+    ]);
   });
 });
 
@@ -342,10 +375,13 @@ describe('findSimilar — 正規化・並び・limit・maxDistance・matchedKey'
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-008 normalize が false のときは全角英数字をそのまま比べる', () => {
-    const r = findSimilar('ＰＬ法', { normalize: false });
-    expect(r.some((m) => m.entry.formal === '製造物責任法')).toBe(false);
-    expect(r.map((m) => m.entry.abbr)).toEqual(['所法', '法法', '消法', '措法', '相法']);
-    expect(r.every((m) => m.distance === 2)).toBe(true);
+    // 20261001-dictionary-rules: PL法 との距離 2 は 3 文字に対して比が 1/3 を超えるので []
+    expect(findSimilar('ＰＬ法', { normalize: false })).toEqual([]);
+    const r = findSimilar('ＰＬ法');
+    expect(r).toHaveLength(1);
+    expect(r[0].entry.formal).toBe('製造物責任法');
+    expect(r[0].matchedKey).toBe('PL法');
+    expect(r[0].distance).toBe(0);
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-009 全角で引いても matchedKey は辞書の表記のまま返す', () => {
@@ -357,47 +393,45 @@ describe('findSimilar — 正規化・並び・limit・maxDistance・matchedKey'
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-010 sortByScore が false のときは辞書の並びのまま limit 件で打ち切る', () => {
-    const q = '労働基準法施行例';
-    const r = findSimilar(q, { maxDistance: 5, sortByScore: false });
-    const unsortedAll = findSimilar(q, { maxDistance: 5, sortByScore: false, limit: 1000 });
+    // 20261001-dictionary-rules: 法人税法施行令 の例に差し替え
+    const q = '法人税法施行令';
+    const r = findSimilar(q, { sortByScore: false });
     expect(r).toHaveLength(5);
-    expect(r).toEqual(unsortedAll.slice(0, 5));
-    expect(isInDictionaryOrder(unsortedAll.map((m) => m.entry))).toBe(true);
-    expect(r.map((m) => m.entry.abbr)).toEqual(['所令', '法令', '消令', '相令', '通令']);
-    // 距離の小さい 労基則 は打ち切りで入らない（sortByScore の既定では入る）
-    expect(r.some((m) => m.entry.abbr === '労基則')).toBe(false);
-    expect(findSimilar(q, { maxDistance: 5 }).some((m) => m.entry.abbr === '労基則')).toBe(true);
+    expect(isInDictionaryOrder(r.map((m) => m.entry))).toBe(true);
+    expect(r.map((m) => [m.entry.abbr, m.distance])).toEqual([
+      ['所令', 2],
+      ['法令', 0],
+      ['法規', 2],
+      ['消令', 2],
+      ['相令', 2],
+    ]);
+    // 距離 0 の 法令 は limit: 1 の打ち切りで入らない
+    const one = findSimilar(q, { sortByScore: false, limit: 1 });
+    expect(one.map((m) => [m.entry.abbr, m.distance])).toEqual([['所令', 2]]);
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-011 distance が同じエントリは辞書の並びのまま並べる', () => {
-    const r = findSimilar('労働基準法施行例', { maxDistance: 5, limit: 100 });
+    // 20261001-dictionary-rules: 所得税法施行令 の例に差し替え
+    const r = findSimilar('所得税法施行令', { limit: 100 });
     const distances = [...new Set(r.map((m) => m.distance))];
     for (const d of distances) {
       expect(isInDictionaryOrder(r.filter((m) => m.distance === d).map((m) => m.entry))).toBe(true);
     }
-    expect(
-      r
-        .filter((m) => m.distance === 5)
-        .map((m) => m.entry.abbr)
-        .slice(0, 10)
-    ).toEqual([
-      '所令',
+    expect(r.filter((m) => m.distance === 2).map((m) => m.entry.abbr)).toEqual([
+      '所規',
       '法令',
       '消令',
       '相令',
-      '通令',
       '印令',
       '地税令',
-      '労契法',
-      '労組法',
-      '建基法',
     ]);
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-012 limit を省くと 5 件で打ち切る', () => {
-    const all = findSimilar('法', { maxDistance: 5, limit: 1000 });
-    expect(all.length).toBeGreaterThan(5);
-    const r = findSimilar('法', { maxDistance: 5 });
+    // 20261001-dictionary-rules: 所得税法施行令 の例に差し替え
+    const all = findSimilar('所得税法施行令', { limit: 500 });
+    expect(all).toHaveLength(7);
+    const r = findSimilar('所得税法施行令');
     expect(r).toHaveLength(5);
     expect(r).toEqual(all.slice(0, 5));
   });
@@ -411,14 +445,19 @@ describe('findSimilar — 正規化・並び・limit・maxDistance・matchedKey'
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-014 maxDistance を省くと 2 として扱う', () => {
-    const q = '労働基準法施行例';
+    // 20261001-dictionary-rules: 租税特別措置法施行令 の例に差し替え
+    const q = '租税特別措置法施行令';
     const r = findSimilar(q, { limit: 100 });
     expect(r).toEqual(findSimilar(q, { maxDistance: 2, limit: 100 }));
-    expect(r.every((m) => m.distance <= 2)).toBe(true);
-    expect(r.some((m) => m.entry.abbr === '労基則' && m.distance === 2)).toBe(true);
-    expect(r.some((m) => m.entry.abbr === '労基法')).toBe(false);
+    expect(r.map((m) => [m.entry.abbr, m.entry.formal, m.distance])).toEqual([
+      ['措令', '租税特別措置法施行令', 0],
+      ['措規', '租税特別措置法施行規則', 2],
+    ]);
+    expect(r.some((m) => m.entry.abbr === '措法')).toBe(false);
     expect(
-      findSimilar(q, { maxDistance: 3, limit: 100 }).some((m) => m.entry.abbr === '労基法')
+      findSimilar(q, { maxDistance: 3, limit: 100 }).some(
+        (m) => m.entry.abbr === '措法' && m.distance === 3
+      )
     ).toBe(true);
   });
 
@@ -436,7 +475,8 @@ describe('findSimilar — 正規化・並び・limit・maxDistance・matchedKey'
   });
 
   it('SPEC-ABBR-FIND-SIMILAR-017 略称と別名が同じ距離なら略称を matchedKey にする', () => {
-    const m = findSimilar('消費', { maxDistance: 1, limit: 100 }).find(
+    // 20261001-dictionary-rules: 2 文字の 消費 は比の上限に掛かるので 3 文字の 消費法 で確かめる
+    const m = findSimilar('消費法', { maxDistance: 1, limit: 100 }).find(
       (x) => x.entry.abbr === '消法'
     );
     expect(m).toBeDefined();
@@ -456,10 +496,18 @@ describe('findSimilar — 正規化・並び・limit・maxDistance・matchedKey'
 
 describe('suggestCorrection — limit・空の query', () => {
   it('SPEC-ABBR-SUGGEST-CORRECTION-003 limit を省くと 5 件で打ち切る', () => {
-    const r = suggestCorrection('法');
-    expect(r).toEqual(['所得税法', '法人税法', '法人税法施行令', '法人税法施行規則', '消費税法']);
-    const many = suggestCorrection('法', 100);
-    expect(many).toHaveLength(100);
+    // 20261001-dictionary-rules: 所得税法施行令 の例に差し替え
+    const r = suggestCorrection('所得税法施行令');
+    expect(r).toEqual([
+      '所得税法施行規則',
+      '法人税法施行令',
+      '消費税法施行令',
+      '相続税法施行令',
+      '印紙税法施行令',
+    ]);
+    const many = suggestCorrection('所得税法施行令', 100);
+    expect(many).toHaveLength(6);
+    expect(many.at(-1)).toBe('地方税法施行令');
     expect(r).toEqual(many.slice(0, 5));
   });
 
@@ -594,5 +642,57 @@ describe('suggestCorrection — 20261001-input-guards', () => {
     const r = suggestCorrection('所得税法施行令', 500);
     expect(r.length).toBeGreaterThan(0);
     expect(r).toEqual(suggestCorrection('所得税法施行令', 499));
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20261001-dictionary-rules                                                  */
+/* -------------------------------------------------------------------------- */
+
+describe('findSimilar — 20261001-dictionary-rules', () => {
+  it('SPEC-ABBR-FIND-SIMILAR-021 民法 には 民（0）と 3 文字の 民訴法・民執法・民保法（1）の 4 件を返し、2 文字の 所法 などは返さない', () => {
+    const r = findSimilar('民法');
+    expect(r.map((m) => [m.entry.abbr, m.matchedKey, m.distance])).toEqual([
+      ['民', '民法', 0],
+      ['民訴', '民訴法', 1],
+      ['民執', '民執法', 1],
+      ['民保', '民保法', 1],
+    ]);
+  });
+
+  it('SPEC-ABBR-FIND-SIMILAR-021 1 文字の 法 は maxDistance: 5 でも [] を返す', () => {
+    expect(findSimilar('法', { maxDistance: 5, limit: 100 })).toEqual([]);
+  });
+
+  it('SPEC-ABBR-FIND-SIMILAR-021 労基側 には 3 文字に対する距離 1（比 1/3）の 労基法 と 労基則 の 2 件を返す', () => {
+    const r = findSimilar('労基側');
+    expect(r.map((m) => [m.entry.abbr, m.distance])).toEqual([
+      ['労基法', 1],
+      ['労基則', 1],
+    ]);
+  });
+
+  it('SPEC-ABBR-FIND-SIMILAR-022 1 文字の 民 でも一致すれば distance 0 で返す', () => {
+    const r = findSimilar('民');
+    expect(r.map((m) => [m.entry.abbr, m.matchedKey, m.distance])).toEqual([['民', '民', 0]]);
+  });
+
+  it('SPEC-ABBR-FIND-SIMILAR-022 会社 には 会社（0）と 会社規（1）の 2 件を返す', () => {
+    const r = findSimilar('会社');
+    expect(r.map((m) => [m.entry.abbr, m.matchedKey, m.distance])).toEqual([
+      ['会社', '会社', 0],
+      ['会社規', '会社規', 1],
+    ]);
+  });
+});
+
+describe('suggestCorrection — 20261001-dictionary-rules', () => {
+  it('SPEC-ABBR-SUGGEST-CORRECTION-009 民法 に一致した 民法 自身は入れず、民事訴訟法・民事執行法・民事保全法 を返す', () => {
+    expect(suggestCorrection('民法')).toEqual(['民事訴訟法', '民事執行法', '民事保全法']);
+  });
+
+  it('SPEC-ABBR-SUGGEST-CORRECTION-009 労働基準法 は一致するエントリしか無いので []、労基側 は 労働基準法・労働基準法施行規則', () => {
+    expect(suggestCorrection('労働基準法')).toEqual([]);
+    expect(suggestCorrection('労基側')).toEqual(['労働基準法', '労働基準法施行規則']);
   });
 });
