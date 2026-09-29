@@ -234,6 +234,15 @@ describe('extractLawNames', () => {
     });
     expect(matches.some((m) => m.matchedKey === '民')).toBe(false);
     expect(matches.some((m) => m.matchedKey === '民法')).toBe(true);
+    // 長い一致の端にまたがる短い一致（消費税法法人税法 の 法法）も返さない
+    const spanning = extractLawNames(extractFixtures, '消費税法法人税法', { preferLonger: true });
+    expect(
+      spanning.map((m) => ({ key: m.matchedKey, position: m.position, length: m.length }))
+    ).toEqual([
+      { key: '消費税法', position: 0, length: 4 },
+      { key: '法人税法', position: 4, length: 4 },
+    ]);
+    expect(spanning.some((m) => m.matchedKey === '法法')).toBe(false);
   });
 
   it('SPEC-ABBR-EXTRACT-LAW-NAMES-006 preferLonger=false で全マッチを返す', () => {
@@ -375,6 +384,16 @@ describe('extractLawNames（既定値・重なり・null）', () => {
     );
   });
 
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-010 preferLonger を指定しなければ長い一致の端にまたがる 法法 も返さない', () => {
+    const matches = extractFromBundled('消費税法法人税法');
+    expect(
+      matches.map((m) => ({ key: m.matchedKey, position: m.position, length: m.length }))
+    ).toEqual([
+      { key: '消費税法', position: 0, length: 4 },
+      { key: '法人税法', position: 4, length: 4 },
+    ]);
+  });
+
   it('SPEC-ABBR-EXTRACT-LAW-NAMES-010 preferLonger: false を足すと短い一致も返る（対照）', () => {
     const matches = extractFromBundled('民法の解釈', { minLength: 1, preferLonger: false });
     expect(matches.some((m) => m.matchedKey === '民' && m.position === 0 && m.length === 1)).toBe(
@@ -446,5 +465,80 @@ describe('extractLawNames（既定値・重なり・null）', () => {
   it('SPEC-ABBR-EXTRACT-LAW-NAMES-014 text が null か undefined なら空の配列', () => {
     expect(extractFromBundled(null as unknown as string)).toEqual([]);
     expect(extractFromBundled(undefined as unknown as string)).toEqual([]);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20261001-normalize                                                         */
+/* -------------------------------------------------------------------------- */
+
+/** 0.7.0 で足す ExtractOptions.normalize。実装で型が付いたら cast は外してよい */
+type ExtractOptionsWithNormalize = {
+  minLength?: number;
+  preferLonger?: boolean;
+  dedupe?: boolean;
+  normalize?: boolean;
+};
+const extractWithOptions = extractFromBundled as unknown as (
+  text: string,
+  options?: ExtractOptionsWithNormalize
+) => ReturnType<typeof extractFromBundled>;
+
+const summarize = (matches: ReturnType<typeof extractFromBundled>) =>
+  matches.map((m) => ({
+    abbr: m.entry.abbr,
+    matchedKey: m.matchedKey,
+    position: m.position,
+    length: m.length,
+  }));
+
+describe('extractLawNames() — 20261001-normalize', () => {
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-015 所得税法人税法 では長さが同じ 所得税法（位置 0）と 法人税法（位置 3）が重なっていても両方返す', () => {
+    expect(summarize(extractFromBundled('所得税法人税法'))).toEqual([
+      { abbr: '所法', matchedKey: '所得税法', position: 0, length: 4 },
+      { abbr: '法法', matchedKey: '法人税法', position: 3, length: 4 },
+    ]);
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-016 normalize: true では全角の ＰＬ法の規定 から PL法 を 1 件見つけ、matchedKey は辞書の表記', () => {
+    const matches = extractWithOptions('ＰＬ法の規定', { normalize: true });
+    expect(matches).toHaveLength(1);
+    expect(matches[0].matchedKey).toBe('PL法');
+    expect(matches[0].entry.formal).toBe('製造物責任法');
+    expect(matches[0].position).toBe(0);
+    expect(matches[0].length).toBe(3);
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-017 normalize: true でも position と length は元の text の位置で、先頭の全角スペースも数える', () => {
+    const text = '\u3000ＰＬ法の規定';
+    const matches = extractWithOptions(text, { normalize: true });
+    expect(matches).toHaveLength(1);
+    expect(matches[0].position).toBe(1);
+    expect(matches[0].length).toBe(3);
+    expect(text.slice(1, 4)).toBe('ＰＬ法');
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-017 normalize: true でも 消費税法の改正と法人税法 の位置は normalize を省いたときと同じ', () => {
+    const text = '消費税法の改正と法人税法';
+    const withNormalize = extractWithOptions(text, { normalize: true });
+    expect(summarize(withNormalize)).toEqual([
+      { abbr: '消法', matchedKey: '消費税法', position: 0, length: 4 },
+      { abbr: '法法', matchedKey: '法人税法', position: 8, length: 4 },
+    ]);
+    expect(summarize(withNormalize)).toEqual(summarize(extractFromBundled(text)));
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-018 options なし・normalize: false では全角の ＰＬ法の規定 に空配列を返す', () => {
+    expect(extractWithOptions('ＰＬ法の規定')).toEqual([]);
+    expect(extractWithOptions('ＰＬ法の規定', {})).toEqual([]);
+    expect(extractWithOptions('ＰＬ法の規定', { normalize: false })).toEqual([]);
+  });
+
+  it('SPEC-ABBR-EXTRACT-LAW-NAMES-018 半角の PL法の規定 は normalize の有無によらず PL法 の 1 件', () => {
+    for (const options of [undefined, {}, { normalize: false }, { normalize: true }]) {
+      const matches = extractWithOptions('PL法の規定', options);
+      expect(matches, JSON.stringify(options)).toHaveLength(1);
+      expect(matches[0].matchedKey, JSON.stringify(options)).toBe('PL法');
+    }
   });
 });

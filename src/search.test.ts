@@ -165,6 +165,8 @@ describe('levenshtein', () => {
     expect(levenshtein('', 'abc')).toBe(3);
     expect(levenshtein('abc', '')).toBe(3);
     expect(levenshtein('', '')).toBe(0);
+    // 文字数はコードポイント数（'𠮷'.length は 2 だが 1 文字）
+    expect(levenshtein('', '𠮷')).toBe(1);
   });
 
   it('SPEC-ABBR-LEVENSHTEIN-003 1 文字違いで distance=1', () => {
@@ -468,5 +470,18 @@ describe('suggestCorrection — limit・空の query', () => {
   it('SPEC-ABBR-SUGGEST-CORRECTION-005 空の query には空配列を返す', () => {
     expect(suggestCorrection('')).toEqual([]);
     expect(suggestCorrection('   ')).toEqual([]);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20261001-normalize                                                         */
+/* -------------------------------------------------------------------------- */
+
+describe('levenshtein — 20261001-normalize', () => {
+  it('SPEC-ABBR-LEVENSHTEIN-005 BMP の外の文字（𠮷 U+20BB7）を 1 文字として数え、𠮷 と 吉 の距離は 1', () => {
+    expect('𠮷'.length).toBe(2);
+    expect(levenshtein('𠮷', '吉')).toBe(1);
+    expect(levenshtein('𠮷野家', '吉野家')).toBe(1);
+    expect(levenshtein('𠮷', '')).toBe(1);
   });
 });

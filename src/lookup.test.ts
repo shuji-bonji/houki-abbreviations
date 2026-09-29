@@ -7,6 +7,7 @@ import type { AbbreviationEntry } from './types.js';
 import { lookupByLawId, lookupByLawNum, getAllNames } from './lookup.js';
 import {
   getAllNames as getAllNamesPublic,
+  lookupByLawId as lookupByLawIdPublic,
   lookupByLawNum as lookupByLawNumPublic,
 } from './index.js';
 
@@ -218,5 +219,67 @@ describe('lookupByLawNum（空白・先頭の 0・元年）', () => {
     expect(lookupByLawNum(entries, '令和元年法律第一号')).toBe(gannen);
     expect(lookupByLawNum(entries, '令和元年法律第01号')).toBe(gannen);
     expect(lookupByLawNum(entries, '令和一年法律第一号')).toBe(gannen);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20261001-normalize                                                         */
+/* -------------------------------------------------------------------------- */
+
+/** 0.7.0 で足す options.normalize（GetAllNamesOptions / LookupByLawIdOptions）。実装で型が付いたら cast は外してよい */
+type NormalizeOptions = { normalize?: boolean };
+const getAllNamesWithOptions = getAllNamesPublic as unknown as (
+  name: string,
+  options?: NormalizeOptions
+) => string[];
+const lookupByLawIdWithOptions = lookupByLawIdPublic as unknown as (
+  law_id: string,
+  options?: NormalizeOptions
+) => AbbreviationEntry | null;
+
+describe('getAllNames() — 20261001-normalize', () => {
+  it('SPEC-ABBR-GET-ALL-NAMES-009 normalize: true では全角の ＰＬ法 でも PL法 と同じ配列を辞書の表記のまま返す', () => {
+    expect(getAllNamesWithOptions('ＰＬ法', { normalize: true })).toEqual(['製造物責任法', 'PL法']);
+    expect(getAllNamesWithOptions('ＰＬ法', { normalize: true })).toEqual(
+      getAllNamesPublic('PL法')
+    );
+  });
+
+  it('SPEC-ABBR-GET-ALL-NAMES-009 normalize: true では前後の全角スペースも除いてから引く', () => {
+    const expected = getAllNamesPublic('消法');
+    expect(expected.length).toBeGreaterThan(0);
+    expect(getAllNamesWithOptions('\u3000消法\u3000', { normalize: true })).toEqual(expected);
+  });
+
+  it('SPEC-ABBR-GET-ALL-NAMES-010 options なし・{}・normalize: false では全角の ＰＬ法 に空配列を返す', () => {
+    expect(getAllNamesWithOptions('ＰＬ法')).toEqual([]);
+    expect(getAllNamesWithOptions('ＰＬ法', {})).toEqual([]);
+    expect(getAllNamesWithOptions('ＰＬ法', { normalize: false })).toEqual([]);
+  });
+
+  it('SPEC-ABBR-GET-ALL-NAMES-010 normalize: false でも半角の PL法 は引ける', () => {
+    expect(getAllNamesWithOptions('PL法', { normalize: false })).toEqual(['製造物責任法', 'PL法']);
+  });
+});
+
+describe('lookupByLawId() — 20261001-normalize', () => {
+  it('SPEC-ABBR-LOOKUP-BY-LAW-ID-005 normalize: true では全角英数字を半角にしてから引き、３６３AC0000000108 で消費税法を返す', () => {
+    expect(lookupByLawIdWithOptions('３６３AC0000000108', { normalize: true })?.formal).toBe(
+      '消費税法'
+    );
+    expect(
+      lookupByLawIdWithOptions('３６３ＡＣ００００００１０８', { normalize: true })?.formal
+    ).toBe('消費税法');
+  });
+
+  it('SPEC-ABBR-LOOKUP-BY-LAW-ID-006 normalize: true でも小文字の 363ac0000000108 は大文字にせず null を返す', () => {
+    expect(lookupByLawIdWithOptions('363ac0000000108', { normalize: true })).toBeNull();
+    expect(lookupByLawIdWithOptions('３６３ac0000000108', { normalize: true })).toBeNull();
+  });
+
+  it('SPEC-ABBR-LOOKUP-BY-LAW-ID-007 options なし・{}・normalize: false では全角の ３６３AC0000000108 に null を返す', () => {
+    expect(lookupByLawIdWithOptions('３６３AC0000000108')).toBeNull();
+    expect(lookupByLawIdWithOptions('３６３AC0000000108', {})).toBeNull();
+    expect(lookupByLawIdWithOptions('３６３AC0000000108', { normalize: false })).toBeNull();
   });
 });

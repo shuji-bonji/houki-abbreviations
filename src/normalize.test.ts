@@ -70,6 +70,7 @@ describe('normalizeSearchQuery()', () => {
 
   it('SPEC-ABBR-NORMALIZE-SEARCH-QUERY-001 applies normalizeJpText transformations', () => {
     expect(normalizeSearchQuery('１８３－２')).toBe('183-2');
+    expect(normalizeSearchQuery('１８３―２')).toBe('183-2');
     expect(normalizeSearchQuery('１８３〜１９３')).toBe('183~193');
   });
 
@@ -355,5 +356,53 @@ describe('kanjiToNumber() — 20260927-untested-behaviors', () => {
     expect(kanjiToNumber('一千一百一十一')).toBe(kanjiToNumber('千百十一'));
     expect(kanjiToNumber('一千一百一十一')).toBe(1111);
     expect(kanjiToNumber('千百十')).toBe(1110);
+  });
+});
+
+/* -------------------------------------------------------------------------- */
+/* 20261001-normalize                                                         */
+/* -------------------------------------------------------------------------- */
+
+describe('normalizeJpText() — 20261001-normalize', () => {
+  it('SPEC-ABBR-NORMALIZE-JP-TEXT-012 全角ハイフン以外のダッシュ類（U+2010・U+2011・U+2013・U+2014・U+2015・U+2212）を挟んだ全角数字も 183-2 にする', () => {
+    expect(normalizeJpText('１８３―２')).toBe('183-2');
+    for (const dash of ['\u2010', '\u2011', '\u2013', '\u2014', '\u2015', '\u2212']) {
+      expect(normalizeJpText(`１８３${dash}２`), JSON.stringify(dash)).toBe('183-2');
+    }
+  });
+
+  it('SPEC-ABBR-NORMALIZE-JP-TEXT-013 罫線 U+2500 と長音 U+30FC は半角ハイフンにしない', () => {
+    expect(normalizeJpText('１８３\u2500２')).toBe('183\u25002');
+    expect(normalizeJpText('データ')).toBe('データ');
+  });
+});
+
+describe('normalizeLawNum() — 20261001-normalize', () => {
+  it('SPEC-ABBR-NORMALIZE-LAW-NUM-015 年・号の直前、第の直後、ダッシュの隣に無い漢数字（千葉県・三重県・一般・昭二五・一〇・二五）は変えない', () => {
+    expect(normalizeLawNum('千葉県条例第一号')).toBe('千葉県条例第1号');
+    expect(normalizeLawNum('三重県')).toBe('三重県');
+    expect(normalizeLawNum('平成十五年一般法律第三号')).toBe('平成15年一般法律第3号');
+    expect(normalizeLawNum('昭二五・一〇・二五')).toBe('昭二五・一〇・二五');
+  });
+
+  it('SPEC-ABBR-NORMALIZE-LAW-NUM-016 20 桁の算用数字も丸めず、先頭の 0 だけを取る', () => {
+    const expected = '昭和25年法律第12345678901234567890号';
+    expect(normalizeLawNum('昭和25年法律第12345678901234567890号')).toBe(expected);
+    expect(normalizeLawNum('昭和25年法律第00012345678901234567890号')).toBe(expected);
+  });
+});
+
+describe('normalizeSearchQuery() — 20261001-normalize', () => {
+  it('SPEC-ABBR-NORMALIZE-SEARCH-QUERY-008 英字以外の大文字（Ⅰ・Α・À）は小文字にせず、A〜Z だけを小文字にする', () => {
+    expect(normalizeSearchQuery('Ⅰ Α À PL')).toBe('Ⅰ Α À pl');
+  });
+});
+
+describe('kanjiToNumber() — 20261001-normalize', () => {
+  it('SPEC-ABBR-KANJI-TO-NUMBER-009 位ごとの並びは 15 文字まで読み、16 文字以上は null を返す', () => {
+    expect(kanjiToNumber('一'.repeat(15))).toBe(111111111111111);
+    expect(kanjiToNumber('一'.repeat(16))).toBeNull();
+    expect(kanjiToNumber('一'.repeat(20))).toBeNull();
+    expect(kanjiToNumber('〇'.repeat(20))).toBeNull();
   });
 });
