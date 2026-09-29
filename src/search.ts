@@ -179,15 +179,32 @@ export interface FuzzyMatch {
 }
 
 /**
+ * 編集距離の比（距離 ÷ 長い方の文字数）の上限。`距離 × 3 ≤ 長い方の文字数` のときだけ候補にする。
+ * 2〜3 文字の `query` が、意味の違う短い略称に当たることを防ぐ（v0.7.0、Issue #20）。
+ */
+const RATIO_DENOMINATOR = 3;
+
+/** 距離 `d` の名前を候補にしてよいか。距離 0 は文字数によらず候補にする */
+function withinRatio(d: number, queryLength: number, keyLength: number): boolean {
+  return d === 0 || d * RATIO_DENOMINATOR <= Math.max(queryLength, keyLength);
+}
+
+/**
  * あいまい一致 (Levenshtein 距離ベース)。
  *
  * 各エントリの `abbr` / `formal` / `aliases` すべてについて Levenshtein 距離を
  * 計算し、`maxDistance` 以下のものを返す。距離が同じ場合は元順序を維持。
  *
+ * 編集距離で近い名前を返す関数で、名前の一部から一覧を得る関数ではない
+ * （一覧は `searchByName`）。名前ごとに、距離の比（距離 ÷ 長い方のコードポイント数）が
+ * 1/3 を超えるものは `maxDistance` 以下でも候補にしない。距離 0 は文字数によらず候補に
+ * する。1 つのエントリで距離が同じ名前が複数あるときは `abbr`・`formal`・`aliases` の順で
+ * 先の名前を `matchedKey` にする。
+ *
  * @example
  * ```ts
  * findSimilar(abbreviationEntries, '労働基準法施行例');
- * // → [{ entry: 労基法施行令, matchedKey: '労働基準法施行令', distance: 1 }, ...]
+ * // → [{ entry: 労基則, matchedKey: '労働基準法施行規則', distance: 2 }]
  * ```
  */
 export function findSimilar(
@@ -205,6 +222,7 @@ export function findSimilar(
   const q = normalize ? normalizeJpText(trimmed) : trimmed;
   if (!q) return [];
 
+  const qLength = Array.from(q).length;
   const filtered = filterEntries(entries, options.filter);
   const matches: FuzzyMatch[] = [];
   const seenAbbr = new Set<string>();
@@ -217,6 +235,8 @@ export function findSimilar(
       const k = normalize ? normalizeJpText(key) : key;
       if (!k) continue;
       const d = levenshtein(q, k);
+      // 名前ごとに長さの補正を掛け、比が上限を超える名前は候補にしない
+      if (!withinRatio(d, qLength, Array.from(k).length)) continue;
       if (d < bestDistance) {
         bestDistance = d;
         bestKey = key;
@@ -239,10 +259,13 @@ export function findSimilar(
  * 「もしかして」サジェスト。`findSimilar` の薄いラッパで、上位 N 件の
  * `formal` だけを文字列配列で返す。LLM プロンプトでそのまま使える形。
  *
+ * `query` と一致した名前を持つエントリ（`distance: 0`）は「もしかして」に入れない。
+ * 距離 0 のエントリを除いてから `limit` 件で打ち切る（v0.7.0 から）。
+ *
  * @example
  * ```ts
  * suggestCorrection(abbreviationEntries, '労働基準法施行例');
- * // → ['労働基準法施行令']
+ * // → ['労働基準法施行規則']
  * ```
  */
 export function suggestCorrection(
@@ -250,8 +273,13 @@ export function suggestCorrection(
   query: string,
   limit = 5
 ): string[] {
-  const matches = findSimilar(entries, query, { limit: checkLimit(limit, 5) });
-  return matches.map((m) => m.entry.formal);
+  const n = checkLimit(limit, 5);
+  // 距離 0 を除いた後で limit 件に打ち切るので、findSimilar は上限いっぱいまで取る
+  const matches = findSimilar(entries, query, { limit: LIMIT_MAX });
+  return matches
+    .filter((m) => m.distance > 0)
+    .slice(0, n)
+    .map((m) => m.entry.formal);
 }
 
 /* -------------------------------------------------------------------------- */

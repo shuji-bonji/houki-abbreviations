@@ -8,8 +8,7 @@
     "category": "constitution",
     "source_mcp_hint": "houki-egov",
     "aliases": [
-      "憲法",
-      "日本国憲法"
+      "憲法"
     ]
   },
   {
@@ -93,10 +92,7 @@
     "law_type": "Act",
     "domain": "administrative",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "国家賠償法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "情報公開法",
@@ -145,10 +141,7 @@
     "law_type": "Act",
     "domain": "administrative",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "刑法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "刑訴",
@@ -244,10 +237,7 @@
     "law_type": "Act",
     "domain": "administrative",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "都市計画法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "国土利用法",
@@ -335,10 +325,7 @@
     "law_type": "Act",
     "domain": "administrative",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "司法書士法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "行書法",
@@ -347,10 +334,7 @@
     "law_type": "Act",
     "domain": "administrative",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "行政書士法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "風営法",
@@ -378,10 +362,7 @@
     "law_type": "Act",
     "domain": "administrative",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "大気汚染防止法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "水濁法",
@@ -390,10 +371,7 @@
     "law_type": "Act",
     "domain": "administrative",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "水質汚濁防止法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "廃掃法",
@@ -413,9 +391,6 @@
     "domain": "administrative",
     "category": "law",
     "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "電気通信事業法"
-    ],
     "note": "Webサービス・メッセージング実装時の外部送信規律（27条の12）等"
   },
   {
@@ -536,9 +511,6 @@
     "domain": "administrative",
     "category": "law",
     "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "デジタル庁設置法"
-    ],
     "note": "デジタル庁の設置・所掌事務の根拠"
   }
 ]

@@ -57,9 +57,13 @@ export type Domain = (typeof DOMAINS)[number];
  *
  * - 'constitution' / 'law' / 'cabinet-order' / 'imperial-ordinance' /
  *   'ministerial-ordinance' / 'rule' は e-Gov 配下（houki-egov-mcp）。
+ * - 'kokuji'（告示）は各省庁公式サイト配下（houki-nta-mcp / houki-mhlw-mcp 等）。
+ *   e-Gov 法令 API は告示を持たない。`law_type` は持たず、`law_id` は `null`（v0.7.0 から）。
  * - 'kihon-tsutatsu' / 'kobetsu-tsutatsu' / 'qa-jirei' / 'tax-answer' は
  *   各省庁公式サイト配下（houki-nta-mcp 等）。
  * - 'hanrei' / 'saiketsu' は判例・裁決系。
+ *
+ * 13 の値をこの順で持つ（`kokuji` は `rule` の次。v0.6.1 までは 12 の値）。
  *
  * @since 0.1.0
  * @group エントリの構造と取りうる値
@@ -71,6 +75,7 @@ export const CATEGORIES = [
   'imperial-ordinance',
   'ministerial-ordinance',
   'rule',
+  'kokuji',
   'kihon-tsutatsu',
   'kobetsu-tsutatsu',
   'qa-jirei',
@@ -93,9 +98,9 @@ export type Category = (typeof CATEGORIES)[number];
  * houki ファミリーの各 MCP が、自分の管轄外エントリを LLM に「正しい MCP に
  * 誘導する」ために使う。
  *
- * - 'houki-egov': e-Gov 法令API (法律・政令・省令・規則・告示)
- * - 'houki-nta': 国税庁通達・Q&A・タックスアンサー
- * - 'houki-mhlw': 厚労省通達・通知
+ * - 'houki-egov': e-Gov 法令API (憲法・法律・政令・勅令・府省令・規則。告示は持たない)
+ * - 'houki-nta': 国税庁通達・告示・Q&A・タックスアンサー
+ * - 'houki-mhlw': 厚労省通達・告示・通知
  * - 'houki-jaish': 労災（労働安全衛生総合研究所）
  * - 'houki-court': 判例（裁判所サイト）
  * - 'houki-saiketsu': 国税不服審判所裁決
@@ -212,7 +217,12 @@ export interface AbbreviationEntry {
    */
   source_mcp_hint: SourceMcpHint;
 
-  /** 同義の別表記。略称・通称・英語名など */
+  /**
+   * 同義の別表記。略称・通称・英語名など。
+   *
+   * 自分の `abbr` / `formal` と同じ値は入れない（`validateAllEntries` の
+   * `alias_equals_own_name` エラー）。ほかのエントリの名前とも重ならない（`duplicate_name`）。
+   */
   aliases?: string[];
 
   /** 備考（例: "通称: 電子帳簿保存法"） */

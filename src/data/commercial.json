@@ -7,10 +7,7 @@
     "law_type": "Act",
     "domain": "commercial",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "会社法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "会社規",
@@ -19,10 +16,7 @@
     "law_type": "MinisterialOrdinance",
     "domain": "commercial",
     "category": "ministerial-ordinance",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "会社法施行規則"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "会社整備",
@@ -41,10 +35,7 @@
     "law_type": "Act",
     "domain": "commercial",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "商法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "商登法",
@@ -53,10 +44,7 @@
     "law_type": "Act",
     "domain": "commercial",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "商業登記法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "商登則",
@@ -94,8 +82,7 @@
     "category": "law",
     "source_mcp_hint": "houki-egov",
     "aliases": [
-      "金商",
-      "金融商品取引法"
+      "金商"
     ]
   },
   {
@@ -128,10 +115,7 @@
     "law_type": "Act",
     "domain": "commercial",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "不正競争防止法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "特商法",
@@ -162,10 +146,7 @@
     "law_type": "Act",
     "domain": "commercial",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "消費者契約法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "景表法",

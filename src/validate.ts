@@ -14,7 +14,8 @@
  */
 
 import type { AbbreviationEntry, Category, SourceMcpHint } from './types.js';
-import { normalizeJpChars } from './normalize.js';
+import { CATEGORIES, DOMAINS, SOURCE_MCP_HINTS } from './types.js';
+import { normalizeJpChars, normalizeJpText } from './normalize.js';
 
 /* -------------------------------------------------------------------------- */
 /* isValidLawId                                                               */
@@ -177,6 +178,7 @@ const CATEGORY_HINT_MAP: Record<Category, readonly SourceMcpHint[]> = {
   'imperial-ordinance': ['houki-egov'],
   'ministerial-ordinance': ['houki-egov'],
   rule: ['houki-egov'],
+  kokuji: ['houki-nta', 'houki-mhlw'],
   'kihon-tsutatsu': ['houki-nta', 'houki-mhlw'],
   'kobetsu-tsutatsu': ['houki-nta', 'houki-mhlw'],
   'qa-jirei': ['houki-nta'],
@@ -194,15 +196,21 @@ const CATEGORY_HINT_MAP: Record<Category, readonly SourceMcpHint[]> = {
  * ## チェック項目
  *
  * **errors（CI fail 対象）:**
- * - `abbr` の重複
- * - 必須フィールド欠損（`abbr` / `formal` / `domain` / `category` / `source_mcp_hint`）
- * - `law_id !== null` なのに `isValidLawId` が `false`
- * - `law_id` の重複
+ * - 必須フィールド欠損（`abbr` / `formal` / `domain` / `category` / `source_mcp_hint`）: `missing_required_field`
+ * - `domain` / `category` / `source_mcp_hint` が一覧に無い値: `invalid_domain` / `invalid_category` /
+ *   `invalid_source_mcp_hint`（v0.7.0 から）
+ * - `abbr` の重複: `duplicate_abbr`
+ * - `abbr` / `formal` / `aliases` が `normalizeJpText` 後に別のエントリの名前と重なる:
+ *   `duplicate_name`（`abbr` どうしは `duplicate_abbr` だけ。v0.7.0 から）
+ * - `aliases` に自分の `abbr` / `formal` と同じ値: `alias_equals_own_name`（v0.7.0 から）
+ * - `law_id !== null` なのに `isValidLawId` が `false`: `invalid_law_id`
+ * - `law_id` の重複: `duplicate_law_id`
  *
  * **warnings（CI fail させない）:**
- * - `category` × `source_mcp_hint` の不整合（`law` なのに `source_mcp_hint='houki-nta'` など）
- * - `aliases` の重複（同一エントリ内）
- * - `aliases` が他エントリの `abbr` と衝突
+ * - `category` × `source_mcp_hint` の不整合（`law` なのに `source_mcp_hint='houki-nta'` など）: `category_hint_mismatch`
+ * - `aliases` の重複（同一エントリ内）: `duplicate_alias_within_entry`
+ *
+ * v0.6.1 にあった警告 `alias_collides_with_abbr` は `duplicate_name` のエラーに含まれるので無くした。
  *
  * @param entries 検証対象のエントリ配列
  * @returns 検証レポート
@@ -225,8 +233,8 @@ export function validateAllEntries(entries: readonly AbbreviationEntry[]): Valid
 
   const abbrSeen = new Map<string, AbbreviationEntry>();
   const lawIdSeen = new Map<string, AbbreviationEntry>();
-  const allAbbrs = new Set<string>();
-  for (const e of entries) allAbbrs.add(e.abbr);
+  /** normalizeJpText 後の名前 → 先に持っていたエントリ */
+  const nameOwner = new Map<string, AbbreviationEntry>();
 
   for (const entry of entries) {
     // 必須フィールドの欠損
@@ -266,10 +274,38 @@ export function validateAllEntries(entries: readonly AbbreviationEntry[]): Valid
       });
     }
 
+    // 一覧に無い値（空は missing_required_field にし、ここでは扱わない）
+    if (entry.domain && !(DOMAINS as readonly string[]).includes(entry.domain)) {
+      errors.push({
+        code: 'invalid_domain',
+        message: `domain が一覧に無い値です: '${entry.domain}'（abbr=${entry.abbr}）`,
+        entry,
+      });
+    }
+    if (entry.category && !(CATEGORIES as readonly string[]).includes(entry.category)) {
+      errors.push({
+        code: 'invalid_category',
+        message: `category が一覧に無い値です: '${entry.category}'（abbr=${entry.abbr}）`,
+        entry,
+      });
+    }
+    if (
+      entry.source_mcp_hint &&
+      !(SOURCE_MCP_HINTS as readonly string[]).includes(entry.source_mcp_hint)
+    ) {
+      errors.push({
+        code: 'invalid_source_mcp_hint',
+        message: `source_mcp_hint が一覧に無い値です: '${entry.source_mcp_hint}'（abbr=${entry.abbr}）`,
+        entry,
+      });
+    }
+
     // abbr 重複
+    let abbrDuplicated = false;
     if (entry.abbr) {
       const prev = abbrSeen.get(entry.abbr);
       if (prev) {
+        abbrDuplicated = true;
         errors.push({
           code: 'duplicate_abbr',
           message: `abbr が重複しています: '${entry.abbr}'（formal: '${prev.formal}' と '${entry.formal}'）`,
@@ -277,6 +313,37 @@ export function validateAllEntries(entries: readonly AbbreviationEntry[]): Valid
         });
       } else {
         abbrSeen.set(entry.abbr, entry);
+      }
+    }
+
+    // 名前（abbr / formal / aliases）が normalizeJpText 後に別のエントリと重なる
+    const ownNames = new Set<string>();
+    for (const name of [entry.abbr, entry.formal, ...(entry.aliases ?? [])]) {
+      const normalized = normalizeJpText(name);
+      if (!normalized || ownNames.has(normalized)) continue;
+      ownNames.add(normalized);
+      const owner = nameOwner.get(normalized);
+      if (owner === undefined) {
+        nameOwner.set(normalized, entry);
+        continue;
+      }
+      // abbr どうしの重なりは duplicate_abbr だけにする
+      if (abbrDuplicated && name === entry.abbr && owner.abbr === entry.abbr) continue;
+      errors.push({
+        code: 'duplicate_name',
+        message: `名前が別のエントリと重なっています: '${name}'（abbr=${entry.abbr}、先のエントリ abbr=${owner.abbr}）`,
+        entry,
+      });
+    }
+
+    // aliases に自分の abbr / formal と同じ値
+    for (const alias of entry.aliases ?? []) {
+      if (alias === entry.abbr || alias === entry.formal) {
+        errors.push({
+          code: 'alias_equals_own_name',
+          message: `aliases に自分の abbr か formal と同じ値があります: '${alias}'（abbr=${entry.abbr}）`,
+          entry,
+        });
       }
     }
 
@@ -326,14 +393,6 @@ export function validateAllEntries(entries: readonly AbbreviationEntry[]): Valid
           });
         }
         seen.add(alias);
-        // 他エントリの abbr との衝突（自分の abbr は除外）
-        if (alias !== entry.abbr && allAbbrs.has(alias)) {
-          warnings.push({
-            code: 'alias_collides_with_abbr',
-            message: `alias '${alias}' が他エントリの abbr と衝突しています（abbr=${entry.abbr}）`,
-            entry,
-          });
-        }
       }
     }
   }
@@ -474,6 +533,7 @@ export function extractLawNames(
 
   for (const entry of entries) {
     const keys = [entry.abbr, entry.formal, ...(entry.aliases ?? [])];
+    const seenSpans = new Set<string>();
     for (const key of keys) {
       if (!key || key.length < minLength) continue;
       const needle = normalize ? normalizeJpChars(key) : key;
@@ -481,12 +541,18 @@ export function extractLawNames(
       while (from <= haystack.length) {
         const pos = haystack.indexOf(needle, from);
         if (pos < 0) break;
-        matches.push({
-          entry,
-          matchedKey: key,
-          position: pos,
-          length: key.length,
-        });
+        // 同じエントリの同じ位置・同じ長さの一致（abbr と formal が同じ値など）は
+        // abbr・formal・aliases の順で先のキーの 1 件にする
+        const span = `${pos}:${key.length}`;
+        if (!seenSpans.has(span)) {
+          seenSpans.add(span);
+          matches.push({
+            entry,
+            matchedKey: key,
+            position: pos,
+            length: key.length,
+          });
+        }
         from = pos + key.length; // overlap は許容、ただし同一マッチを 2 度返さない
       }
     }

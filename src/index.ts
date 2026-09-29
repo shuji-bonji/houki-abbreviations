@@ -27,6 +27,7 @@ import type {
   LookupByLawIdOptions,
   SourceMcpHint,
 } from './types.js';
+import { CATEGORIES, DOMAINS, SOURCE_MCP_HINTS } from './types.js';
 import { normalizeJpText } from './normalize.js';
 
 import tax from './data/tax.json' with { type: 'json' };
@@ -281,14 +282,25 @@ export function listBySourceMcpHint(hint: SourceMcpHint): AbbreviationEntry[] {
 /**
  * `getAbbreviationStats` が返す辞書統計。起動時ログ・診断用。
  *
+ * `byDomain` / `byCategory` / `bySourceMcpHint` のキーは、それぞれ `DOMAINS` /
+ * `CATEGORIES` / `SOURCE_MCP_HINTS` の全値を定数の順で持ち、辞書に無い値は `0`
+ * （v0.7.0 から。v0.6.1 までは 1 件以上ある値だけがキーで、型は `Record<string, number>`）。
+ *
  * @since 0.1.0
  * @group 辞書の解決
  */
 export interface AbbreviationStats {
   total: number;
-  byDomain: Record<string, number>;
-  byCategory: Record<string, number>;
-  bySourceMcpHint: Record<string, number>;
+  byDomain: Record<Domain, number>;
+  byCategory: Record<Category, number>;
+  bySourceMcpHint: Record<SourceMcpHint, number>;
+}
+
+/** 定数の全値を 0 で埋めた件数表を作る（キーの順は定数の順） */
+function zeroCounts<K extends string>(keys: readonly K[]): Record<K, number> {
+  const counts = {} as Record<K, number>;
+  for (const key of keys) counts[key] = 0;
+  return counts;
 }
 
 /**
@@ -296,16 +308,16 @@ export interface AbbreviationStats {
  *
  * @since 0.1.0
  * @group 辞書の解決
- * @returns 全件数、ドメイン別件数、カテゴリ別件数、管轄 MCP 別件数
+ * @returns 全件数、ドメイン別件数、カテゴリ別件数、管轄 MCP 別件数（定数の全値がキーで、無い値は 0）
  */
 export function getAbbreviationStats(): AbbreviationStats {
-  const byDomain: Record<string, number> = {};
-  const byCategory: Record<string, number> = {};
-  const bySourceMcpHint: Record<string, number> = {};
+  const byDomain = zeroCounts(DOMAINS);
+  const byCategory = zeroCounts(CATEGORIES);
+  const bySourceMcpHint = zeroCounts(SOURCE_MCP_HINTS);
   for (const e of abbreviationEntries) {
-    byDomain[e.domain] = (byDomain[e.domain] ?? 0) + 1;
-    byCategory[e.category] = (byCategory[e.category] ?? 0) + 1;
-    bySourceMcpHint[e.source_mcp_hint] = (bySourceMcpHint[e.source_mcp_hint] ?? 0) + 1;
+    byDomain[e.domain] += 1;
+    byCategory[e.category] += 1;
+    bySourceMcpHint[e.source_mcp_hint] += 1;
   }
   return {
     total: abbreviationEntries.length,
@@ -348,6 +360,11 @@ export function searchByName(query: string, options?: _SearchOptions): Abbreviat
  * あいまい一致 (Levenshtein 距離ベース)。「うろ覚え」入力で類似エントリを
  * 探すときに使う。
  *
+ * 編集距離で近い名前を返す関数で、名前の一部から一覧を得る関数ではない。
+ * `民法` のような短い名前を渡しても、`民` で始まる法令の一覧にはならない。
+ * 一覧が欲しいときは `searchByName` を使う。編集距離の比（距離 ÷ 長い方の文字数）が
+ * 1/3 を超える名前は `maxDistance` 以下でも返さない（v0.7.0 から。距離 0 は文字数によらず返す）。
+ *
  * @since 0.4.0
  * @group 検索とあいまい一致
  * @example
@@ -355,7 +372,9 @@ export function searchByName(query: string, options?: _SearchOptions): Abbreviat
  * import { findSimilar } from '@shuji-bonji/houki-abbreviations';
  *
  * findSimilar('労働基準法施行例');
- * // → [{ entry: 労基法施行令, matchedKey: '労働基準法施行令', distance: 1 }]
+ * // → [{ entry: 労基則, matchedKey: '労働基準法施行規則', distance: 2 }]
+ * findSimilar('民法');
+ * // → 民（民法、0）・民訴（民訴法、1）・民執（民執法、1）・民保（民保法、1）
  * ```
  */
 export function findSimilar(query: string, options?: _FuzzyOptions): _FuzzyMatch[] {
@@ -365,13 +384,16 @@ export function findSimilar(query: string, options?: _FuzzyOptions): _FuzzyMatch
 /**
  * 「もしかして」サジェスト。`findSimilar` の薄いラッパで、上位 N 件の
  * `formal` だけを文字列配列で返す。LLM プロンプトでそのまま使える形。
+ * `query` と一致した名前を持つエントリ（`distance: 0`）は入れない（v0.7.0 から）。
  *
  * @since 0.4.0
  * @group 検索とあいまい一致
  * @example
  * ```ts
  * suggestCorrection('労働基準法施行例');
- * // → ['労働基準法施行令']
+ * // → ['労働基準法施行規則']
+ * suggestCorrection('民法');
+ * // → ['民事訴訟法', '民事執行法', '民事保全法']（民法 自身は入らない）
  * ```
  */
 export function suggestCorrection(query: string, limit = 5): string[] {

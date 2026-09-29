@@ -294,10 +294,7 @@
     "law_type": "Act",
     "domain": "labor",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "最低賃金法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "賃確法",
@@ -315,10 +312,7 @@
     "law_type": "Act",
     "domain": "labor",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "社会保険労務士法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "フリーランス新法",

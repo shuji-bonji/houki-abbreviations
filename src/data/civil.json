@@ -7,10 +7,7 @@
     "law_type": "Act",
     "domain": "civil",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "民法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "民訴",
@@ -21,8 +18,7 @@
     "category": "law",
     "source_mcp_hint": "houki-egov",
     "aliases": [
-      "民訴法",
-      "民事訴訟法"
+      "民訴法"
     ]
   },
   {
@@ -74,10 +70,7 @@
     "law_type": "Act",
     "domain": "civil",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "破産法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "民再",
@@ -123,10 +116,7 @@
     "law_type": "Act",
     "domain": "civil",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "不動産登記法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "不登則",
@@ -153,10 +143,7 @@
     "law_type": "Act",
     "domain": "civil",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "住民基本台帳法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "家事法",
@@ -177,10 +164,7 @@
     "law_type": "Act",
     "domain": "civil",
     "category": "law",
-    "source_mcp_hint": "houki-egov",
-    "aliases": [
-      "人事訴訟法"
-    ]
+    "source_mcp_hint": "houki-egov"
   },
   {
     "abbr": "失火責任法",
