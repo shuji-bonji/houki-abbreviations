@@ -312,8 +312,12 @@ describe('normalizeLawNum() — 20260927-untested-behaviors', () => {
   });
 
   it('SPEC-ABBR-NORMALIZE-LAW-NUM-013 罫線と長音は半角ハイフンにしない', () => {
-    expect(normalizeLawNum('昭和二十四年人事院規則一\u2500一')).toBe('昭和24年人事院規則1\u25001');
-    expect(normalizeLawNum('昭和二十四年人事院規則一\u30FC一')).toBe('昭和24年人事院規則1\u30FC1');
+    expect(normalizeLawNum('昭和二十四年人事院規則一\u2500一')).toBe(
+      '昭和24年人事院規則一\u2500一'
+    );
+    expect(normalizeLawNum('昭和二十四年人事院規則一\u30FC一')).toBe(
+      '昭和24年人事院規則一\u30FC一'
+    );
   });
 
   it('SPEC-ABBR-NORMALIZE-LAW-NUM-014 null と undefined には空文字を返す', () => {

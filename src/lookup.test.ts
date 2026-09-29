@@ -271,7 +271,7 @@ describe('lookupByLawId() — 20261001-normalize', () => {
       '消費税法'
     );
     expect(
-      lookupByLawIdWithOptions('３６３ＡＣ００００００１０８', { normalize: true })?.formal
+      lookupByLawIdWithOptions('３６３ＡＣ０００００００１０８', { normalize: true })?.formal
     ).toBe('消費税法');
   });
 

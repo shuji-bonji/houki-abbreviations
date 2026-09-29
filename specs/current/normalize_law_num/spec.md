@@ -128,7 +128,7 @@ flowchart TD
 
 罫線 `─`（U+2500）と長音 `ー`（U+30FC）はダッシュ類として扱わず、変えない。
 
-例: `normalizeLawNum('昭和二十四年人事院規則一─一')` は `'昭和24年人事院規則1─1'`、`normalizeLawNum('昭和二十四年人事院規則一ー一')` は `'昭和24年人事院規則1ー1'`。
+例: `normalizeLawNum('昭和二十四年人事院規則一─一')` は `'昭和24年人事院規則一─一'`（漢数字は罫線の隣なので変えない。SPEC-ABBR-NORMALIZE-LAW-NUM-015）、`normalizeLawNum('昭和二十四年人事院規則一ー一')` は `'昭和24年人事院規則一ー一'`。
 
 ### SPEC-ABBR-NORMALIZE-LAW-NUM-014 null と undefined には空文字を返す
 

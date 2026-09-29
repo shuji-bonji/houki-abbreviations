@@ -74,7 +74,7 @@ flowchart TD
 
 `options.normalize` が `true` のとき、`law_id` の全角英数字を半角にしてから辞書の `law_id` と比べる。
 
-例: `lookupByLawId('３６３AC0000000108', { normalize: true })?.formal` は `'消費税法'`。`lookupByLawId('３６３ＡＣ００００００１０８', { normalize: true })?.formal` も `'消費税法'`。
+例: `lookupByLawId('３６３AC0000000108', { normalize: true })?.formal` は `'消費税法'`。`lookupByLawId('３６３ＡＣ０００００００１０８', { normalize: true })?.formal` も `'消費税法'`。
 
 ### SPEC-ABBR-LOOKUP-BY-LAW-ID-006 normalize: true でも英字の小文字は大文字にしない
 
