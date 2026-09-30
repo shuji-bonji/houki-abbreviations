@@ -2,7 +2,7 @@
 /**
  * verify-law-ids.mjs — e-Gov API 突合 CI スクリプト
  *
- * e-Gov 法令 API v2 `GET /api/2/laws` の全件（2026-10-01 で 9,570 件）を取得し、2 つの検査を行う。
+ * e-Gov 法令 API v2 `GET /api/2/laws` の全件（2026-09-30 で 9,570 件）を取得し、2 つの検査を行う。
  *
  * A. 辞書全件のうち `law_id !== null` のエントリについて:
  *    1. e-Gov 上に law_id が存在する
@@ -43,7 +43,7 @@
  */
 
 import { readFileSync, readdirSync } from 'node:fs';
-import { join, dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

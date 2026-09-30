@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-dictionary-rules` は 2026-10-01（PR #32）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-dictionary-rules` は 2026-09-30（PR #32）
 - 起こした元: v0.6.0 の `src/validate.ts`（`validateAllEntries`、型 `ValidationIssue` / `ValidationReport`）、`src/index.ts`（`validateAllEntries`）、`src/validate.test.ts`
 - 関連する Issue: なし
 
@@ -37,24 +37,24 @@
 
 エラーの種類（`errors` に入る）。
 
-| `code`                    | 起きる条件                                                                                                                                                       | 仕様 ID |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `missing_required_field`  | `abbr` / `formal` / `domain` / `category` / `source_mcp_hint` のどれかが空（空文字・未設定）。欠けたフィールドごとに 1 件                                        | 006     |
-| `invalid_domain`          | `domain` が空でなく、`DOMAINS` に無い値                                                                                                                          | 017     |
-| `invalid_category`        | `category` が空でなく、`CATEGORIES` に無い値                                                                                                                     | 017     |
-| `invalid_source_mcp_hint` | `source_mcp_hint` が空でなく、`SOURCE_MCP_HINTS` に無い値                                                                                                        | 017     |
-| `duplicate_abbr`          | 同じ `abbr` のエントリが 2 件以上ある。2 件目以降に 1 件ずつ                                                                                                     | 002     |
+| `code`                    | 起きる条件                                                                                                                                                                                                                        | 仕様 ID |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `missing_required_field`  | `abbr` / `formal` / `domain` / `category` / `source_mcp_hint` のどれかが空（空文字・未設定）。欠けたフィールドごとに 1 件                                                                                                         | 006     |
+| `invalid_domain`          | `domain` が空でなく、`DOMAINS` に無い値                                                                                                                                                                                           | 017     |
+| `invalid_category`        | `category` が空でなく、`CATEGORIES` に無い値                                                                                                                                                                                      | 017     |
+| `invalid_source_mcp_hint` | `source_mcp_hint` が空でなく、`SOURCE_MCP_HINTS` に無い値                                                                                                                                                                         | 017     |
+| `duplicate_abbr`          | 同じ `abbr` のエントリが 2 件以上ある。2 件目以降に 1 件ずつ                                                                                                                                                                      | 002     |
 | `duplicate_name`          | `abbr` / `formal` / `aliases` のどれかが、`normalizeJpText` を通した後で、別のエントリの `abbr` / `formal` / `aliases` のどれかと同じ。`abbr` どうしの重なりは `duplicate_abbr` だけにする。後のエントリに、重なる名前ごとに 1 件 | 015     |
-| `alias_equals_own_name`   | `aliases` に、そのエントリの `abbr` か `formal` と同じ値がある。値ごとに 1 件                                                                                    | 016     |
-| `invalid_law_id`          | `law_id` が `null` でも未設定でもなく、`isValidLawId` が `false`                                                                                                 | 004     |
-| `duplicate_law_id`        | 同じ `law_id` のエントリが 2 件以上ある。2 件目以降に 1 件ずつ                                                                                                   | 003     |
+| `alias_equals_own_name`   | `aliases` に、そのエントリの `abbr` か `formal` と同じ値がある。値ごとに 1 件                                                                                                                                                     | 016     |
+| `invalid_law_id`          | `law_id` が `null` でも未設定でもなく、`isValidLawId` が `false`                                                                                                                                                                  | 004     |
+| `duplicate_law_id`        | 同じ `law_id` のエントリが 2 件以上ある。2 件目以降に 1 件ずつ                                                                                                                                                                    | 003     |
 
 警告の種類（`warnings` に入る）。
 
-| `code`                         | 起きる条件                                               | 仕様 ID |
-| ------------------------------ | -------------------------------------------------------- | ------- |
+| `code`                         | 起きる条件                                               | 仕様 ID  |
+| ------------------------------ | -------------------------------------------------------- | -------- |
 | `category_hint_mismatch`       | `category` に対して `source_mcp_hint` が下の許容表に無い | 007・018 |
-| `duplicate_alias_within_entry` | 1 件のエントリの `aliases` に同じ値が 2 回以上ある       | 010     |
+| `duplicate_alias_within_entry` | 1 件のエントリの `aliases` に同じ値が 2 回以上ある       | 010      |
 
 v0.6.1 にあった警告 `alias_collides_with_abbr`（別名がほかのエントリの `abbr` と同じ）は、`duplicate_name` のエラーに含まれるので無くす。
 

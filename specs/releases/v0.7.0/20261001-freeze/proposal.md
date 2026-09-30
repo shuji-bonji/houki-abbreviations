@@ -2,9 +2,9 @@
 
 - 対象: `specs/current/` の `abbreviation_entries` / `public_constants`
 - 実装の変更: 要
-- 承認日: 2026-10-01（PR #33）
-- 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-10-01（JST、実装 PR の最終コミット）
-- 起こした日: 2026-10-01（JST）
+- 承認日: 2026-09-30（PR #33）
+- 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-09-30（JST、実装 PR の最終コミット）
+- 起こした日: 2026-09-30（JST）
 - 起こした役: Spec Steward
 - 対象 Issue: houki-abbreviations #13（辞書のエントリと公開定数を実行時に書き換えられ、他の関数の結果が変わる）
 - 決定の出典: houki-hub `docs/DECISIONS.md` 2026-09-30「houki-abbreviations #13（凍結）」（案 A）、`docs/notes/2026-09-29-plan-spec-issues.md` 4 章「段階 3」の 4
@@ -24,7 +24,7 @@
 
 `TypeError` になるのは strict mode（ES モジュール、TypeScript の出力）のとき。非 strict のスクリプトでは代入が無視されて値が変わらない。どちらでも値は変わらない。
 
-houki-egov-mcp と houki-nta-mcp の `src/` を 2026-10-01 に確かめた範囲では、`abbreviationEntries` / 公開定数 / 返り値への代入は無い（`DOMAINS` は `[...DOMAINS]` で読むだけ、`STALENESS_THRESHOLDS` は読むだけ）。0.7.0 に上げても動作は変わらない。
+houki-egov-mcp と houki-nta-mcp の `src/` を 2026-09-30 に確かめた範囲では、`abbreviationEntries` / 公開定数 / 返り値への代入は無い（`DOMAINS` は `[...DOMAINS]` で読むだけ、`STALENESS_THRESHOLDS` は読むだけ）。0.7.0 に上げても動作は変わらない。
 
 ## 変わらない振る舞い
 

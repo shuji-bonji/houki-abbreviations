@@ -2,9 +2,9 @@
 
 - 対象: `specs/current/` の `search_by_name` / `find_similar` / `suggest_correction` / `compute_days_since` / `judge_staleness` / `is_valid_law_id`
 - 実装の変更: 要
-- 承認日: 2026-10-01（PR #31）
-- 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-10-01（JST、実装 PR の最終コミット）
-- 起こした日: 2026-10-01（JST）
+- 承認日: 2026-09-30（PR #31）
+- 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-09-30（JST、実装 PR の最終コミット）
+- 起こした日: 2026-09-30（JST）
 - 起こした役: Spec Steward
 - 対象 Issue: houki-abbreviations #22（`limit` の `NaN` と上限）、#18（壊れた取得時刻と鮮度判定）、#23（`isValidLawId` の厳しさ）
 - 決定の出典: houki-hub `docs/DECISIONS.md` 2026-09-29「T1 引数の検査」、2026-09-30「houki-abbreviations #23（`isValidLawId`）」、`docs/notes/2026-09-29-plan-spec-issues.md` 4 章「段階 3」の 2
@@ -33,7 +33,7 @@ houki-egov-mcp の `freshness.ts` と houki-nta-mcp の `freshness.ts` は `comp
 - `limit` の既定値（`searchByName` 50、`findSimilar` / `suggestCorrection` 5）と、既定値以内の整数を渡したときの結果
 - `computeDaysSince` で今より後の取得時刻に `0` を返すこと（SPEC-ABBR-COMPUTE-DAYS-SINCE-002）。時刻が未来なのは書き込んだ側と読む側の時計のずれで起きるので、壊れた値とは扱わない
 - `judgeStaleness` の境界（7 / 30）と小数の扱い（001〜004）
-- `isValidLawId` が空文字・小文字・全角・前後の空白・15 文字以外を `false` にすること（007〜012）。2026-10-01 の e-Gov 全 9,570 件が `true` になること（差分の「戻り値」の表）
+- `isValidLawId` が空文字・小文字・全角・前後の空白・15 文字以外を `false` にすること（007〜012）。2026-09-30 の e-Gov 全 9,570 件が `true` になること（差分の「戻り値」の表）
 - `findSimilar` の `maxDistance` と `extractLawNames` の `minLength` の丸め（SPEC-ABBR-FIND-SIMILAR-016、SPEC-ABBR-EXTRACT-LAW-NAMES-011）。#22 の対象は `limit` だけなので、この差分では触らない
 
 ## Issue の「決めること」への答え
@@ -47,11 +47,11 @@ houki-egov-mcp の `freshness.ts` と houki-nta-mcp の `freshness.ts` は `comp
 
 ### #18
 
-| 決めること                                                                        | 答え                                                                                                                                                                                               |
+| 決めること | 答え |
 | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | 解釈できない取得時刻を `0` と区別できる値で返すか、呼び出し側の責任のままにするか | 値を返さず `RangeError` を投げる（COMPUTE-DAYS-SINCE-003 の MODIFIED）。戻り値の型を `number                                                                                                       | null`に変えると`judgeStaleness(computeDaysSince(...))` の型が通らなくなるので、値ではなく例外にする |
-| ISO 8601 以外の書き方、時差の無い時刻、存在しない日付を受け付けるか               | 受け付けない。どれも `RangeError`（006・007・008）。受け付けるのは日付だけ・UTC・時差付きの 3 つの形（005）                                                                                        |
-| `judgeStaleness` が `NaN` と負の値をどう扱うか（例外、または特別な段階）          | 例外。負の値は `RangeError`（JUDGE-STALENESS-005）、`NaN` / `±Infinity` は `RangeError`、数でない値は `TypeError`（006）。`StalenessLevel` の 3 つの値は family の応答に使われているので増やさない |
+| ISO 8601 以外の書き方、時差の無い時刻、存在しない日付を受け付けるか | 受け付けない。どれも `RangeError`（006・007・008）。受け付けるのは日付だけ・UTC・時差付きの 3 つの形（005） |
+| `judgeStaleness` が `NaN` と負の値をどう扱うか（例外、または特別な段階） | 例外。負の値は `RangeError`（JUDGE-STALENESS-005）、`NaN` / `±Infinity` は `RangeError`、数でない値は `TypeError`（006）。`StalenessLevel` の 3 つの値は family の応答に使われているので増やさない |
 
 ### #23
 

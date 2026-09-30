@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-dictionary-rules` は 2026-10-01（PR #32）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-dictionary-rules` は 2026-09-30（PR #32）
 - 起こした元: v0.6.0 の `src/index.ts`（`getAbbreviationStats`、`AbbreviationStats`）、`src/index.test.ts`
 - 関連する Issue: なし
 
@@ -20,12 +20,12 @@
 
 `AbbreviationStats`。次の 4 つのフィールドを持つオブジェクト。
 
-| フィールド        | 型                              | 内容                                                                                                                 |
-| ----------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `total`           | `number`                        | 辞書のエントリの件数                                                                                                 |
-| `byDomain`        | `Record<Domain, number>`        | キーは `DOMAINS` の全値（定数の順）、値はその分野のエントリの件数。辞書に無い分野は `0`                              |
-| `byCategory`      | `Record<Category, number>`      | キーは `CATEGORIES` の全値（定数の順）、値はその種別のエントリの件数。辞書に無い種別は `0`                           |
-| `bySourceMcpHint` | `Record<SourceMcpHint, number>` | キーは `SOURCE_MCP_HINTS` の全値（定数の順）、値はその MCP のエントリの件数。辞書に無い MCP は `0`                   |
+| フィールド        | 型                              | 内容                                                                                               |
+| ----------------- | ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `total`           | `number`                        | 辞書のエントリの件数                                                                               |
+| `byDomain`        | `Record<Domain, number>`        | キーは `DOMAINS` の全値（定数の順）、値はその分野のエントリの件数。辞書に無い分野は `0`            |
+| `byCategory`      | `Record<Category, number>`      | キーは `CATEGORIES` の全値（定数の順）、値はその種別のエントリの件数。辞書に無い種別は `0`         |
+| `bySourceMcpHint` | `Record<SourceMcpHint, number>` | キーは `SOURCE_MCP_HINTS` の全値（定数の順）、値はその MCP のエントリの件数。辞書に無い MCP は `0` |
 
 件数の実数（総数 174 など）は仕様に固定しない。エントリを足すたびに変わる。
 

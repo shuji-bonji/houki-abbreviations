@@ -13,9 +13,9 @@
  * @see docs/v0.5-v0.6-design.md
  */
 
+import { normalizeJpChars, normalizeJpText } from './normalize.js';
 import type { AbbreviationEntry, Category, SourceMcpHint } from './types.js';
 import { CATEGORIES, DOMAINS, SOURCE_MCP_HINTS } from './types.js';
-import { normalizeJpChars, normalizeJpText } from './normalize.js';
 
 /* -------------------------------------------------------------------------- */
 /* isValidLawId                                                               */
@@ -35,7 +35,7 @@ const ERA_YEAR = '[1-5]\\d{2}';
  * - `IO` = ImperialOrdinance（勅令）
  * - `DF` = 太政官布告（明治 5〜17 年）
  * - `DT` = 太政官達（明治 8〜16 年）
- * - `DH` = 太政官布達（公式仕様にあり、2026-10-01 の e-Gov には 0 件。v0.7.0 から）
+ * - `DH` = 太政官布達（公式仕様にあり、2026-09-30 の e-Gov には 0 件。v0.7.0 から）
  *
  * 番号 10 桁のうち 6〜12 桁目（閣法・議員立法・効力の区別）の値は確かめない。
  */
@@ -81,7 +81,7 @@ const LAW_ID_CONSTITUTION = /^321CONSTITUTION$/;
  * e-Gov の公式仕様（法令データ ドキュメンテーション「法令種別と法令ID」
  * https://laws.e-gov.go.jp/docs/law-data-basic/607318a-lawtypes-and-lawid/ ）に合わせた
  * 次の 6 つの形だけを受け付ける（v0.7.0、Issue #23）。長さはどれも 15 文字、英字は大文字だけ。
- * 元号の 1 桁は `1`〜`5`。件数は 2026-10-01 に e-Gov 法令 API v2 `GET /api/2/laws` で
+ * 元号の 1 桁は `1`〜`5`。件数は 2026-09-30 に e-Gov 法令 API v2 `GET /api/2/laws` で
  * 取得した全 9,570 件の内訳で、6 つの形で全件が `true` になる。
  *
  * | 形 | 件数 | 例 |

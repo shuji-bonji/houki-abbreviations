@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-normalize` は 2026-10-01（PR #30）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-normalize` は 2026-09-30（PR #30）
 - 起こした元: v0.6.0 の `src/normalize.ts`（`kanjiToNumber`）、`src/normalize.test.ts`
 - 関連する Issue: houki-abbreviations #6（法令番号の漢数字と算用数字の正規化）
 

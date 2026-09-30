@@ -2,9 +2,9 @@
 
 - 対象: `specs/current/` の `abbreviation_entries` / `validate_all_entries` / `public_constants` / `get_abbreviation_stats` / `find_similar` / `suggest_correction` / `extract_law_names` / `get_all_names`
 - 実装の変更: 要（辞書 `src/data/*.json` の 33 件の修正を含む）
-- 承認日: 2026-10-01（PR #32）
-- 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-10-01（JST、実装 PR の最終コミット）
-- 起こした日: 2026-10-01（JST）
+- 承認日: 2026-09-30（PR #32）
+- 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-09-30（JST、実装 PR の最終コミット）
+- 起こした日: 2026-09-30（JST）
 - 起こした役: Spec Steward
 - 対象 Issue: houki-abbreviations #14（名前の重なりと `validateAllEntries` が見逃す値）、#15（`aliases` に自分の `abbr` / `formal`）、#25（告示の `category`）、#16（件数と 0 件のキー）、#20（短い `query` と一致した名前）
 - 決定の出典: houki-hub `docs/DECISIONS.md` 2026-09-30「#16」「#20」、`docs/notes/2026-09-29-plan-spec-issues.md` 4 章「段階 3」の 3
@@ -125,7 +125,7 @@ ADDED 12 件、MODIFIED 19 件（ID の無い節 7 つを除く）、REMOVED 1 �
 
 1. **承認日。** proposal.md に承認日と PR 番号を書く。
 2. **`kokuji` を足すこと。** 段階 3 の表（houki-hub `docs/notes/2026-09-29-plan-spec-issues.md`）に「`kokuji` の追加」とあるので足した。位置は `rule` の次（法令系の値の末尾）。理由: `abbreviation_entries` の 016（houki-egov 管轄は法令系だけ）と 009（houki-nta 管轄は通達系）の境目に置き、`CATEGORIES` の順を「e-Gov にあるもの → 無いもの」に保つ。末尾に足す案もある（`CATEGORIES` の添字を変えない）。
-3. **`kokuji` の `source_mcp_hint`。** `houki-nta` / `houki-mhlw` にした。理由: e-Gov 法令 API（`GET /api/2/laws`）は告示を持たない（2026-10-01 に全 9,570 件を取得して種別を数えた結果、告示に当たる法令 ID の形は無い）。`houki-egov` の説明「法律・政令・省令・規則・告示」から「告示」を外す。#17 の表には無い行なので、この差分で直す。
+3. **`kokuji` の `source_mcp_hint`。** `houki-nta` / `houki-mhlw` にした。理由: e-Gov 法令 API（`GET /api/2/laws`）は告示を持たない（2026-09-30 に全 9,570 件を取得して種別を数えた結果、告示に当たる法令 ID の形は無い）。`houki-egov` の説明「法律・政令・省令・規則・告示」から「告示」を外す。#17 の表には無い行なので、この差分で直す。
 4. **別名の重なりをエラーにすること（警告ではなく）。** 理由: 名前から 1 件を返す関数の結果が決まらなくなるのは辞書の誤りで、CI で止めるべきため。v0.6.1 の辞書は違反 0 件なので、既存の CI は落ちない。`alias_equals_own_name` も同じ理由でエラーにしたが、辞書の 33 件を直すまで `npm run validate` が落ちるので、辞書の修正と同じ実装 PR にする。
 5. **`duplicate_name` の比較を `normalizeJpText` 後にすること。** `resolveAbbreviation({ normalize: true })` の索引が半角にした名前で引くため。`PL法` と `ＰＬ法` を別のエントリに持てない。
 6. **`alias_collides_with_abbr` を REMOVED にすること。** `duplicate_name` に含まれる。残して両方返す案もあるが、1 つの誤りに 2 つの報告が出る。

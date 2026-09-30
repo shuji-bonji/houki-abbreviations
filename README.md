@@ -35,14 +35,14 @@ graph TB
 - **法律・政令・省令・規則・憲法**（e-Gov 法令 API 配下、`source_mcp_hint='houki-egov'`）
 - **基本通達 8 件＋個別通達 1 件**（`source_mcp_hint='houki-nta'`）
 
-| 分野 | 件数 | 例 |
-|---|---|---|
-| tax | 35 | 所法、消法、電帳法、消基通、所基通、電帳法取通 |
-| labor | 28 | 労基法、安衛法、フリーランス新法 |
-| accounting | 9 | 公認会計士法、会計士法 |
-| commercial | 31 | 会社、商法、電子署名法、資金決済法 |
-| civil | 23 | 民、民訴法、不動産登記法 |
-| administrative | 48 | 憲法、行手法、個情法、プロ責法 |
+| 分野           | 件数 | 例                                             |
+| -------------- | ---- | ---------------------------------------------- |
+| tax            | 35   | 所法、消法、電帳法、消基通、所基通、電帳法取通 |
+| labor          | 28   | 労基法、安衛法、フリーランス新法               |
+| accounting     | 9    | 公認会計士法、会計士法                         |
+| commercial     | 31   | 会社、商法、電子署名法、資金決済法             |
+| civil          | 23   | 民、民訴法、不動産登記法                       |
+| administrative | 48   | 憲法、行手法、個情法、プロ責法                 |
 
 ## インストール
 
@@ -76,13 +76,13 @@ const r = resolveAbbreviation('消法');
 // }
 
 // 通称・aliases でも引ける
-resolveAbbreviation('電子帳簿保存法')?.abbr;  // '電帳法'
-resolveAbbreviation('PL法')?.formal;          // '製造物責任法'
+resolveAbbreviation('電子帳簿保存法')?.abbr; // '電帳法'
+resolveAbbreviation('PL法')?.formal; // '製造物責任法'
 
 // 分野別・カテゴリ別・MCP 別の一覧
-listByDomain('tax');                  // 35 件
-listByCategory('cabinet-order');      // 政令系
-listBySourceMcpHint('houki-egov');    // e-Gov 管轄全件
+listByDomain('tax'); // 35 件
+listByCategory('cabinet-order'); // 政令系
+listBySourceMcpHint('houki-egov'); // e-Gov 管轄全件
 
 // 統計（byDomain / byCategory / bySourceMcpHint は定数の全値がキーで、無い値は 0。v0.7.0〜）
 getAbbreviationStats();
@@ -103,15 +103,15 @@ import {
 } from '@shuji-bonji/houki-abbreviations';
 
 // 全角ゆらぎを保守的に半角化（大文字小文字は保持）
-normalizeJpText('１８３－２');     // '183-2'
-normalizeJpText('１８３―２');     // '183-2'（U+2015 などのダッシュ類も。v0.7.0〜）
-normalizeJpText('ＰＬ法');         // 'PL法'
-normalizeJpText('消　法');         // '消 法'（全角スペースは半角スペースになる。取り除かれはしない）
+normalizeJpText('１８３－２'); // '183-2'
+normalizeJpText('１８３―２'); // '183-2'（U+2015 などのダッシュ類も。v0.7.0〜）
+normalizeJpText('ＰＬ法'); // 'PL法'
+normalizeJpText('消　法'); // '消 法'（全角スペースは半角スペースになる。取り除かれはしない）
 
 // 検索クエリ向けの積極的な正規化（さらに A〜Z の小文字化＋空白畳み込み）
-normalizeSearchQuery('ＰＬ法');     // 'pl法'
+normalizeSearchQuery('ＰＬ法'); // 'pl法'
 normalizeSearchQuery(' 消    法 '); // '消 法'
-normalizeSearchQuery('Ⅰ Α À PL');   // 'Ⅰ Α À pl'（英字以外の大文字は変えない。v0.7.0〜）
+normalizeSearchQuery('Ⅰ Α À PL'); // 'Ⅰ Α À pl'（英字以外の大文字は変えない。v0.7.0〜）
 
 // resolveAbbreviation の normalize オプション（デフォルト OFF で後方互換）
 resolveAbbreviation('ＰＬ法', { normalize: true })?.formal;
@@ -120,19 +120,19 @@ resolveAbbreviation('ＰＬ法', { normalize: true })?.formal;
 resolveAbbreviation('　消法　', { normalize: true })?.formal;
 // '消費税法'（前後の全角スペースを吸収。名前の途中の空白は取り除かないので '消　法' は null）
 
-resolveAbbreviation('ＰＬ法');  // null（normalize: false がデフォルト）
+resolveAbbreviation('ＰＬ法'); // null（normalize: false がデフォルト）
 ```
 
 `normalizeJpText` が `-` に揃えるダッシュ類は `－` `‐` `‑` `–` `—` `―` `−` の 7 文字です（v0.7.0〜。v0.6.1 までは全角ハイフン `－` だけ）。罫線 `─` と長音 `ー` は変えません。`normalizeJpText` を使う `searchByName` / `findSimilar` / `normalizeSearchQuery` / `normalizeLawNum` も同じ範囲を `-` にして比べます。
 
 名前や ID を受け取る関数には `options.normalize` があります。既定はどれも `false`（`searchByName` / `findSimilar` は `true`）で、MCP サーバーは入口で `true` を渡します。
 
-| 関数 | `normalize: true` で吸収するもの |
-|---|---|
-| `resolveAbbreviation(name, { normalize })` | 全角英数字・ダッシュ類・全角チルダ・全角スペース（v0.3.0〜） |
-| `getAllNames(name, { normalize })` | 同上。返す名前は辞書の表記のまま（v0.7.0〜） |
-| `lookupByLawId(law_id, { normalize })` | 全角英数字。小文字は大文字にしない（v0.7.0〜） |
-| `extractLawNames(text, { normalize })` | 同上。`position` / `length` は元の `text` の位置で返す（v0.7.0〜） |
+| 関数                                       | `normalize: true` で吸収するもの                                   |
+| ------------------------------------------ | ------------------------------------------------------------------ |
+| `resolveAbbreviation(name, { normalize })` | 全角英数字・ダッシュ類・全角チルダ・全角スペース（v0.3.0〜）       |
+| `getAllNames(name, { normalize })`         | 同上。返す名前は辞書の表記のまま（v0.7.0〜）                       |
+| `lookupByLawId(law_id, { normalize })`     | 全角英数字。小文字は大文字にしない（v0.7.0〜）                     |
+| `extractLawNames(text, { normalize })`     | 同上。`position` / `length` は元の `text` の位置で返す（v0.7.0〜） |
 
 法令番号には専用の `normalizeLawNum` があります（v0.6.0〜）。漢数字（位取りの `二十五` と位ごとの `二五` の両方）・算用数字・全角数字を算用数字に揃え、`元年` を `1年` にし、空白を取り除きます。`lookupByLawNum` はこの関数で入力と辞書の両方を揃えてから比較します。算用数字にする漢数字は、年・番号の位置（`年` `号` の直前、`第` の直後、ダッシュの隣）にあるものだけで、地名や語の一部（`千葉県` `一般`）は変えません（v0.7.0〜）。桁数の大きい算用数字も丸めません。
 
@@ -140,14 +140,14 @@ resolveAbbreviation('ＰＬ法');  // null（normalize: false がデフォルト
 import { normalizeLawNum, kanjiToNumber } from '@shuji-bonji/houki-abbreviations';
 
 normalizeLawNum('昭和二十五年法律第百三十七号'); // '昭和25年法律第137号'
-normalizeLawNum('昭和２５年法律第１３７号');     // '昭和25年法律第137号'
-normalizeLawNum('昭和二五年法律第一三七号');     // '昭和25年法律第137号'
-normalizeLawNum('令和元年法律第一号');           // '令和1年法律第1号'
-normalizeLawNum('千葉県条例第一号');             // '千葉県条例第1号'（v0.7.0〜。v0.6.1 までは '1000葉県条例第1号'）
+normalizeLawNum('昭和２５年法律第１３７号'); // '昭和25年法律第137号'
+normalizeLawNum('昭和二五年法律第一三七号'); // '昭和25年法律第137号'
+normalizeLawNum('令和元年法律第一号'); // '令和1年法律第1号'
+normalizeLawNum('千葉県条例第一号'); // '千葉県条例第1号'（v0.7.0〜。v0.6.1 までは '1000葉県条例第1号'）
 
 kanjiToNumber('百三十七'); // 137
-kanjiToNumber('一三七');   // 137（位ごと）
-kanjiToNumber('十十');     // null（読めない並び）
+kanjiToNumber('一三七'); // 137（位ごと）
+kanjiToNumber('十十'); // null（読めない並び）
 kanjiToNumber('一'.repeat(16)); // null（位ごとの並びは 15 文字まで。v0.7.0〜）
 ```
 
@@ -195,11 +195,11 @@ suggestCorrection('民法');
 
 `abbr` / `formal` / `aliases` のいずれかにマッチを試みます。`normalize: true`（デフォルト）の場合は全角ゆらぎを吸収して比較します。
 
-| `mode` | マッチ条件 | クエリ `労働` での挙動例 |
-|---|---|---|
-| `'prefix'` | 候補文字列の **先頭** に query が出現 | `労働基準法` ✅ / `労働者派遣法` ✅ / `改正労働法` ❌ |
-| `'contains'`（default） | 候補文字列の **どこか** に query を含む | `労働基準法` ✅ / `改正労働基準法` ✅ |
-| `'suffix'` | 候補文字列の **末尾** に query が出現 | `民法・労働法` ✅ / `労働基準法` ❌ |
+| `mode`                  | マッチ条件                              | クエリ `労働` での挙動例                              |
+| ----------------------- | --------------------------------------- | ----------------------------------------------------- |
+| `'prefix'`              | 候補文字列の **先頭** に query が出現   | `労働基準法` ✅ / `労働者派遣法` ✅ / `改正労働法` ❌ |
+| `'contains'`（default） | 候補文字列の **どこか** に query を含む | `労働基準法` ✅ / `改正労働基準法` ✅                 |
+| `'suffix'`              | 候補文字列の **末尾** に query が出現   | `民法・労働法` ✅ / `労働基準法` ❌                   |
 
 返却順は元の辞書順（`abbreviationEntries` の並び）を維持し、`limit` 件で打ち切ります。重複エントリ（同じ `abbr` が複数キーにヒット）は最初の 1 件だけ返します。
 
@@ -207,12 +207,12 @@ suggestCorrection('民法');
 
 [Levenshtein 距離](https://ja.wikipedia.org/wiki/レーベンシュタイン距離)（編集距離）= 1 文字単位（コードポイント単位。`𠮷` は 1 文字。v0.7.0〜）の挿入・削除・置換コストの合計。`maxDistance`（デフォルト `2`）以下のエントリだけ返します。
 
-| クエリ | マッチしたキー | 距離 | 操作 |
-|---|---|---|---|
-| `消費税法施行令例` | `消費税法施行令`（`formal`） | 1 | 末尾「例」を削除 |
-| `労働基準法施行例` | `労働基準法施行規則`（`formal`） | 2 | 「例」→「規」置換 + 「則」挿入 |
-| `所得税基本通達` | `所得税基本通達`（`formal`） | 0 | 完全一致（abbr=所基通） |
-| `民訴` | `民訴`（`abbr`） | 0 | 完全一致 |
+| クエリ             | マッチしたキー                   | 距離 | 操作                           |
+| ------------------ | -------------------------------- | ---- | ------------------------------ |
+| `消費税法施行令例` | `消費税法施行令`（`formal`）     | 1    | 末尾「例」を削除               |
+| `労働基準法施行例` | `労働基準法施行規則`（`formal`） | 2    | 「例」→「規」置換 + 「則」挿入 |
+| `所得税基本通達`   | `所得税基本通達`（`formal`）     | 0    | 完全一致（abbr=所基通）        |
+| `民訴`             | `民訴`（`abbr`）                 | 0    | 完全一致                       |
 
 `maxDistance` を超える候補は返しません。例えば `あいうえお` のようなまったく関係ない文字列を投げても結果は空配列です。
 
@@ -247,11 +247,11 @@ STALENESS_THRESHOLDS.stale_days; // 30
 
 `computeDaysSince` の `fetchedAt` は ISO 8601 の 3 つの形（日付だけ `YYYY-MM-DD`（UTC の 0 時）、UTC `YYYY-MM-DDTHH:mm:ss(.sss)Z`、時差付き `YYYY-MM-DDTHH:mm:ss(.sss)±hh:mm`）だけを受け付けます（v0.7.0〜）。それ以外の書き方（`2026/05/07`）、時差の無い時刻、暦に無い日付（2 月 30 日）は `RangeError`、文字列でない値は `TypeError` を投げます。v0.6.1 までは解釈できない文字列に `0` を返していたため、壊れた取得時刻が `fresh` になっていました。今より後の取得時刻は時計のずれとみなし、これまでどおり `0` を返します。`judgeStaleness` も負の値・`NaN`・`±Infinity` に `RangeError`、数でない値に `TypeError` を投げます。DB の `fetched_at` が壊れているときは、MCP 側でこの例外を捕まえて応答の `code` に変えてください。
 
-| `level` | 経過日数 | 想定運用 |
-|---|---|---|
-| `'fresh'` | `< 7 日` | 週次 health-check 想定。そのまま使ってよい |
-| `'stale'` | `7 日 ≦ x < 30 日` | 利用は可だが、bulk DL 推奨を warning として返す |
-| `'outdated'` | `≧ 30 日` | 月次 bulk DL 想定。利用前に再取得を促す |
+| `level`      | 経過日数           | 想定運用                                        |
+| ------------ | ------------------ | ----------------------------------------------- |
+| `'fresh'`    | `< 7 日`           | 週次 health-check 想定。そのまま使ってよい      |
+| `'stale'`    | `7 日 ≦ x < 30 日` | 利用は可だが、bulk DL 推奨を warning として返す |
+| `'outdated'` | `≧ 30 日`          | 月次 bulk DL 想定。利用前に再取得を促す         |
 
 しきい値は houki-nta-mcp v0.6.0（Phase 5 Resilience）で確立した慣行値です。MCP 側で固有のしきい値が必要な場合は `judgeStaleness` をラップしてください（`STALENESS_THRESHOLDS` を上書きしないこと）。
 
@@ -260,20 +260,16 @@ STALENESS_THRESHOLDS.stale_days; // 30
 `law_id` / `law_num` から辞書を引く逆引きと、エントリの **全別表記** を一発で取得するヘルパです。
 
 ```ts
-import {
-  lookupByLawId,
-  lookupByLawNum,
-  getAllNames,
-} from '@shuji-bonji/houki-abbreviations';
+import { lookupByLawId, lookupByLawNum, getAllNames } from '@shuji-bonji/houki-abbreviations';
 
 // e-Gov law_id から逆引き
-lookupByLawId('363AC0000000108')?.formal;  // '消費税法'
-lookupByLawId('321CONSTITUTION')?.formal;  // '日本国憲法'
+lookupByLawId('363AC0000000108')?.formal; // '消費税法'
+lookupByLawId('321CONSTITUTION')?.formal; // '日本国憲法'
 lookupByLawId('３６３AC0000000108', { normalize: true })?.formal; // '消費税法'（全角を吸収。v0.7.0〜）
 
 // 法令番号から逆引き（漢数字・算用数字・全角数字のどれでも同じエントリ。v0.6.0〜）
-lookupByLawNum('昭和六十三年法律第百八号')?.formal;  // '消費税法'
-lookupByLawNum('昭和63年法律第108号')?.formal;        // '消費税法'
+lookupByLawNum('昭和六十三年法律第百八号')?.formal; // '消費税法'
+lookupByLawNum('昭和63年法律第108号')?.formal; // '消費税法'
 
 // エントリの全別表記を列挙（LLM プロンプト生成用）
 getAllNames('消法');
@@ -296,16 +292,16 @@ import {
 } from '@shuji-bonji/houki-abbreviations';
 
 // law_id 形式チェック（外部 API は叩かない純粋関数）
-isValidLawId('363AC0000000108');  // true
-isValidLawId('321CONSTITUTION');  // true
-isValidLawId('363CONSTITUTION');  // false（v0.7.0〜。v0.6.1 では true）
-isValidLawId('AAA');              // false
+isValidLawId('363AC0000000108'); // true
+isValidLawId('321CONSTITUTION'); // true
+isValidLawId('363CONSTITUTION'); // false（v0.7.0〜。v0.6.1 では true）
+isValidLawId('AAA'); // false
 
 // 辞書全体の整合性（CI 用途）
 const report = validateAllEntries();
-report.valid;     // boolean (errors.length === 0)
-report.errors;    // 重大な不整合
-report.warnings;  // 軽微な不整合
+report.valid; // boolean (errors.length === 0)
+report.errors; // 重大な不整合
+report.warnings; // 軽微な不整合
 
 // テキスト中の法令名抽出（LLM 出力チェック用途）
 extractLawNames('消費税法と法人税法の改正について。インボイス制度も対象。');
@@ -322,43 +318,43 @@ extractLawNames('ＰＬ法の規定', { normalize: true });
 
 辞書の約束（`abbr` が一意、名前がエントリをまたいで重ならない、`aliases` に自分の名前を入れない、など）を CI で固定するための検査です。
 
-| レベル | コード | 内容 |
-|---|---|---|
-| error | `missing_required_field` | 必須フィールド欠損（`abbr` / `formal` / `domain` / `category` / `source_mcp_hint`） |
-| error | `invalid_domain` / `invalid_category` / `invalid_source_mcp_hint` | `DOMAINS` / `CATEGORIES` / `SOURCE_MCP_HINTS` に無い値（v0.7.0〜） |
-| error | `duplicate_abbr` | `abbr` の重複 |
-| error | `duplicate_name` | `abbr` / `formal` / `aliases` が `normalizeJpText` 後に別のエントリの名前と重なる（`abbr` どうしは `duplicate_abbr` だけ。v0.7.0〜） |
-| error | `alias_equals_own_name` | `aliases` に自分の `abbr` / `formal` と同じ値がある（v0.7.0〜） |
-| error | `invalid_law_id` | `law_id` 形式が `isValidLawId` で false |
-| error | `duplicate_law_id` | `law_id` の重複 |
-| warning | `category_hint_mismatch` | `category` × `source_mcp_hint` の組合せが想定外 |
-| warning | `duplicate_alias_within_entry` | 同一エントリ内の `aliases` 重複 |
+| レベル  | コード                                                            | 内容                                                                                                                                 |
+| ------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| error   | `missing_required_field`                                          | 必須フィールド欠損（`abbr` / `formal` / `domain` / `category` / `source_mcp_hint`）                                                  |
+| error   | `invalid_domain` / `invalid_category` / `invalid_source_mcp_hint` | `DOMAINS` / `CATEGORIES` / `SOURCE_MCP_HINTS` に無い値（v0.7.0〜）                                                                   |
+| error   | `duplicate_abbr`                                                  | `abbr` の重複                                                                                                                        |
+| error   | `duplicate_name`                                                  | `abbr` / `formal` / `aliases` が `normalizeJpText` 後に別のエントリの名前と重なる（`abbr` どうしは `duplicate_abbr` だけ。v0.7.0〜） |
+| error   | `alias_equals_own_name`                                           | `aliases` に自分の `abbr` / `formal` と同じ値がある（v0.7.0〜）                                                                      |
+| error   | `invalid_law_id`                                                  | `law_id` 形式が `isValidLawId` で false                                                                                              |
+| error   | `duplicate_law_id`                                                | `law_id` の重複                                                                                                                      |
+| warning | `category_hint_mismatch`                                          | `category` × `source_mcp_hint` の組合せが想定外                                                                                      |
+| warning | `duplicate_alias_within_entry`                                    | 同一エントリ内の `aliases` 重複                                                                                                      |
 
 v0.6.1 にあった警告 `alias_collides_with_abbr` は `duplicate_name` のエラーに含まれるので無くしました。CI（`ci.yml` の build ジョブ）で `npm run build` の後に `npm run validate` を呼び、`errors > 0` の場合に exit 1 を返します。
 
 #### `isValidLawId` が認識するパターン
 
-e-Gov の公式仕様（[法令種別と法令ID](https://laws.e-gov.go.jp/docs/law-data-basic/607318a-lawtypes-and-lawid/)）に合わせた 6 つの形だけを受け付けます（v0.7.0〜）。長さはすべて 15 文字、英字は大文字だけ、元号の 1 桁は `1`（明治）〜`5`（令和）です。件数は 2026-10-01 に e-Gov 法令 API v2（`GET /api/2/laws`）で取得した全 9,570 件の内訳で、6 つの形で全件が `true` になります（`scripts/verify-law-ids.mjs` が月次で確かめます）。
+e-Gov の公式仕様（[法令種別と法令ID](https://laws.e-gov.go.jp/docs/law-data-basic/607318a-lawtypes-and-lawid/)）に合わせた 6 つの形だけを受け付けます（v0.7.0〜）。長さはすべて 15 文字、英字は大文字だけ、元号の 1 桁は `1`（明治）〜`5`（令和）です。件数は 2026-09-30 に e-Gov 法令 API v2（`GET /api/2/laws`）で取得した全 9,570 件の内訳で、6 つの形で全件が `true` になります（`scripts/verify-law-ids.mjs` が月次で確かめます）。
 
-| パターン | 件数 | 例 | 説明 |
-|---|---|---|---|
-| `[1-5]\d{2}(AC\|CO\|IO\|DF\|DT\|DH)\d{10}` | 4,677 | `363AC0000000108` | 法律・政令・勅令・太政官布告・太政官達・太政官布達: 元号(1)+年(2)+種別(2)+番号(10)。`DH` は v0.7.0 から |
-| `[1-5]\d{2}M[1-6][0-9A-F]{7}\d{3}` | 4,687 | `340M50000040011` | 府省令: 元号(1)+年(2)+`M`+世代(1)+府省令ビットフラグ(16 進 7 文字)+番号(3)。共同省令は `415M60000F4A003` のように英字が並ぶ |
-| `[1-5]\d{2}R\d{8}\d{3}` | 49 | `322R00000001001` | 会計検査院規則・行政機関の規則など: 元号(1)+年(2)+`R`+機関番号(10 進 8 桁)+番号(3) |
-| `[1-5]\d{2}RJNJ\d{8}` | 142 | `324RJNJ01001000` | 人事院規則 |
-| `[1-5]\d{2}RPMD\d{8}` | 14 | `351RPMD12230000` | 内閣総理大臣決定 |
-| `321CONSTITUTION` | 1 | `321CONSTITUTION` | 日本国憲法（この 1 件だけ） |
+| パターン                                   | 件数  | 例                | 説明                                                                                                                        |
+| ------------------------------------------ | ----- | ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `[1-5]\d{2}(AC\|CO\|IO\|DF\|DT\|DH)\d{10}` | 4,677 | `363AC0000000108` | 法律・政令・勅令・太政官布告・太政官達・太政官布達: 元号(1)+年(2)+種別(2)+番号(10)。`DH` は v0.7.0 から                     |
+| `[1-5]\d{2}M[1-6][0-9A-F]{7}\d{3}`         | 4,687 | `340M50000040011` | 府省令: 元号(1)+年(2)+`M`+世代(1)+府省令ビットフラグ(16 進 7 文字)+番号(3)。共同省令は `415M60000F4A003` のように英字が並ぶ |
+| `[1-5]\d{2}R\d{8}\d{3}`                    | 49    | `322R00000001001` | 会計検査院規則・行政機関の規則など: 元号(1)+年(2)+`R`+機関番号(10 進 8 桁)+番号(3)                                          |
+| `[1-5]\d{2}RJNJ\d{8}`                      | 142   | `324RJNJ01001000` | 人事院規則                                                                                                                  |
+| `[1-5]\d{2}RPMD\d{8}`                      | 14    | `351RPMD12230000` | 内閣総理大臣決定                                                                                                            |
+| `321CONSTITUTION`                          | 1     | `321CONSTITUTION` | 日本国憲法（この 1 件だけ）                                                                                                 |
 
 v0.6.1 までは元号の桁・`M` の次の桁・`R` の機関番号・`CONSTITUTION` の先頭を確かめていなかったため、`000AC0000000000` `340M70000040011` `322R0000000A001` `363CONSTITUTION` も `true` でした。年の 2 桁の値、`R` の機関番号の値の範囲、`AC` などの 6〜12 桁目の値は確かめません（新しい機関や区分が足されたときに、パッケージを上げるまで `false` になるのを避けるため）。v0.5.x が受け付けていた `MO` / `RU` は e-Gov の実データに 1 件も無かったため v0.6.0 で外しました。
 
 #### `extractLawNames` のオプション
 
-| オプション | デフォルト | 役割 |
-|---|---|---|
-| `minLength` | `2` | これより短いキーは抽出対象外（1 文字略称のノイズ抑制） |
-| `preferLonger` | `true` | ほかの、より長い一致と 1 文字でも重なる短い一致を捨てる（例: `民法等の一部を改正する法律` 内の `民法`、`消費税法法人税法` の `法法`）。長さが同じ一致は両方返す（v0.7.0〜。v0.6.1 まではすっぽり含まれる一致だけを捨てていた） |
-| `dedupe` | `false` | 同一エントリのマッチを 1 件に絞る |
-| `normalize` | `false` | 全角英数字などを半角にしてから探す。`position` / `length` は元の `text` の位置（v0.7.0〜） |
+| オプション     | デフォルト | 役割                                                                                                                                                                                                                           |
+| -------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `minLength`    | `2`        | これより短いキーは抽出対象外（1 文字略称のノイズ抑制）                                                                                                                                                                         |
+| `preferLonger` | `true`     | ほかの、より長い一致と 1 文字でも重なる短い一致を捨てる（例: `民法等の一部を改正する法律` 内の `民法`、`消費税法法人税法` の `法法`）。長さが同じ一致は両方返す（v0.7.0〜。v0.6.1 まではすっぽり含まれる一致だけを捨てていた） |
+| `dedupe`       | `false`    | 同一エントリのマッチを 1 件に絞る                                                                                                                                                                                              |
+| `normalize`    | `false`    | 全角英数字などを半角にしてから探す。`position` / `length` は元の `text` の位置（v0.7.0〜）                                                                                                                                     |
 
 同じエントリの同じ位置・同じ長さの一致（`abbr` と `formal` がどちらも `酒税法` など）は 1 件にします（v0.7.0〜）。
 
@@ -462,16 +458,16 @@ e-Gov `law_id` から辞書エントリを引きます。`law_id !== null` の�
 
 ```ts
 interface AbbreviationEntry {
-  abbr: string;            // 略称（例: '消法'）
-  formal: string;          // 正式名称（例: '消費税法'）
-  law_id: string | null;   // e-Gov law_id（verified 済みのみ。それ以外は null）
-  law_num?: string;        // 法令番号（例: '昭和六十三年法律第百八号'）
-  law_type?: LawTypeCode;  // 'Act' | 'CabinetOrder' | ...（後方互換）
-  domain: Domain;          // 分野タグ
-  category: Category;      // 法令カテゴリ
-  source_mcp_hint: SourceMcpHint;  // 参照すべき MCP
-  aliases?: string[];      // 同義の別表記（自分の abbr / formal と同じ値は入れない）
-  note?: string;           // 備考
+  abbr: string; // 略称（例: '消法'）
+  formal: string; // 正式名称（例: '消費税法'）
+  law_id: string | null; // e-Gov law_id（verified 済みのみ。それ以外は null）
+  law_num?: string; // 法令番号（例: '昭和六十三年法律第百八号'）
+  law_type?: LawTypeCode; // 'Act' | 'CabinetOrder' | ...（後方互換）
+  domain: Domain; // 分野タグ
+  category: Category; // 法令カテゴリ
+  source_mcp_hint: SourceMcpHint; // 参照すべき MCP
+  aliases?: string[]; // 同義の別表記（自分の abbr / formal と同じ値は入れない）
+  note?: string; // 備考
 }
 ```
 
@@ -486,20 +482,20 @@ interface AbbreviationEntry {
 
 ## category と source_mcp_hint の対応
 
-| category | 例 | source_mcp_hint |
-|---|---|---|
-| `constitution` | 日本国憲法 | houki-egov |
-| `law` | 消費税法、労働基準法 | houki-egov |
-| `cabinet-order` | 消費税法施行令 | houki-egov |
-| `ministerial-ordinance` | 消費税法施行規則 | houki-egov |
-| `rule` | 各庁規則 | houki-egov |
-| `kokuji` *(v0.7.0 で追加。エントリはまだ無い)* | 告示 | houki-nta / houki-mhlw（e-Gov 法令 API は告示を持たない） |
-| `kihon-tsutatsu` | 消費税法基本通達（8 件） | houki-nta |
-| `kobetsu-tsutatsu` | 個別通達（1 件） | houki-nta / houki-mhlw |
-| `qa-jirei` *(将来)* | 質疑応答事例 | houki-nta |
-| `tax-answer` *(将来)* | タックスアンサー | houki-nta |
-| `hanrei` *(将来)* | 判例 | houki-court |
-| `saiketsu` *(将来)* | 国税不服審判所裁決 | houki-saiketsu |
+| category                                       | 例                       | source_mcp_hint                                           |
+| ---------------------------------------------- | ------------------------ | --------------------------------------------------------- |
+| `constitution`                                 | 日本国憲法               | houki-egov                                                |
+| `law`                                          | 消費税法、労働基準法     | houki-egov                                                |
+| `cabinet-order`                                | 消費税法施行令           | houki-egov                                                |
+| `ministerial-ordinance`                        | 消費税法施行規則         | houki-egov                                                |
+| `rule`                                         | 各庁規則                 | houki-egov                                                |
+| `kokuji` _(v0.7.0 で追加。エントリはまだ無い)_ | 告示                     | houki-nta / houki-mhlw（e-Gov 法令 API は告示を持たない） |
+| `kihon-tsutatsu`                               | 消費税法基本通達（8 件） | houki-nta                                                 |
+| `kobetsu-tsutatsu`                             | 個別通達（1 件）         | houki-nta / houki-mhlw                                    |
+| `qa-jirei` _(将来)_                            | 質疑応答事例             | houki-nta                                                 |
+| `tax-answer` _(将来)_                          | タックスアンサー         | houki-nta                                                 |
+| `hanrei` _(将来)_                              | 判例                     | houki-court                                               |
+| `saiketsu` _(将来)_                            | 国税不服審判所裁決       | houki-saiketsu                                            |
 
 現在の管轄は `houki-egov`（165 件）と `houki-nta`（9 件）の 2 つです。`houki-mhlw-mcp` 等の開発と並行してエントリを追加していきます。
 

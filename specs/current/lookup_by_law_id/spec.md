@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-normalize` は 2026-10-01（PR #30）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-normalize` は 2026-09-30（PR #30）
 - 起こした元: v0.6.0 の `src/lookup.ts`（`lookupByLawId`）、`src/index.ts`（`lookupByLawId`）、`src/lookup.test.ts`
 - 関連する Issue: なし
 
@@ -14,10 +14,10 @@
 
 ## 入力
 
-| 引数                | 必須 | 内容                                                                                                                                                |
-| ------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `law_id`            | 必須 | e-Gov の法令 ID。例: `363AC0000000108`（消費税法）/ `321CONSTITUTION`（日本国憲法）。前後の空白は無視する                                           |
-| `options.normalize` | 任意 | `true` なら、`law_id` を `normalizeJpText` に通してから比べる（全角英数字を半角にする）。既定 `false`                                                |
+| 引数                | 必須 | 内容                                                                                                      |
+| ------------------- | ---- | --------------------------------------------------------------------------------------------------------- |
+| `law_id`            | 必須 | e-Gov の法令 ID。例: `363AC0000000108`（消費税法）/ `321CONSTITUTION`（日本国憲法）。前後の空白は無視する |
+| `options.normalize` | 任意 | `true` なら、`law_id` を `normalizeJpText` に通してから比べる（全角英数字を半角にする）。既定 `false`     |
 
 型は `LookupByLawIdOptions`（`{ normalize?: boolean }`）。`resolveAbbreviation` の `options.normalize` と同じ意味で、既定も同じ `false`。houki-egov-mcp・houki-nta-mcp は入口で `normalize: true` を渡す。辞書の `law_id` は半角の大文字なので、辞書の側は変換しない。
 
