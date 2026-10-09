@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #28）。差分 `20261001-input-guards` は 2026-09-30（PR #31）。差分 `20261001-dictionary-rules` は 2026-09-30（PR #32）
+- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #27）。差分 `20261001-input-guards` は 2026-09-30（PR #31）。差分 `20261001-dictionary-rules` は 2026-09-30（PR #32）
 - 起こした元: v0.6.0 の `src/search.ts`（`findSimilar`・`FuzzyOptions`・`FuzzyMatch`）、`src/index.ts`（`findSimilar`）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加）
 
