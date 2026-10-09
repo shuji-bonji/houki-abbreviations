@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20261001-input-guards` は 2026-09-30（PR #31）
+- 承認日: 2026-09-27（PR #10）。差分 `20260927-undecided-to-issues` は 2026-09-27（PR #26）。差分 `20261001-input-guards` は 2026-09-30（PR #31）
 - 起こした元: v0.6.0 の `src/freshness.ts`（`computeDaysSince`）、`src/freshness.test.ts`
 - 関連する Issue: houki-abbreviations #3（JSDoc の強化）。共通化の発端は houki-nta-mcp #15
 

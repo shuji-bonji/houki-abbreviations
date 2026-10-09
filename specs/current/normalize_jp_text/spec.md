@@ -2,7 +2,7 @@
 
 - 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27 （PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #27）。差分 `20261001-normalize` は 2026-09-30（PR #30）
+- 承認日: 2026-09-27（PR #10）。差分 `20260927-undecided-to-issues` は 2026-09-27（PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #27）。差分 `20261001-normalize` は 2026-09-30（PR #30）
 - 起こした元: v0.6.0 の `src/normalize.ts`（`normalizeJpText`）、`src/normalize.test.ts`
 - 関連する Issue: なし（v0.3.0 で houki-nta-mcp の正規化の一部を移したもの。CHANGELOG の 0.3.0）
 
