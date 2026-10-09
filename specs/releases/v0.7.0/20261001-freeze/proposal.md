@@ -1,8 +1,12 @@
+---
+approved: 2026-09-30
+pr: 33
+implementation: required
+targets: [abbreviation_entries, public_constants]
+---
 # 変更: 辞書のエントリと公開定数を凍結する
 
 - 対象: `specs/current/` の `abbreviation_entries` / `public_constants`
-- 実装の変更: 要
-- 承認日: 2026-09-30（PR #33）
 - 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-09-30（JST、実装 PR の最終コミット）
 - 起こした日: 2026-09-30（JST）
 - 起こした役: Spec Steward

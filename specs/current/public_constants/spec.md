@@ -1,8 +1,11 @@
+---
+spec_id: ABBR
+approved: 2026-09-27
+pr: 10
+---
 # 機能: 公開定数（CATEGORIES / DOMAINS / LAW_TYPE_CODES / SOURCE_MCP_HINTS / STALENESS_THRESHOLDS）
 
-- 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27（PR #10）。差分 `20260927-undecided-to-issues` は 2026-09-27（PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #27）。差分 `20261001-dictionary-rules` は 2026-09-30（PR #32）。差分 `20261001-freeze` は 2026-09-30（PR #33）
 - 起こした元: v0.6.0 の `src/types.ts`（`CATEGORIES`、`DOMAINS`、`LAW_TYPE_CODES`、`SOURCE_MCP_HINTS`）、`src/freshness.ts`（`STALENESS_THRESHOLDS`）、`src/freshness.test.ts`、`src/index.test.ts`
 - 関連する Issue: houki-abbreviations #3（`STALENESS_THRESHOLDS` の JSDoc の強化）。`STALENESS_THRESHOLDS` の共通化の発端は houki-nta-mcp #15
 

@@ -1,8 +1,11 @@
+---
+spec_id: ABBR
+approved: 2026-09-27
+pr: 10
+---
 # 機能: searchByName（辞書のエントリを名前の部分一致で探す）
 
-- 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27（PR #10）。差分 `20260927-undecided-to-issues` は 2026-09-27（PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #27）。差分 `20261001-input-guards` は 2026-09-30（PR #31）
 - 起こした元: v0.6.0 の `src/search.ts`（`searchByName`・`SearchOptions`・`SearchFilter`・`SearchMode`）、`src/index.ts`（`searchByName`）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加。`aliases` に通称を足したテストは houki-nta-mcp #3 に対応したもの）
 

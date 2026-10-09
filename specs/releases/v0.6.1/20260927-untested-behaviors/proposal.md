@@ -1,8 +1,13 @@
+---
+approved: 2026-09-27
+pr: 27
+implementation: none
+targets: [abbreviation_entries, extract_law_names, find_similar, get_abbreviation_stats, get_all_names, is_valid_law_id, judge_staleness, kanji_to_number, levenshtein, list_by_category, list_by_domain, list_by_source_mcp_hint, lookup_by_law_id, lookup_by_law_num, normalize_jp_text, normalize_law_num, normalize_search_query, public_constants, resolve_abbreviation, search_by_name, suggest_correction, validate_all_entries]
+---
 # 変更: テストが無いだけの振る舞いに仕様 ID を振る
 
 - 対象: `specs/current/` の下の 20 本の `spec.md`（「できること」への追加）
-- 実装の変更: 不要（テストを足すだけ。`src/` は JSDoc の 1 か所だけ直す）
-- 承認日: 2026-09-27（PR #27）
+- 実装の変更の補足: テストを足すだけ。`src/` は JSDoc の 1 か所だけ直す
 - 状態: 取り込み済み。実装は v0.6.1、`specs/current/` への取り込みは 2026-09-27（JST、実装 PR の最終コミット）
 - 起こした日: 2026-09-27（JST）
 - 起こした役: Spec Steward

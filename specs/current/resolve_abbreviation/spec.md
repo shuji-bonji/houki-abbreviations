@@ -1,8 +1,11 @@
+---
+spec_id: ABBR
+approved: 2026-09-27
+pr: 10
+---
 # 機能: resolveAbbreviation（略称・正式名称・別名から辞書のエントリを 1 件引く）
 
-- 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27（PR #10）。差分 `20260927-undecided-to-issues` は 2026-09-27（PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #27）
 - 起こした元: v0.6.0 の `src/index.ts`（`resolveAbbreviation`、`ResolveAbbreviationOptions`）、`src/index.test.ts`、`src/normalize.test.ts`
 - 関連する Issue: なし
 

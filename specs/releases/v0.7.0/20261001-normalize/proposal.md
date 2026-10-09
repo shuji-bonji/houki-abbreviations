@@ -1,8 +1,12 @@
+---
+approved: 2026-09-30
+pr: 30
+implementation: required
+targets: [extract_law_names, get_all_names, kanji_to_number, levenshtein, lookup_by_law_id, normalize_jp_text, normalize_law_num, normalize_search_query]
+---
 # 変更: 関数ごとの全角・ダッシュ類・大文字の扱いを揃える（T3 正規化）
 
 - 対象: `specs/current/` の `normalize_jp_text` / `normalize_law_num` / `normalize_search_query` / `get_all_names` / `lookup_by_law_id` / `extract_law_names` / `kanji_to_number` / `levenshtein`
-- 実装の変更: 要
-- 承認日: 2026-09-30（PR #30）
 - 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-09-30（JST、実装 PR の最終コミット）
 - 起こした日: 2026-09-30（JST）
 - 起こした役: Spec Steward

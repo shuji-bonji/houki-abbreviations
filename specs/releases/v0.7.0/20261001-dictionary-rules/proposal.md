@@ -1,8 +1,13 @@
+---
+approved: 2026-09-30
+pr: 32
+implementation: required
+targets: [abbreviation_entries, extract_law_names, find_similar, get_abbreviation_stats, get_all_names, public_constants, suggest_correction, validate_all_entries]
+---
 # 変更: 辞書の約束（名前の重なり・別名・告示）と、件数・近さの決め方
 
 - 対象: `specs/current/` の `abbreviation_entries` / `validate_all_entries` / `public_constants` / `get_abbreviation_stats` / `find_similar` / `suggest_correction` / `extract_law_names` / `get_all_names`
-- 実装の変更: 要（辞書 `src/data/*.json` の 33 件の修正を含む）
-- 承認日: 2026-09-30（PR #32）
+- 実装の変更の補足: 辞書 `src/data/*.json` の 33 件の修正を含む
 - 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-09-30（JST、実装 PR の最終コミット）
 - 起こした日: 2026-09-30（JST）
 - 起こした役: Spec Steward

@@ -1,8 +1,11 @@
+---
+spec_id: ABBR
+approved: 2026-09-27
+pr: 10
+---
 # 機能: isValidLawId（文字列が e-Gov の law_id の形をしているかを判定する）
 
-- 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27（PR #10）。差分 `20260927-undecided-to-issues` は 2026-09-27（PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #27）。差分 `20261001-input-guards` は 2026-09-30（PR #31）
 - 起こした元: v0.6.0 の `src/validate.ts`（`isValidLawId`）、`src/index.ts`（そのまま再 export）、`src/validate.test.ts`
 - 関連する Issue: houki-abbreviations #6（e-Gov の実データに合わせる）
 

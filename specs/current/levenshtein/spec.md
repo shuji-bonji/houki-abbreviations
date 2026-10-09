@@ -1,8 +1,11 @@
+---
+spec_id: ABBR
+approved: 2026-09-27
+pr: 10
+---
 # 機能: levenshtein（2 つの文字列の編集距離を返す）
 
-- 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27（PR #10）。差分 `20260927-undecided-to-issues` は 2026-09-27（PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #27）。差分 `20261001-normalize` は 2026-09-30（PR #30）
 - 起こした元: v0.6.0 の `src/search.ts`（`levenshtein`）、`src/index.ts`（`levenshtein` の再 export）、`src/search.test.ts`
 - 関連する Issue: なし（v0.4.0 の Track 1 で追加）
 

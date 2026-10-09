@@ -1,8 +1,11 @@
+---
+spec_id: ABBR
+approved: 2026-09-27
+pr: 10
+---
 # 機能: validateAllEntries（同梱の辞書全件の整合性を検査し、エラーと警告の一覧を返す）
 
-- 機能 ID: ABBR
 - 版: current
-- 承認日: 2026-09-27（PR #10）。差分 `20260927-undecided-to-issues` は 2026-09-27（PR #26）。差分 `20260927-untested-behaviors` は 2026-09-27（PR #27）。差分 `20261001-dictionary-rules` は 2026-09-30（PR #32）
 - 起こした元: v0.6.0 の `src/validate.ts`（`validateAllEntries`、型 `ValidationIssue` / `ValidationReport`）、`src/index.ts`（`validateAllEntries`）、`src/validate.test.ts`
 - 関連する Issue: なし
 

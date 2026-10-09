@@ -1,8 +1,12 @@
+---
+approved: 2026-09-30
+pr: 31
+implementation: required
+targets: [compute_days_since, find_similar, is_valid_law_id, judge_staleness, search_by_name, suggest_correction]
+---
 # 変更: 引数の検査を「丸めない」に揃える（limit・取得時刻・law_id の形）
 
 - 対象: `specs/current/` の `search_by_name` / `find_similar` / `suggest_correction` / `compute_days_since` / `judge_staleness` / `is_valid_law_id`
-- 実装の変更: 要
-- 承認日: 2026-09-30（PR #31）
 - 状態: 取り込み済み。実装は v0.7.0、`specs/current/` への取り込みは 2026-09-30（JST、実装 PR の最終コミット）
 - 起こした日: 2026-09-30（JST）
 - 起こした役: Spec Steward

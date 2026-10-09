@@ -1,8 +1,12 @@
+---
+approved: 2026-09-27
+pr: 26
+implementation: none
+targets: [abbreviation_entries, compute_days_since, extract_law_names, find_similar, get_abbreviation_stats, get_all_names, is_valid_law_id, judge_staleness, kanji_to_number, levenshtein, list_by_category, list_by_domain, list_by_source_mcp_hint, lookup_by_law_id, lookup_by_law_num, normalize_jp_text, normalize_law_num, normalize_search_query, public_constants, resolve_abbreviation, search_by_name, suggest_correction, validate_all_entries]
+---
 # 変更: 「未決」のうち判断が要る 52 件を Issue に移す
 
 - 対象: `specs/current/` の下の 23 本の `spec.md`（`## 未決` の節）
-- 実装の変更: 不要
-- 承認日: 2026-09-27 （PR #26）
 - 状態: 取り込み済み。この仕様 PR（#26）の中で `specs/current/` に反映し、v0.6.1 の実装 PR の最終コミットで `specs/releases/v0.6.1/` へ移した
 - 起こした日: 2026-09-27（JST）
 - 起こした役: Spec Steward
