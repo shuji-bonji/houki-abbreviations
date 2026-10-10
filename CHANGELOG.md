@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 (none)
 
+## [0.7.1] - 2026-10-10
+
+🔧 **patch リリース** — 振る舞いの変更は無い。公開 API・実行されるコード・辞書のエントリは 0.7.0 と同じで、`src/` の差分は JSDoc の日付の直しと import の並びだけ。houki-hub のサイトの仕様書ページを公開版のタグから作り直すときに承認の履歴が残るよう、仕様の承認の記録を front matter に移した `specs/` をこの版のタグに含めるために出す。houki-egov-mcp / houki-nta-mcp の依存の指定（`^0.7.0`）の範囲に入るので、MCP 側の追随は要らない。
+
+### Changed
+
+- **仕様の承認の記録を front matter に移した**（[#38](https://github.com/shuji-bonji/houki-abbreviations/pull/38)）。`specs/current/<dir>/spec.md` と `specs/releases/<tag>/<id>/proposal.md` の承認日と PR 番号を、本文の「- 承認日:」の行から、ファイルの先頭の front matter（`approved`・`pr` など。`@shuji-bonji/spec-ids` 0.3.0 の形）に移した（`spec-ids migrate --write`）。移す前に、current の spec.md の承認の記録の誤りを直した（23 本で初版の PR 番号を #26 から #10 に戻して差分 `20260927-undecided-to-issues`（#26）の記録を足し、22 本で差分 `20260927-untested-behaviors` の PR 番号を #28 から #27 にした）。仕様の本文と仕様 ID は変えていない。機能ごとの承認の履歴は `npx spec-ids history <dir>` で見られる
+- 開発用の依存 `@shuji-bonji/spec-ids` を `^0.3.0` にした
+- CI の `pr-scope`（`.github/scripts/check-pr-scope.mjs`）が承認日と PR 番号を確かめる場所を、本文の行から front matter に替えた
+- `verify-law-ids.yml` の定期実行を毎月 1 日から毎月 2 日（03:17 UTC、12:17 JST）にずらした。e-Gov の毎月 1 日のメンテナンスと重ならないようにする（#35）
+
+### Documentation
+
+- CHANGELOG の 0.7.0 の日付と、README・JSDoc・`scripts/verify-law-ids.mjs` の e-Gov の件数を確かめた日を 2026-10-01 から 2026-09-30 に直した（誤記）。README は表の区切りなどの書式も整えた
+- AGENTS.md の「承認の記録」と Publisher の手順を、front matter に書く形に直した
+
 ## [0.7.0] - 2026-09-30
 
 ✨ **minor リリース** — 段階 3（houki-hub `docs/notes/2026-09-29-plan-spec-issues.md`）。仕様 PR [#30](https://github.com/shuji-bonji/houki-abbreviations/pull/30)（正規化）/ [#31](https://github.com/shuji-bonji/houki-abbreviations/pull/31)（引数の検査）/ [#32](https://github.com/shuji-bonji/houki-abbreviations/pull/32)（辞書の約束）/ [#33](https://github.com/shuji-bonji/houki-abbreviations/pull/33)（凍結）で承認した差分を実装し、`specs/current/` に取り込んだ。対象 Issue: #13 #14 #15 #16 #17 #18 #19 #20 #21 #22 #23 #24 #25。
